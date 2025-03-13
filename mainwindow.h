@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include "choosemodelscene.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -16,12 +17,17 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+    void paintEvent(QPaintEvent *event);
+
+private slots:
 
 private:
     Ui::MainWindow *ui;
     QGraphicsView *view;
     QGraphicsScene *scene;
+    ChooseModelScene* choosemodelscene = nullptr;
 };
 #endif // MAINWINDOW_H
