@@ -12,6 +12,8 @@ public:
     // 弹跳特效
     void pop1(); // 向下跳
     void pop2(); // 向上跳
+    void createAnimation(int startYOffset, int endYOffset);
+    void setupButton(const QPixmap& pix);
 
 signals:
 

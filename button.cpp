@@ -4,11 +4,14 @@
 button::button(QString normalImg) : QPushButton(nullptr) {
     normalImgPath = normalImg;
     QPixmap pix;
-    bool ret = pix.load(normalImg);
-    if (!ret) {
+    if (!pix.load(normalImg)) {
         qDebug() << "图片加载失败" << normalImg;
         return;
     }
+    setupButton(pix);
+}
+
+void button::setupButton(const QPixmap& pix) {
     this->setFixedSize(pix.width(), pix.height());
     this->setStyleSheet("QPushButton{border:0px;}");
     this->setIcon(pix);
@@ -16,25 +19,18 @@ button::button(QString normalImg) : QPushButton(nullptr) {
 }
 
 void button::pop1() {
-    // 创建动态属性动画
-    QPropertyAnimation* animation = new QPropertyAnimation(this, "geometry");
-    // 设置动画时间间隔
-    animation->setDuration(200);
-    // 设置动画起始位置
-    animation->setStartValue(QRect(this->x(), this->y(), this->width(), this->height()));
-    // 设置动画结束位置
-    animation->setEndValue(QRect(this->x(), this->y() + 10, this->width(), this->height()));
-    // 设置动画曲线
-    animation->setEasingCurve(QEasingCurve::OutBounce);
-    // 开始动画
-    animation->start();
+    createAnimation(0, 10);
 }
 
 void button::pop2() {
+    createAnimation(10, 0);
+}
+
+void button::createAnimation(int startYOffset, int endYOffset) {
     QPropertyAnimation* animation = new QPropertyAnimation(this, "geometry");
     animation->setDuration(200);
-    animation->setStartValue(QRect(this->x(), this->y() + 10, this->width(), this->height()));
-    animation->setEndValue(QRect(this->x(), this->y(), this->width(), this->height()));
+    animation->setStartValue(QRect(this->x(), this->y() + startYOffset, this->width(), this->height()));
+    animation->setEndValue(QRect(this->x(), this->y() + endYOffset, this->width(), this->height()));
     animation->setEasingCurve(QEasingCurve::OutBounce);
     animation->start();
 }

@@ -2,7 +2,7 @@
 #define CHOOSEMODELSCENE_H
 
 #include <QMainWindow>
-#include "playscene1.h"
+#include "playscene.h"
 #include "playscene2.h"
 
 class ChooseModelScene : public QMainWindow {
@@ -11,7 +11,7 @@ public:
     explicit ChooseModelScene(QWidget *parent = nullptr);
     void paintEvent(QPaintEvent *event);
 
-    PlayScene1* playscene1;
+    PlayScene* playscene;
     PlayScene2* playscene2;
 
 signals:

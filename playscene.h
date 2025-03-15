@@ -1,15 +1,68 @@
-#ifndef PLAYSCENE2_H
-#define PLAYSCENE2_H
+#ifndef PLAYSCENE_H
+#define PLAYSCENE_H
 
 #include <QMainWindow>
-#include "playscene.h"
+#include <vector>
+#include <queue>
+#include <cmath>
+#include <algorithm>
 #include "button.h"
 
-class PlayScene2 : public QMainWindow
+using namespace std;
+
+struct tanks
+{
+    int x;         // tank located col
+    int y;         // tank located row
+    int direction; // tank 方向  上下左右。
+    bool isInit = false;
+    bool alive = true; // 是否生存
+    bool IsGood = true;
+    bool DieOnce = false;
+};
+
+struct bullets
+{
+    int x;
+    int y;
+    int direction;
+    bool isHit = true;
+    int HitsNum = 0;
+    QTimer *timer;
+    bool update = true;
+};
+
+struct point
+{
+    int x;
+    int y;
+    int step;
+};
+
+// A* 算法所需的节点结构体
+struct Node
+{
+    int x, y;
+    int g; // 从起点到当前节点的实际代价
+    int h; // 从当前节点到目标节点的预估代价
+    int f; // f = g + h
+    Node *parent;
+
+    Node(int _x, int _y, int _g, int _h, Node *_parent = nullptr)
+        : x(_x), y(_y), g(_g), h(_h), f(_g + _h), parent(_parent) {}
+
+    bool operator>(const Node &other) const
+    {
+        return f > other.f;
+    }
+};
+
+class PlayScene : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit PlayScene2(QWidget *parent = nullptr);
+    explicit PlayScene(QWidget *parent = nullptr);
+
     vector<vector<int>> forevermap = {
         // 1表示不能打碎的墙 2表示可以打碎的墙
         // 1
@@ -51,7 +104,7 @@ public:
         {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
     void paintEvent(QPaintEvent *event);
     void initMy_Tank();
-    void initYour_Tank();
+    void initEnemy_Tank();
     void initBullet(tanks *tank, bullets *bullet, int direction);
     void SetTankNewLocation(tanks *tank, int direction);
     bool checkTankIsMoveable(tanks *tank);
@@ -62,20 +115,26 @@ public:
     void paintBullet(bullets *bullet);
     void BulletHitTank(tanks *tank, bullets *bullet);
     void BulletHit(bullets *bulllet);
+    void EnemyTankMove();
     void DeathEffect(tanks *tank);
-    void GameOver();
-    bool IsGameOver = false;
+    void EnemyFire();
+    void ShootBulletE();
+    void DodgeBullet();
+    vector<int> res;
+    int num;
+    QTimer *reroute;
+    QTimer *EnemyTimer;
     QTimer *movespeed;
     bool SpeedControl = true;
-    QTimer *movespeed2;
-    bool SpeedControl2 = true;
-    button *backBtn2;
-    bool Btnmove2 = false;
-signals:
-    void playScene2Back();
-public slots:
+    vector<int> Astar(vector<vector<int>> tempmap);
+    void GameOver();
+    bool IsGameOver = false;
+    button *backBtn;
+    bool Btnmove = false;
 
-private slots:
+signals:
+    void playSceneBack();
+public slots:
 
 private:
     void keyPressEvent(QKeyEvent *event);
@@ -83,10 +142,17 @@ private:
     bullets *bullet1 = new bullets;
     bullets *bullet2 = new bullets;
     bullets *bullet3 = new bullets;
-    tanks *your_tank = new tanks;
-    bullets *bullet1Y = new bullets;
-    bullets *bullet2Y = new bullets;
-    bullets *bullet3Y = new bullets;
+    tanks *enemy_tank = new tanks;
+    bullets *bullet1E = new bullets;
+    bullets *bullet2E = new bullets;
+    bullets *bullet3E = new bullets;
+
+    // 启发式函数：曼哈顿距离
+    int heuristic(int x1, int y1, int x2, int y2)
+    {
+        return abs(x1 - x2) + abs(y1 - y2);
+    }
 };
 
-#endif // PLAYSCENE2_H
+
+#endif

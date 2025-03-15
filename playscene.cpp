@@ -1,15 +1,16 @@
-#include "playscene2.h"
+#include "playscene.h"
 #include <QPainter>
 #include <QBrush>
 #include <QString>
 #include <QKeyEvent>
 #include <QTimer>
 #include <QDebug>
+#include <queue>
 #include <QMediaPlayer>
-
 using namespace std;
+
 // 上1下2左3右4
-vector<vector<int>> mainmap2 = {
+vector<vector<int>> mainmap = {
     // 1表示不能打碎的墙 2表示可以打碎的墙
     // 1
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -48,9 +49,11 @@ vector<vector<int>> mainmap2 = {
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     // 8
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}};
-PlayScene2::PlayScene2(QWidget *parent) : QMainWindow(parent)
+vector<vector<int>> tempmap = mainmap;
+PlayScene::PlayScene(QWidget *parent) : QMainWindow(parent)
 {
-    mainmap2 = forevermap;
+    mainmap = forevermap;
+    tempmap = forevermap;
     // 设置窗口固定大小
     setFixedSize(1050, 725);
     // 设置标题
@@ -58,24 +61,24 @@ PlayScene2::PlayScene2(QWidget *parent) : QMainWindow(parent)
     // 设置图标
     setWindowIcon(QIcon("://res/tank_up.jpg"));
     // 返回按钮
-    backBtn2 = new button("://res3/back.tga");
-    backBtn2->setParent(this);
-    backBtn2->move(1050, 750);
-    connect(backBtn2, &button::clicked, [=]()
+    backBtn = new button("://res3/back.tga");
+    backBtn->setParent(this);
+    backBtn->move(1050, 750);
+    connect(backBtn, &button::clicked, [=]()
             {
-        backBtn2->pop1();
-        backBtn2->pop2();
+        backBtn->pop1();
+        backBtn->pop2();
         QTimer::singleShot(500,this,[=](){
-            emit this->playScene2Back();
+            emit this->playSceneBack();
         }); });
 }
 // 画基本地图 画坦克
-void PlayScene2::paintEvent(QPaintEvent *event)
+void PlayScene::paintEvent(QPaintEvent *event)
 {
-    if (IsGameOver && !Btnmove2)
+    if (IsGameOver && !Btnmove)
     {
-        Btnmove2 = true;
-        backBtn2->move(this->width() * 0.5 - backBtn2->width() * 0.5, this->height() * 0.75);
+        Btnmove = true;
+        backBtn->move(this->width() * 0.5 - backBtn->width() * 0.5, this->height() * 0.75);
     }
 
     /**************************/
@@ -96,20 +99,20 @@ void PlayScene2::paintEvent(QPaintEvent *event)
     pixRight.load("://res/tank_right.jpg");
 
     // 判断敌方坦克是否初始化 若未初始化将敌方坦克初始化
-    if (!your_tank->isInit)
+    if (!enemy_tank->isInit)
     {
-        initYour_Tank();
-        your_tank->isInit = true;
+        initEnemy_Tank();
+        enemy_tank->isInit = true;
     }
     // 加载四个方向敌方tank图片
     QPixmap pixUpE;
-    pixUpE.load("://res/p2tankU.gif");
+    pixUpE.load("://res3/enemy_tank_down.jpg");
     QPixmap pixDownE;
-    pixDownE.load("://res/p2tankD.gif");
+    pixDownE.load("://res/enemy_tank_up.jpg");
     QPixmap pixLeftE;
-    pixLeftE.load("://res/p2tankL.gif");
+    pixLeftE.load("://res3/enemy_tank_left.jpg");
     QPixmap pixRightE;
-    pixRightE.load("://res/p2tankR.gif");
+    pixRightE.load("://res/enemy_tank_right.jpg");
     /**************************/
 
     QPainter painter(this);
@@ -125,43 +128,43 @@ void PlayScene2::paintEvent(QPaintEvent *event)
     {
         for (int j = 0; j < 42; ++j)
         {
-            if (mainmap2[i][j] == 1)
+            if (mainmap[i][j] == 1)
             {
                 painter.drawPixmap(25 * j, 25 * i, 25, 25, pix1);
             }
-            if (mainmap2[i][j] == 2)
+            if (mainmap[i][j] == 2)
             {
                 painter.drawPixmap(25 * j, 25 * i, 25, 25, pix2);
             }
-            if (mainmap2[i][j] == 204)
+            if (mainmap[i][j] == 204)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixRight);
             }
-            if (mainmap2[i][j] == 203)
+            if (mainmap[i][j] == 203)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixLeft);
             }
-            if (mainmap2[i][j] == 202)
+            if (mainmap[i][j] == 202)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixDown);
             }
-            if (mainmap2[i][j] == 201)
+            if (mainmap[i][j] == 201)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixUp);
             }
-            if (mainmap2[i][j] == 304)
+            if (mainmap[i][j] == 304)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixRightE);
             }
-            if (mainmap2[i][j] == 303)
+            if (mainmap[i][j] == 303)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixLeftE);
             }
-            if (mainmap2[i][j] == 302)
+            if (mainmap[i][j] == 302)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixDownE);
             }
-            if (mainmap2[i][j] == 301)
+            if (mainmap[i][j] == 301)
             {
                 painter.drawPixmap(25 * j, 25 * i, 50, 50, pixUpE);
             }
@@ -170,34 +173,34 @@ void PlayScene2::paintEvent(QPaintEvent *event)
     // 判断我方坦克是不是还活着
 
     DeathEffect(my_tank);
-    DeathEffect(your_tank);
+    DeathEffect(enemy_tank);
 
     // 画子弹 同时判断子弹有没有击中tank
     paintBullet(bullet1);
-    BulletHitTank(your_tank, bullet1);
+    BulletHitTank(enemy_tank, bullet1);
     BulletHitTank(my_tank, bullet1);
     paintBullet(bullet2);
-    BulletHitTank(your_tank, bullet2);
+    BulletHitTank(enemy_tank, bullet2);
     BulletHitTank(my_tank, bullet2);
     paintBullet(bullet3);
-    BulletHitTank(your_tank, bullet3);
+    BulletHitTank(enemy_tank, bullet3);
     BulletHitTank(my_tank, bullet3);
 
-    paintBullet(bullet1Y);
-    BulletHitTank(your_tank, bullet1Y);
-    BulletHitTank(my_tank, bullet1Y);
-    paintBullet(bullet2Y);
-    BulletHitTank(your_tank, bullet2Y);
-    BulletHitTank(my_tank, bullet2Y);
-    paintBullet(bullet3Y);
-    BulletHitTank(your_tank, bullet3Y);
-    BulletHitTank(my_tank, bullet3Y);
+    paintBullet(bullet1E);
+    BulletHitTank(enemy_tank, bullet1E);
+    BulletHitTank(my_tank, bullet1E);
+    paintBullet(bullet2E);
+    BulletHitTank(enemy_tank, bullet2E);
+    BulletHitTank(my_tank, bullet2E);
+    paintBullet(bullet3E);
+    BulletHitTank(enemy_tank, bullet3E);
+    BulletHitTank(my_tank, bullet3E);
 
     GameOver();
 }
 
 // 初始化我方tank
-void PlayScene2::initMy_Tank()
+void PlayScene::initMy_Tank()
 {
     QMediaPlayer *startSound = new QMediaPlayer(this);
     startSound->setSource(QUrl("qrc:/music/background.wav"));
@@ -213,23 +216,28 @@ void PlayScene2::initMy_Tank()
             { SpeedControl = true; });
     movespeed->start(200);
 }
+
 // 初始化敌方tank
-void PlayScene2::initYour_Tank()
+void PlayScene::initEnemy_Tank()
 {
-    your_tank->x = 35;
-    your_tank->y = 20;
-    your_tank->direction = 3;
-    your_tank->alive = true;
-    your_tank->IsGood = false;
+    enemy_tank->x = 35;
+    enemy_tank->y = 20;
+    enemy_tank->direction = 3;
+    enemy_tank->alive = true;
+    enemy_tank->IsGood = false;
     // 初始化敌方tank的位置
-    LocationSetting(your_tank, your_tank->direction);
-    movespeed2 = new QTimer(this);
-    connect(movespeed2, &QTimer::timeout, [=]()
-            { SpeedControl2 = true; });
-    movespeed2->start(200);
+    LocationSetting(enemy_tank, enemy_tank->direction);
+    reroute = new QTimer(this);
+    EnemyTankMove();
+    connect(reroute, &QTimer::timeout, [=]()
+            {
+         EnemyTimer->stop();
+         EnemyTankMove(); });
+    reroute->start(3000);
 }
+
 // 初始化子弹
-void PlayScene2::initBullet(tanks *tank, bullets *bullet, int direction)
+void PlayScene::initBullet(tanks *tank, bullets *bullet, int direction)
 {
     if (direction == 1)
     {
@@ -264,7 +272,7 @@ void PlayScene2::initBullet(tanks *tank, bullets *bullet, int direction)
 }
 
 // 更新坦克的位置
-void PlayScene2::tank_update(tanks *tank)
+void PlayScene::tank_update(tanks *tank)
 {
     switch (tank->direction)
     {
@@ -287,48 +295,48 @@ void PlayScene2::tank_update(tanks *tank)
 }
 
 // 检查坦克是否能移动
-bool PlayScene2::checkTankIsMoveable(tanks *tank)
+bool PlayScene::checkTankIsMoveable(tanks *tank)
 {
     if (tank->direction == 1)
     {
-        if (mainmap2[tank->y - 1][tank->x] != 0)
+        if (mainmap[tank->y - 1][tank->x] != 0)
         {
             return false;
         }
-        if (mainmap2[tank->y - 1][tank->x + 1] != 0)
+        if (mainmap[tank->y - 1][tank->x + 1] != 0)
         {
             return false;
         }
     }
     if (tank->direction == 2)
     {
-        if (mainmap2[tank->y + 2][tank->x] != 0)
+        if (mainmap[tank->y + 2][tank->x] != 0)
         {
             return false;
         }
-        if (mainmap2[tank->y + 2][tank->x + 1] != 0)
+        if (mainmap[tank->y + 2][tank->x + 1] != 0)
         {
             return false;
         }
     }
     if (tank->direction == 3)
     {
-        if (mainmap2[tank->y][tank->x - 1] != 0)
+        if (mainmap[tank->y][tank->x - 1] != 0)
         {
             return false;
         }
-        if (mainmap2[tank->y + 1][tank->x - 1] != 0)
+        if (mainmap[tank->y + 1][tank->x - 1] != 0)
         {
             return false;
         }
     }
     if (tank->direction == 4)
     {
-        if (mainmap2[tank->y][tank->x + 2] != 0)
+        if (mainmap[tank->y][tank->x + 2] != 0)
         {
             return false;
         }
-        if (mainmap2[tank->y + 1][tank->x + 2] != 0)
+        if (mainmap[tank->y + 1][tank->x + 2] != 0)
         {
             return false;
         }
@@ -337,12 +345,12 @@ bool PlayScene2::checkTankIsMoveable(tanks *tank)
 }
 
 // 设置坦克的新位置。
-void PlayScene2::SetTankNewLocation(tanks *tank, int direction)
+void PlayScene::SetTankNewLocation(tanks *tank, int direction)
 {
-    mainmap2[tank->y][tank->x] = 0;
-    mainmap2[tank->y + 1][tank->x] = 0;
-    mainmap2[tank->y][tank->x + 1] = 0;
-    mainmap2[tank->y + 1][tank->x + 1] = 0;
+    mainmap[tank->y][tank->x] = 0;
+    mainmap[tank->y + 1][tank->x] = 0;
+    mainmap[tank->y][tank->x + 1] = 0;
+    mainmap[tank->y + 1][tank->x + 1] = 0;
     switch (direction)
     {
     case 1:
@@ -367,23 +375,23 @@ void PlayScene2::SetTankNewLocation(tanks *tank, int direction)
 }
 
 // 坦克位置设置
-void PlayScene2::LocationSetting(tanks *tank, int direction)
+void PlayScene::LocationSetting(tanks *tank, int direction)
 {
     int a = 200;
     if (!tank->IsGood)
     {
         a = 300;
     }
-    mainmap2[tank->y][tank->x] = a + direction;
-    mainmap2[tank->y + 1][tank->x] = a;
-    mainmap2[tank->y][tank->x + 1] = a;
-    mainmap2[tank->y + 1][tank->x + 1] = a;
+    mainmap[tank->y][tank->x] = a + direction;
+    mainmap[tank->y + 1][tank->x] = a;
+    mainmap[tank->y][tank->x + 1] = a;
+    mainmap[tank->y + 1][tank->x + 1] = a;
 }
 
 // 我方坦克的移动-键盘事件控制
-void PlayScene2::keyPressEvent(QKeyEvent *event)
+void PlayScene::keyPressEvent(QKeyEvent *event)
 {
-    if (my_tank->alive)
+    if (my_tank->alive && !IsGameOver)
     {
         if (event->key() == Qt::Key_W && SpeedControl)
         {
@@ -461,88 +469,34 @@ void PlayScene2::keyPressEvent(QKeyEvent *event)
             }
         }
     }
-    if (your_tank->alive)
-    {
-        if (event->key() == Qt::Key_Up && SpeedControl2)
-        {
-            SpeedControl2 = false;
-            if (your_tank->direction != 1)
-            {
-                LocationSetting(your_tank, 1);
-                update();
-                your_tank->direction = 1;
-                return;
-            }
-            if (checkTankIsMoveable(your_tank))
-            {
-                tank_update(your_tank);
-            }
-        }
-        if (event->key() == Qt::Key_Down && SpeedControl2)
-        {
-            SpeedControl2 = false;
-            if (your_tank->direction != 2)
-            {
-                LocationSetting(your_tank, 2);
-                update();
-                your_tank->direction = 2;
-                return;
-            }
-            if (checkTankIsMoveable(your_tank))
-            {
-                tank_update(your_tank);
-            }
-        }
-        if (event->key() == Qt::Key_Left && SpeedControl2)
-        {
-            SpeedControl2 = false;
-            if (your_tank->direction != 3)
-            {
-                LocationSetting(your_tank, 3);
-                update();
-                your_tank->direction = 3;
-                return;
-            }
-            if (checkTankIsMoveable(your_tank))
-            {
-                tank_update(your_tank);
-            }
-        }
-        if (event->key() == Qt::Key_Right && SpeedControl2)
-        {
-            SpeedControl2 = false;
-            if (your_tank->direction != 4)
-            {
-                LocationSetting(your_tank, 4);
-                update();
-                your_tank->direction = 4;
-                return;
-            }
-            if (checkTankIsMoveable(your_tank))
-            {
-                tank_update(your_tank);
-            }
-        }
-        if (event->key() == Qt::Key_End)
-        {
-            if (bullet1Y->isHit)
-            {
-                initBullet(your_tank, bullet1Y, your_tank->direction);
-            }
-            else if (bullet2Y->isHit)
-            {
-                initBullet(your_tank, bullet2Y, your_tank->direction);
-            }
-            else if (bullet3Y->isHit)
-            {
-                initBullet(your_tank, bullet3Y, your_tank->direction);
-            }
-        }
-    }
     QWidget::keyPressEvent(event);
 }
+
+// 敌方坦克的移动
+void PlayScene::EnemyTankMove()
+{
+    EnemyTimer = new QTimer(this);
+    res = Astar(tempmap);
+    num = res.size() - 1;
+    connect(EnemyTimer, &QTimer::timeout, [&]()
+            {
+                if (num >= 0)
+                {
+                    enemy_tank->direction = res[num];
+                    tank_update(enemy_tank);
+                    --num;
+                }
+                else
+                {
+                    EnemyTimer->stop();
+                }
+                EnemyFire();
+            });
+    EnemyTimer->start(300);
+}
+
 // 画子弹
-void PlayScene2::paintBullet(bullets *bullet)
+void PlayScene::paintBullet(bullets *bullet)
 {
     if (bullet->HitsNum > 3)
     {
@@ -622,40 +576,40 @@ void PlayScene2::paintBullet(bullets *bullet)
 }
 
 // 判断子弹击中墙
-void PlayScene2::BulletHitWall(bullets *bullet, int x, int y)
+void PlayScene::BulletHitWall(bullets *bullet, int x, int y)
 {
-    if (mainmap2[y / 25][x / 25] == 1)
+    if (mainmap[y / 25][x / 25] == 1)
     {
         partBulletHitWall(bullet);
     }
-    else if (mainmap2[y / 25 - 1][x / 25] == 1)
+    else if (mainmap[y / 25 - 1][x / 25] == 1)
     {
         partBulletHitWall(bullet);
     }
-    else if (mainmap2[y / 25][x / 25 - 1] == 1)
+    else if (mainmap[y / 25][x / 25 - 1] == 1)
     {
         partBulletHitWall(bullet);
     }
-    if (mainmap2[y / 25][x / 25] == 2)
+    if (mainmap[y / 25][x / 25] == 2)
     {
-        mainmap2[y / 25][x / 25] = 0;
-
+        mainmap[y / 25][x / 25] = 0;
+        tempmap[y / 25][x / 25] = 0;
         BulletHit(bullet);
     }
-    else if (mainmap2[y / 25 - 1][x / 25] == 2)
+    else if (mainmap[y / 25 - 1][x / 25] == 2)
     {
-        mainmap2[y / 25 - 1][x / 25] = 0;
-
+        mainmap[y / 25 - 1][x / 25] = 0;
+        tempmap[y / 25 - 1][x / 25] = 0;
         BulletHit(bullet);
     }
-    else if (mainmap2[y / 25][x / 25 - 1] == 2)
+    else if (mainmap[y / 25][x / 25 - 1] == 2)
     {
-        mainmap2[y / 25][x / 25 - 1] = 0;
-
+        mainmap[y / 25][x / 25 - 1] = 0;
+        tempmap[y / 25][x / 25 - 1] = 0;
         BulletHit(bullet);
     }
 }
-void PlayScene2::partBulletHitWall(bullets *bullet)
+void PlayScene::partBulletHitWall(bullets *bullet)
 {
     if (bullet->direction == 1)
     {
@@ -679,7 +633,7 @@ void PlayScene2::partBulletHitWall(bullets *bullet)
 }
 
 // 判断子弹击中坦克
-void PlayScene2::BulletHitTank(tanks *tank, bullets *bullet)
+void PlayScene::BulletHitTank(tanks *tank, bullets *bullet)
 {
     int x = tank->x * 25;
     int y = tank->y * 25;
@@ -688,12 +642,14 @@ void PlayScene2::BulletHitTank(tanks *tank, bullets *bullet)
     if (f1 && f2 && tank->alive)
     {
         tank->alive = false;
+        EnemyTimer->stop();
+        reroute->stop();
         BulletHit(bullet);
     }
 }
 
 // 子弹击中后停止的处理
-void PlayScene2::BulletHit(bullets *bullet)
+void PlayScene::BulletHit(bullets *bullet)
 {
     bullet->timer->stop();
     bullet->isHit = true;
@@ -703,7 +659,7 @@ void PlayScene2::BulletHit(bullets *bullet)
 }
 
 // 坦克死亡效果
-void PlayScene2::DeathEffect(tanks *tank)
+void PlayScene::DeathEffect(tanks *tank)
 {
     if (!tank->alive)
     {
@@ -725,13 +681,62 @@ void PlayScene2::DeathEffect(tanks *tank)
     }
 }
 
-// 游戏结束
-void PlayScene2::GameOver()
+// 敌方开火
+void PlayScene::EnemyFire()
 {
-    if (!my_tank->alive || !your_tank->alive)
+    if (enemy_tank->x == my_tank->x)
+    {
+        if (enemy_tank->y > my_tank->y && enemy_tank->direction == 1)
+        {
+            EnemyTimer->stop();
+            ShootBulletE();
+        }
+        else if (enemy_tank->y < my_tank->y && enemy_tank->direction == 2)
+        {
+            EnemyTimer->stop();
+            ShootBulletE();
+        }
+    }
+    else if (enemy_tank->y == my_tank->y)
+    {
+        if (enemy_tank->x > my_tank->x && enemy_tank->direction == 3)
+        {
+            EnemyTimer->stop();
+            ShootBulletE();
+        }
+        else if (enemy_tank->x < my_tank->x && enemy_tank->direction == 4)
+        {
+            EnemyTimer->stop();
+            ShootBulletE();
+        }
+    }
+}
+
+// 敌方子弹的射出
+void PlayScene::ShootBulletE()
+{
+    if (bullet1E->isHit)
+    {
+        initBullet(enemy_tank, bullet1E, enemy_tank->direction);
+    }
+    else if (bullet2E->isHit)
+    {
+        initBullet(enemy_tank, bullet2E, enemy_tank->direction);
+    }
+    else if (bullet3E->isHit)
+    {
+        initBullet(enemy_tank, bullet3E, enemy_tank->direction);
+    }
+}
+
+
+// 游戏结束
+void PlayScene::GameOver()
+{
+    if (!my_tank->alive || !enemy_tank->alive)
     {
         bool a = bullet1->isHit && bullet2->isHit && bullet3->isHit;
-        bool b = bullet1Y->isHit && bullet2Y->isHit && bullet3Y->isHit;
+        bool b = bullet1E->isHit && bullet2E->isHit && bullet3E->isHit;
         if (a && b)
         {
             QPixmap over;
@@ -741,4 +746,65 @@ void PlayScene2::GameOver()
             IsGameOver = true;
         }
     }
+}
+
+void PlayScene::DodgeBullet()
+{
+}
+
+// A* 算法实现
+vector<int> PlayScene::Astar(vector<vector<int>> tempmap)
+{
+    int startX = my_tank->x;
+    int startY = my_tank->y;
+    int goalX = enemy_tank->x;
+    int goalY = enemy_tank->y;
+
+    priority_queue<Node, vector<Node>, greater<Node>> openSet;
+    vector<vector<bool>> closedSet(tempmap.size(), vector<bool>(tempmap[0].size(), false));
+
+    openSet.push(Node(startX, startY, 0, heuristic(startX, startY, goalX, goalY)));
+
+    while (!openSet.empty())
+    {
+        Node current = openSet.top();
+        openSet.pop();
+
+        if (current.x == goalX && current.y == goalY)
+        {
+            vector<int> path;
+            while (current.parent != nullptr)
+            {
+                path.push_back(current.x);
+                path.push_back(current.y);
+                current = *current.parent;
+            }
+            path.push_back(startX);
+            path.push_back(startY);
+            reverse(path.begin(), path.end());
+            return path;
+        }
+
+        closedSet[current.x][current.y] = true;
+
+        // 四个方向：上、下、左、右
+        int dx[] = {-1, 1, 0, 0};
+        int dy[] = {0, 0, -1, 1};
+
+        for (int i = 0; i < 4; ++i)
+        {
+            int newX = current.x + dx[i];
+            int newY = current.y + dy[i];
+
+            if (newX >= 0 && newX < tempmap.size() && newY >= 0 && newY < tempmap[0].size() &&
+                !closedSet[newX][newY] && tempmap[newX][newY] != 1)
+            {
+                int newG = current.g + 1;
+                Node neighbor(newX, newY, newG, heuristic(newX, newY, goalX, goalY), new Node(current.x, current.y, current.g, current.h, current.parent));
+                openSet.push(neighbor);
+            }
+        }
+    }
+
+    return {}; // 没有找到路径
 }

@@ -1,6 +1,7 @@
 QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT += multimedia
 
 CONFIG += c++17
 
@@ -9,27 +10,19 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    baseplayscene.cpp \
     button.cpp \
     choosemodelscene.cpp \
     main.cpp \
-    mapdrawer.cpp \
-    playscene1.cpp \
+    playscene.cpp \
     playscene2.cpp \
-    resourcemanager.cpp \
-    tank.cpp \
     mainwindow.cpp
 
 HEADERS += \
-    baseplayscene.h \
     button.h \
     choosemodelscene.h \
     mainwindow.h \
-    mapdrawer.h \
-    playscene1.h \
-    playscene2.h \
-    resourcemanager.h \
-    tank.h
+    playscene.h \
+    playscene2.h
 
 FORMS += \
     mainwindow.ui

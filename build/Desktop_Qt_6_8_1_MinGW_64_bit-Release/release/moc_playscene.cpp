@@ -1,12 +1,12 @@
 /****************************************************************************
-** Meta object code from reading C++ file 'playscene2.h'
+** Meta object code from reading C++ file 'playscene.h'
 **
 ** Created by: The Qt Meta Object Compiler version 68 (Qt 6.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "../../../playscene2.h"
+#include "../../../playscene.h"
 #include <QtCore/qmetatype.h>
 
 #include <QtCore/qtmochelpers.h>
@@ -16,7 +16,7 @@
 
 #include <QtCore/qxptype_traits.h>
 #if !defined(Q_MOC_OUTPUT_REVISION)
-#error "The header file 'playscene2.h' doesn't include <QObject>."
+#error "The header file 'playscene.h' doesn't include <QObject>."
 #elif Q_MOC_OUTPUT_REVISION != 68
 #error "This file was generated using the moc from 6.8.1. It"
 #error "cannot be used with the include files from this version of Qt."
@@ -31,21 +31,21 @@ QT_WARNING_PUSH
 QT_WARNING_DISABLE_DEPRECATED
 QT_WARNING_DISABLE_GCC("-Wuseless-cast")
 namespace {
-struct qt_meta_tag_ZN10PlayScene2E_t {};
+struct qt_meta_tag_ZN9PlaySceneE_t {};
 } // unnamed namespace
 
 
 #ifdef QT_MOC_HAS_STRINGDATA
-static constexpr auto qt_meta_stringdata_ZN10PlayScene2E = QtMocHelpers::stringData(
-    "PlayScene2",
-    "playScene2Back",
+static constexpr auto qt_meta_stringdata_ZN9PlaySceneE = QtMocHelpers::stringData(
+    "PlayScene",
+    "playSceneBack",
     ""
 );
 #else  // !QT_MOC_HAS_STRINGDATA
 #error "qtmochelpers.h not found or too old."
 #endif // !QT_MOC_HAS_STRINGDATA
 
-Q_CONSTINIT static const uint qt_meta_data_ZN10PlayScene2E[] = {
+Q_CONSTINIT static const uint qt_meta_data_ZN9PlaySceneE[] = {
 
  // content:
       12,       // revision
@@ -67,35 +67,35 @@ Q_CONSTINIT static const uint qt_meta_data_ZN10PlayScene2E[] = {
        0        // eod
 };
 
-Q_CONSTINIT const QMetaObject PlayScene2::staticMetaObject = { {
+Q_CONSTINIT const QMetaObject PlayScene::staticMetaObject = { {
     QMetaObject::SuperData::link<QMainWindow::staticMetaObject>(),
-    qt_meta_stringdata_ZN10PlayScene2E.offsetsAndSizes,
-    qt_meta_data_ZN10PlayScene2E,
+    qt_meta_stringdata_ZN9PlaySceneE.offsetsAndSizes,
+    qt_meta_data_ZN9PlaySceneE,
     qt_static_metacall,
     nullptr,
-    qt_incomplete_metaTypeArray<qt_meta_tag_ZN10PlayScene2E_t,
+    qt_incomplete_metaTypeArray<qt_meta_tag_ZN9PlaySceneE_t,
         // Q_OBJECT / Q_GADGET
-        QtPrivate::TypeAndForceComplete<PlayScene2, std::true_type>,
-        // method 'playScene2Back'
+        QtPrivate::TypeAndForceComplete<PlayScene, std::true_type>,
+        // method 'playSceneBack'
         QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
     nullptr
 } };
 
-void PlayScene2::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
+void PlayScene::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
 {
-    auto *_t = static_cast<PlayScene2 *>(_o);
+    auto *_t = static_cast<PlayScene *>(_o);
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
-        case 0: _t->playScene2Back(); break;
+        case 0: _t->playSceneBack(); break;
         default: ;
         }
     }
     if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         {
-            using _q_method_type = void (PlayScene2::*)();
-            if (_q_method_type _q_method = &PlayScene2::playScene2Back; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
+            using _q_method_type = void (PlayScene::*)();
+            if (_q_method_type _q_method = &PlayScene::playSceneBack; *reinterpret_cast<_q_method_type *>(_a[1]) == _q_method) {
                 *result = 0;
                 return;
             }
@@ -103,20 +103,20 @@ void PlayScene2::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
     }
 }
 
-const QMetaObject *PlayScene2::metaObject() const
+const QMetaObject *PlayScene::metaObject() const
 {
     return QObject::d_ptr->metaObject ? QObject::d_ptr->dynamicMetaObject() : &staticMetaObject;
 }
 
-void *PlayScene2::qt_metacast(const char *_clname)
+void *PlayScene::qt_metacast(const char *_clname)
 {
     if (!_clname) return nullptr;
-    if (!strcmp(_clname, qt_meta_stringdata_ZN10PlayScene2E.stringdata0))
+    if (!strcmp(_clname, qt_meta_stringdata_ZN9PlaySceneE.stringdata0))
         return static_cast<void*>(this);
     return QMainWindow::qt_metacast(_clname);
 }
 
-int PlayScene2::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
+int PlayScene::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 {
     _id = QMainWindow::qt_metacall(_c, _id, _a);
     if (_id < 0)
@@ -135,7 +135,7 @@ int PlayScene2::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 }
 
 // SIGNAL 0
-void PlayScene2::playScene2Back()
+void PlayScene::playSceneBack()
 {
     QMetaObject::activate(this, &staticMetaObject, 0, nullptr);
 }

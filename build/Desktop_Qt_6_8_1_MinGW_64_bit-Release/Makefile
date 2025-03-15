@@ -420,7 +420,9 @@ Makefile: ../../Tank-Battle.pro D:/Qt20250127/6.8.1/mingw_64/mkspecs/win32-g++/q
 		D:/Qt20250127/6.8.1/mingw_64/mkspecs/features/lex.prf \
 		../../Tank-Battle.pro \
 		D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Widgets.prl \
+		D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Multimedia.prl \
 		D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Gui.prl \
+		D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Network.prl \
 		D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Core.prl \
 		D:/Qt20250127/6.8.1/mingw_64/lib/Qt6EntryPoint.prl \
 		D:/Qt20250127/6.8.1/mingw_64/mkspecs/features/build_pass.prf
@@ -775,7 +777,9 @@ D:/Qt20250127/6.8.1/mingw_64/mkspecs/features/yacc.prf:
 D:/Qt20250127/6.8.1/mingw_64/mkspecs/features/lex.prf:
 ../../Tank-Battle.pro:
 D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Widgets.prl:
+D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Multimedia.prl:
 D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Gui.prl:
+D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Network.prl:
 D:/Qt20250127/6.8.1/mingw_64/lib/Qt6Core.prl:
 D:/Qt20250127/6.8.1/mingw_64/lib/Qt6EntryPoint.prl:
 D:/Qt20250127/6.8.1/mingw_64/mkspecs/features/build_pass.prf:
