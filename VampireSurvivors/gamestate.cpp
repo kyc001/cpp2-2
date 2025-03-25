@@ -1,4 +1,4 @@
-#include "gamestate.h"
+#include "bin/gamestate.h"
 
 GameState::GameState(QObject *parent) : QObject(parent) {
     my_hero = new Hero(this);
