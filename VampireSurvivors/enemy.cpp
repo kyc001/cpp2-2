@@ -1,4 +1,4 @@
-#include "enemy.h"
+#include "bin/enemy.h"
 
 Enemy::Enemy(int x, int y, int HP, int attack, QObject *parent) : QObject(parent), my_x(x), my_y(y), my_HP(HP), my_attack(attack) {
     // 初始化敌人的属性

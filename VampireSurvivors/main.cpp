@@ -1,4 +1,4 @@
-#include "mainscene.h"
+#include "bin/mainscene.h"
 
 #include <QApplication>
 
