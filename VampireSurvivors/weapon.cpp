@@ -123,4 +123,24 @@ QRect Weapon::getDamageArea() const {
         default:
             return QRect(x - range, y - range, range * 2, range * 2);
     }
+}
+
+void Weapon::increaseDamage(double percentage) {
+    weapon_damage = static_cast<int>(weapon_damage * (1.0 + percentage));
+}
+
+void Weapon::decreaseCooldown(double percentage) {
+    cooldown_time = static_cast<int>(cooldown_time * (1.0 - percentage));
+    // 确保冷却时间不低于最小值
+    if (cooldown_time < 100) {
+        cooldown_time = 100; // 最低100ms
+    }
+}
+
+void Weapon::increaseDuration(double percentage) {
+    duration_time = static_cast<int>(duration_time * (1.0 + percentage));
+}
+
+void Weapon::increaseRange(double percentage) {
+    range = static_cast<int>(range * (1.0 + percentage));
 } 
