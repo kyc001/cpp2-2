@@ -4,12 +4,18 @@
 #include "bin/hero.h"
 #include "bin/enemy.h"
 #include "bin/gamemap.h"
+#include "bin/upgradeui.h"
+#include "bin/shopui.h"
+#include "bin/saveui.h"
 #include <QPainter>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QFont>
+#include <QKeyEvent>
+#include <QCloseEvent>
+#include <QVector>
 
 MainScene::MainScene(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainScene), game_state(nullptr), timer_id(0)
@@ -27,6 +33,7 @@ MainScene::MainScene(QWidget *parent)
     connect(game_state, &GameState::gameOverSignal, this, &MainScene::onGameOver);
     connect(game_state, &GameState::scoreUpdated, this, &MainScene::onScoreUpdated);
     connect(game_state, &GameState::timeUpdated, this, &MainScene::onTimeUpdated);
+    connect(game_state, &GameState::coinsUpdated, this, &MainScene::onCoinsUpdated);
     
     // Setup UI
     setupUI();
@@ -49,12 +56,19 @@ void MainScene::setupUI()
 {
     // Create score and time labels
     score_label = new QLabel("Score: 0", this);
-    score_label->setGeometry(10, 10, 150, 30);
+    score_label->setGeometry(10, 10, 200, 30);
     score_label->setStyleSheet("color: white; font-size: 16px;");
+    score_label->hide();
     
     time_label = new QLabel("Time: 0", this);
-    time_label->setGeometry(width() - 160, 10, 150, 30);
+    time_label->setGeometry(10, 40, 200, 30);
     time_label->setStyleSheet("color: white; font-size: 16px;");
+    time_label->hide();
+    
+    coin_label = new QLabel("Coins: 0", this);
+    coin_label->setGeometry(10, 70, 200, 30);
+    coin_label->setStyleSheet("color: gold; font-size: 16px;");
+    coin_label->hide();
     
     // Create character selection UI
     character_selection = new QWidget(this);
@@ -63,29 +77,24 @@ void MainScene::setupUI()
     
     QVBoxLayout *char_layout = new QVBoxLayout(character_selection);
     
-    QLabel *title = new QLabel("Select Your Character", character_selection);
-    title->setAlignment(Qt::AlignCenter);
-    title->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
+    character_title = new QLabel("选择角色", character_selection);
+    character_title->setAlignment(Qt::AlignCenter);
+    character_title->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
     
     QHBoxLayout *buttons_layout = new QHBoxLayout();
     
-    warrior_button = new QPushButton("Warrior", character_selection);
-    warrior_button->setMinimumSize(120, 120);
-    connect(warrior_button, &QPushButton::clicked, this, [this]() { onCharacterSelected(0); });
+    // 创建角色按钮
+    QStringList character_names = {"战士", "法师", "弓箭手", "盗贼"};
     
-    mage_button = new QPushButton("Mage", character_selection);
-    mage_button->setMinimumSize(120, 120);
-    connect(mage_button, &QPushButton::clicked, this, [this]() { onCharacterSelected(1); });
+    for (int i = 0; i < character_names.size(); i++) {
+        QPushButton* btn = new QPushButton(character_names[i], character_selection);
+        btn->setMinimumSize(120, 120);
+        connect(btn, &QPushButton::clicked, this, [this, i]() { onCharacterSelected(i); });
+        buttons_layout->addWidget(btn);
+        character_buttons.append(btn);
+    }
     
-    archer_button = new QPushButton("Archer", character_selection);
-    archer_button->setMinimumSize(120, 120);
-    connect(archer_button, &QPushButton::clicked, this, [this]() { onCharacterSelected(2); });
-    
-    buttons_layout->addWidget(warrior_button);
-    buttons_layout->addWidget(mage_button);
-    buttons_layout->addWidget(archer_button);
-    
-    char_layout->addWidget(title);
+    char_layout->addWidget(character_title);
     char_layout->addLayout(buttons_layout);
     
     // Create game over screen
@@ -111,6 +120,32 @@ void MainScene::setupUI()
     go_layout->addWidget(go_title);
     go_layout->addWidget(final_score_label);
     go_layout->addWidget(restart_button, 0, Qt::AlignCenter);
+    
+    // Create shop button
+    shop_button = new QPushButton("商店", this);
+    shop_button->setGeometry(700, 10, 80, 30);
+    shop_button->setStyleSheet("background-color: rgba(70, 70, 70, 180); color: white; border: none; border-radius: 5px;");
+    connect(shop_button, &QPushButton::clicked, this, &MainScene::onShopButtonClicked);
+    shop_button->hide();
+    
+    // 创建存档按钮
+    save_button = new QPushButton("存档", this);
+    save_button->setGeometry(700, 50, 80, 30);
+    save_button->setStyleSheet("background-color: rgba(70, 70, 70, 180); color: white; border: none; border-radius: 5px;");
+    connect(save_button, &QPushButton::clicked, this, &MainScene::onSaveButtonClicked);
+    save_button->hide();
+    
+    // 创建升级UI
+    upgrade_ui = new UpgradeUI(this);
+    connect(game_state, &GameState::levelUpOptionsReady, this, &MainScene::onHeroLeveledUp);
+    
+    // 创建商店UI
+    shop_ui = new ShopUI(this);
+    connect(shop_ui, &ShopUI::shopClosed, this, &MainScene::onShopClosed);
+    
+    // 创建存档UI
+    save_ui = new SaveUI(this);
+    connect(save_ui, &SaveUI::saveUIClosed, this, &MainScene::onSaveClosed);
 }
 
 void MainScene::showCharacterSelection()
@@ -123,6 +158,7 @@ void MainScene::showCharacterSelection()
     
     score_label->hide();
     time_label->hide();
+    coin_label->hide();
 }
 
 void MainScene::hideCharacterSelection()
@@ -130,6 +166,7 @@ void MainScene::hideCharacterSelection()
     character_selection->hide();
     score_label->show();
     time_label->show();
+    coin_label->show();
 }
 
 void MainScene::showGameOverScreen()
@@ -151,18 +188,31 @@ void MainScene::onCharacterSelected(int character)
 
 void MainScene::startGame()
 {
+    // Hide character selection UI
+    for (QPushButton* btn : character_buttons) {
+        btn->hide();
+    }
+    character_title->hide();
+    character_selection->hide();
+    
     // Initialize game
     game_state->init();
+    
+    // Start game
     game_state->start();
     
-    // Start game update timer
+    // Show score and time labels
+    score_label->show();
+    time_label->show();
+    
+    // Show shop and save buttons
+    shop_button->show();
+    save_button->show();
+    
+    // Start rendering timer
     if (timer_id == 0) {
         timer_id = startTimer(16); // ~60 fps
     }
-    
-    // Reset UI
-    score_label->setText("Score: 0");
-    time_label->setText("Time: 0");
 }
 
 void MainScene::restartGame()
@@ -329,4 +379,58 @@ void MainScene::timerEvent(QTimerEvent *event)
     }
     
     QMainWindow::timerEvent(event);
+}
+
+void MainScene::onSaveButtonClicked() {
+    if (game_state) {
+        pauseGame();
+        save_ui->showSaveUI(game_state);
+    }
+}
+
+void MainScene::onSaveClosed() {
+    resumeGame();
+}
+
+void MainScene::pauseGame() {
+    if (game_state && game_state->isRunning()) {
+        game_state->pause();
+    }
+}
+
+void MainScene::resumeGame() {
+    if (game_state && !game_state->isGameOver()) {
+        game_state->resume();
+    }
+}
+
+void MainScene::closeEvent(QCloseEvent* event) {
+    if (game_state) {
+        // 保存游戏
+        game_state->saveGame();
+    }
+    QMainWindow::closeEvent(event);
+}
+
+void MainScene::onCoinsUpdated(int coins) {
+    coin_label->setText(QString("Coins: %1").arg(coins));
+    coin_label->show();
+}
+
+void MainScene::onShopButtonClicked() {
+    if (game_state) {
+        pauseGame();
+        shop_ui->showShop();
+    }
+}
+
+void MainScene::onShopClosed() {
+    resumeGame();
+}
+
+void MainScene::onHeroLeveledUp() {
+    if (game_state && game_state->getHero()) {
+        pauseGame();
+        upgrade_ui->showUpgradeOptions(game_state->getHero());
+    }
 }

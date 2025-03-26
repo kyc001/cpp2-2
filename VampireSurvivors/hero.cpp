@@ -4,13 +4,15 @@
 #include "bin/gamestate.h"
 #include <QWidget>
 #include <QKeyEvent>
+#include <QRandomGenerator>
 
-Hero::Hero() : QObject(), is_alive(true) {
+Hero::Hero() : QObject(), is_alive(true), level(1), pickup_range(1) {
     // Default constructor
 }
 
 Hero::Hero(int style, QWidget* parent, GameMap* map_parent, GameState* state) 
-    : QObject(parent), hero_style(style), game_map(map_parent), game_state(state), is_alive(true) {
+    : QObject(parent), hero_style(style), game_map(map_parent), game_state(state), 
+      is_alive(true), level(1), pickup_range(1) {
     
     // Initialize character based on style
     initCharacter();
@@ -20,6 +22,7 @@ Hero::Hero(int style, QWidget* parent, GameMap* map_parent, GameState* state)
     EXP_bar = new QProgressBar(parent);
     HP_label = new QLabel(parent);
     EXP_label = new QLabel(parent);
+    level_label = new QLabel(parent);
     
     // Configure UI elements
     HP_bar->setRange(0, HP_MAX);
@@ -36,6 +39,10 @@ Hero::Hero(int style, QWidget* parent, GameMap* map_parent, GameState* state)
     EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
     EXP_label->setGeometry(220, 40, 100, 20);
     
+    level_label->setText(QString("LV: %1").arg(level));
+    level_label->setGeometry(220, 70, 100, 20);
+    level_label->setStyleSheet("color: white; font-size: 16px;");
+    
     // Set starting position
     abspos = qMakePair(game_map->getWidth() / 2, game_map->getHeight() / 2);
     realpos = qMakePair(abspos.first * 1.0, abspos.second * 1.0);
@@ -49,7 +56,14 @@ Hero::~Hero() {
     delete EXP_bar;
     delete HP_label;
     delete EXP_label;
+    delete level_label;
     delete my_weapon;
+    
+    // 清理升级选项
+    for (auto upgrade : available_upgrades) {
+        delete upgrade;
+    }
+    available_upgrades.clear();
 }
 
 void Hero::initCharacter() {
@@ -122,26 +136,172 @@ int Hero::getEXP() const {
 
 void Hero::addEXP(int exp) {
     my_EXP += exp;
-    if (my_EXP >= EXP_MAX) {
-        my_EXP = 0;
-        // Level up logic would go here
-    }
     
     // Update UI
     EXP_bar->setValue(my_EXP);
     EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    
+    // 检查是否升级
+    if (my_EXP >= EXP_MAX) {
+        levelUp();
+    }
 }
 
 int Hero::getAttack() const {
     return my_attack;
 }
 
+void Hero::addAttack(int attack) {
+    my_attack += attack;
+}
+
 int Hero::getSpeed() const {
     return my_speed;
 }
 
+void Hero::addSpeed(float speed) {
+    my_speed += speed;
+}
+
 int Hero::getWeaponType() const {
     return weapon_type;
+}
+
+int Hero::getLevel() const {
+    return level;
+}
+
+int Hero::getPickupRange() const {
+    return pickup_range;
+}
+
+void Hero::addPickupRange(int range) {
+    pickup_range += range;
+}
+
+void Hero::levelUp() {
+    // 升级
+    level++;
+    
+    // 重置经验值
+    my_EXP = 0;
+    
+    // 提高升级所需经验
+    EXP_MAX = 100 + (level - 1) * 20;
+    
+    // 更新UI
+    EXP_bar->setRange(0, EXP_MAX);
+    EXP_bar->setValue(my_EXP);
+    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    level_label->setText(QString("LV: %1").arg(level));
+    
+    // 生成升级选项
+    generateUpgradeOptions();
+    
+    // 发出升级信号
+    emit leveledUp();
+}
+
+void Hero::generateUpgradeOptions() {
+    // 清理之前的升级选项
+    for (auto upgrade : available_upgrades) {
+        delete upgrade;
+    }
+    available_upgrades.clear();
+    
+    // 生成三个随机升级选项
+    for (int i = 0; i < 3; i++) {
+        int optionType = QRandomGenerator::global()->bounded(5); // 0-4，5种不同的升级选项
+        
+        switch (optionType) {
+            case 0: // 增加最大生命值
+                available_upgrades.push_back(new UpgradeOption(
+                    "生命值+20",
+                    "增加20点最大生命值",
+                    UpgradeType::CHARACTER,
+                    optionType
+                ));
+                break;
+            case 1: // 增加攻击力
+                available_upgrades.push_back(new UpgradeOption(
+                    "攻击力+5",
+                    "增加5点攻击力",
+                    UpgradeType::CHARACTER,
+                    optionType
+                ));
+                break;
+            case 2: // 增加移动速度
+                available_upgrades.push_back(new UpgradeOption(
+                    "移动速度+0.5",
+                    "增加移动速度",
+                    UpgradeType::CHARACTER,
+                    optionType
+                ));
+                break;
+            case 3: // 增加武器伤害
+                available_upgrades.push_back(new UpgradeOption(
+                    "武器伤害+10%",
+                    "增加武器伤害10%",
+                    UpgradeType::WEAPON,
+                    optionType
+                ));
+                break;
+            case 4: // 减少武器冷却时间
+                available_upgrades.push_back(new UpgradeOption(
+                    "武器冷却-10%",
+                    "减少武器冷却时间10%",
+                    UpgradeType::WEAPON,
+                    optionType
+                ));
+                break;
+        }
+    }
+}
+
+// 应用升级选项
+void Hero::applyUpgrade(int upgradeIndex) {
+    if (upgradeIndex < 0 || upgradeIndex >= available_upgrades.size()) {
+        return;
+    }
+    
+    UpgradeOption* selectedUpgrade = available_upgrades[upgradeIndex];
+    
+    switch (selectedUpgrade->getValue()) {
+        case 0: // 增加最大生命值
+            HP_MAX += 20;
+            setHP(my_HP + 20); // 同时恢复部分血量
+            break;
+        case 1: // 增加攻击力
+            addAttack(5);
+            break;
+        case 2: // 增加移动速度
+            addSpeed(0.5);
+            break;
+        case 3: // 增加武器伤害
+            if (my_weapon) {
+                my_weapon->increaseDamage(0.1); // 增加10%伤害
+            }
+            break;
+        case 4: // 减少武器冷却时间
+            if (my_weapon) {
+                my_weapon->decreaseCooldown(0.1); // 减少10%冷却时间
+            }
+            break;
+    }
+    
+    // 清理升级选项
+    for (auto upgrade : available_upgrades) {
+        delete upgrade;
+    }
+    available_upgrades.clear();
+}
+
+bool Hero::hasLeveledUp() const {
+    return !available_upgrades.empty();
+}
+
+const std::vector<UpgradeOption*>& Hero::getAvailableUpgrades() const {
+    return available_upgrades;
 }
 
 void Hero::move(int dx, int dy) {

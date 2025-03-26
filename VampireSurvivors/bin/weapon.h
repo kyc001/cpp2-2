@@ -21,6 +21,12 @@ public:
     int getDuration() const;
     int getType() const;
     
+    // 强化系统
+    void increaseDamage(double percentage);
+    void decreaseCooldown(double percentage);
+    void increaseDuration(double percentage);
+    void increaseRange(double percentage);
+    
     // Weapon actions
     void attack();
     bool canAttack() const;
