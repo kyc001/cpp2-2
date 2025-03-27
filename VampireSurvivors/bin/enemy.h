@@ -22,7 +22,7 @@ class Enemy : public QObject {
     Q_OBJECT
 public:
     Enemy(int type, int x, int y, GameMap* map, GameState* state, QObject* parent = nullptr);
-    ~Enemy() override;
+    virtual ~Enemy() override;
 
     // Position getters
     int getX() const;

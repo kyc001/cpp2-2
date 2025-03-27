@@ -179,6 +179,21 @@ void Hero::addPickupRange(int range) {
     pickup_range += range;
 }
 
+void Hero::setMaxHealth(int maxHP) {
+    HP_MAX = maxHP;
+    if (my_HP > HP_MAX) {
+        my_HP = HP_MAX;
+    }
+}
+
+void Hero::setBaseDamage(int damage) {
+    my_attack = damage;
+}
+
+void Hero::setPickupRange(int range) {
+    pickup_range = range;
+}
+
 void Hero::levelUp() {
     // 升级
     level++;

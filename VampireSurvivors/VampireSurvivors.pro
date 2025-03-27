@@ -17,7 +17,13 @@ SOURCES += \
     hero.cpp \
     main.cpp \
     mainscene.cpp \
-    obstacle.cpp
+    obstacle.cpp \
+    drop.cpp \
+    upgradeui.cpp \
+    shopui.cpp \
+    saveui.cpp \
+    savefile.cpp \
+    weapon.cpp
 
 HEADERS += \
     bullet.h \
@@ -27,7 +33,13 @@ HEADERS += \
     gamestate.h \
     hero.h \
     mainscene.h \
-    obstacle.h
+    obstacle.h \
+    drop.h \
+    upgradeui.h \
+    shopui.h \
+    saveui.h \
+    savefile.h \
+    weapon.h
 
 FORMS += \
     mainscene.ui

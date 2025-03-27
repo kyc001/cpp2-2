@@ -7,7 +7,7 @@ class bullet : public QObject{
     Q_OBJECT
 public:
     bullet(int x, int y, int speed, int damage, QObject *parent = nullptr);
-    ~bullet() override;
+    virtual ~bullet() override;
 
     //获取子弹的位置
     int getX() const;

@@ -40,6 +40,7 @@ class ShopUI : public QWidget {
     Q_OBJECT
 public:
     explicit ShopUI(GameState* state, QWidget *parent = nullptr);
+    explicit ShopUI(MainScene* scene, QWidget *parent = nullptr);
     ~ShopUI() override;
     
     // 显示商店
@@ -77,4 +78,4 @@ private:
     QWidget* createItemWidget(const ShopItem& item, int index);
 };
 
-#endif // SHOPUI_H 
+#endif // SHOPUI_H
