@@ -1,4 +1,4 @@
-#include "Obstacle.h"
+#include "../../include/core/obstacle.h"
 
 Obstacle::Obstacle(int x, int y, int width, int height, QObject *parent) : QObject(parent), my_x(x), my_y(y), my_width(width), my_height(height) {
     // 初始化障碍物的属性

@@ -1,6 +1,6 @@
-#include "bin/saveui.h"
-#include "bin/savefile.h"
-#include "bin/gamestate.h"
+#include "../../include/ui/saveui.h"
+#include "../../include/core/gamestate.h"
+#include "../../include/utils/savefile.h"
 
 SaveUI::SaveUI(QWidget* parent) : QWidget(parent), game_state(nullptr) {
     // 设置窗口样式

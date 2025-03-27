@@ -1,7 +1,7 @@
-#include "bin/weapon.h"
-#include "bin/hero.h"
-#include "bin/enemy.h"
-#include "bin/gamestate.h"
+#include "../../include/core/weapon.h"
+#include "../../include/entities/hero.h"
+#include "../../include/entities/enemy.h"
+#include "../../include/core/gamestate.h"
 
 Weapon::Weapon(int type, Hero* owner, GameState* state, QObject* parent)
     : QObject(parent), weapon_type(type), owner(owner), game_state(state), 

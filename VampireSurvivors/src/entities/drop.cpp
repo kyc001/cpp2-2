@@ -1,6 +1,6 @@
-#include "bin/drop.h"
-#include "bin/hero.h"
-#include "bin/gamestate.h"
+#include "../../include/entities/drop.h"
+#include "../../include/core/gamestate.h"
+#include "../../include/entities/hero.h"
 
 Drop::Drop(DropType type, int value, int x, int y, GameState* state, QObject* parent)
     : QObject(parent), drop_type(type), drop_value(value), x_pos(x), y_pos(y),

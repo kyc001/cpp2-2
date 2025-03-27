@@ -7,9 +7,9 @@
 #include <QLabel>
 #include <QPair>
 #include <vector>
-#include "bin/weapon.h"
-#include "bin/gamemap.h"
-#include "bin/gamestate.h"
+#include "../core/weapon.h"
+#include "../core/gamemap.h"
+#include "../core/gamestate.h"
 
 // Forward declarations
 class GameMap;
@@ -92,6 +92,9 @@ public:
     void setMaxHealth(int maxHP);
     void setBaseDamage(int damage);
     void setPickupRange(int range);
+    
+signals:
+    void leveledUp(); // 角色升级信号
     
 private:
     // 初始化

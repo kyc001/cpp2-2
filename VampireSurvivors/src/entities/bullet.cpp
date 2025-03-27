@@ -1,4 +1,6 @@
-#include "bin/bullet.h"
+#include "../../include/entities/bullet.h"
+#include "../../include/entities/enemy.h"
+#include "../../include/core/gamestate.h"
 
 bullet::bullet(int x, int y, int speed, int damage, QObject *parent) : QObject(parent), my_x(x), my_y(y), my_speed(speed), my_damage(damage) {
     //初始化子弹属性

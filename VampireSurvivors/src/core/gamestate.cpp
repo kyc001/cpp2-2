@@ -1,9 +1,10 @@
-#include "bin/gamestate.h"
-#include "bin/hero.h"
-#include "bin/enemy.h"
-#include "bin/gamemap.h"
-#include "bin/drop.h"
-#include "bin/savefile.h"
+#include "../../include/core/gamestate.h"
+#include "../../include/entities/hero.h"
+#include "../../include/entities/enemy.h"
+#include "../../include/entities/drop.h"
+#include "../../include/core/weapon.h"
+#include "../../include/core/gamemap.h"
+#include "../../include/utils/savefile.h"
 #include <QRandomGenerator>
 #include <QWidget>
 #include <QFile>
@@ -379,6 +380,19 @@ int GameState::getUpgradeLevel(int type) const {
         return global_upgrades[type];
     }
     return 0;
+}
+
+int GameState::getGlobalUpgradeLevel(int type) const {
+    if (type >= 0 && type < global_upgrades.size()) {
+        return global_upgrades[type];
+    }
+    return 0;
+}
+
+void GameState::setUpgradeLevel(int type, int level) {
+    if (type >= 0 && type < global_upgrades.size()) {
+        global_upgrades[type] = level;
+    }
 }
 
 bool GameState::saveGame() {

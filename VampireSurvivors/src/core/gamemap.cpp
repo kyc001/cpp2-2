@@ -1,4 +1,4 @@
-#include "bin/gamemap.h"
+#include "../../include/core/gamemap.h"
 
 GameMap::GameMap(QObject *parent) : QObject(parent) {
     // Initialize with a 30x20 map

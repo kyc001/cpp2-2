@@ -1,10 +1,11 @@
-#include "bin/hero.h"
-#include "bin/weapon.h"
-#include "bin/gamemap.h"
-#include "bin/gamestate.h"
+#include "../../include/entities/hero.h"
+#include "../../include/core/gamestate.h"
+#include "../../include/core/weapon.h"
+#include "../../include/core/gamemap.h"
 #include <QWidget>
 #include <QKeyEvent>
 #include <QRandomGenerator>
+#include <algorithm>
 
 Hero::Hero() : QObject(), is_alive(true), level(1), pickup_range(1) {
     // Default constructor
@@ -359,7 +360,7 @@ void Hero::processKeyPress(int key) {
 
 void Hero::processKeyRelease(int key) {
     // Remove key from pressed keys
-    key_pressed.remove(key);
+    key_pressed.erase(std::remove(key_pressed.begin(), key_pressed.end(), key), key_pressed.end());
 }
 
 void Hero::updateMovement() {
