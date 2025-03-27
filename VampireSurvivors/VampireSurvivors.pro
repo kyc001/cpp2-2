@@ -8,41 +8,51 @@ CONFIG += c++17
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+# 添加包含路径
+INCLUDEPATH += include
+
+# 源文件
 SOURCES += \
-    bullet.cpp \
-    enemy.cpp \
-    enemycontroller.cpp \
-    gamemap.cpp \
-    gamestate.cpp \
-    hero.cpp \
-    main.cpp \
-    mainscene.cpp \
-    obstacle.cpp \
-    drop.cpp \
-    upgradeui.cpp \
-    shopui.cpp \
-    saveui.cpp \
-    savefile.cpp \
-    weapon.cpp
+    src/core/gamestate.cpp \
+    src/core/gamemap.cpp \
+    src/core/weapon.cpp \
+    src/core/enemycontroller.cpp \
+    src/core/obstacle.cpp \
+    src/entities/hero.cpp \
+    src/entities/enemy.cpp \
+    src/entities/bullet.cpp \
+    src/entities/drop.cpp \
+    src/ui/mainscene.cpp \
+    src/ui/shopui.cpp \
+    src/ui/upgradeui.cpp \
+    src/ui/saveui.cpp \
+    src/utils/savefile.cpp \
+    src/main.cpp
 
+# 头文件
 HEADERS += \
-    bullet.h \
-    enemy.h \
-    enemycontroller.h \
-    gamemap.h \
-    gamestate.h \
-    hero.h \
-    mainscene.h \
-    obstacle.h \
-    drop.h \
-    upgradeui.h \
-    shopui.h \
-    saveui.h \
-    savefile.h \
-    weapon.h
+    include/core/gamestate.h \
+    include/core/gamemap.h \
+    include/core/weapon.h \
+    include/core/enemycontroller.h \
+    include/core/obstacle.h \
+    include/entities/hero.h \
+    include/entities/enemy.h \
+    include/entities/bullet.h \
+    include/entities/drop.h \
+    include/ui/mainscene.h \
+    include/ui/shopui.h \
+    include/ui/upgradeui.h \
+    include/ui/saveui.h \
+    include/utils/savefile.h
 
+# UI文件
 FORMS += \
-    mainscene.ui
+    forms/mainscene.ui
+
+# 资源文件
+RESOURCES += \
+    resources/resources.qrc
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

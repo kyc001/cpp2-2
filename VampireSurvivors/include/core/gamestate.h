@@ -73,6 +73,8 @@ public:
     // 全局强化系统
     void applyGlobalUpgrade(int type, int level);
     int getUpgradeLevel(int type) const;
+    int getGlobalUpgradeLevel(int type) const;
+    void setUpgradeLevel(int type, int level);
     
     // 存档系统
     bool saveGame();

@@ -1,4 +1,5 @@
 #include "bin/shopui.h"
+#include "bin/mainscene.h"
 #include "bin/gamestate.h"
 #include <QMessageBox>
 
@@ -12,16 +13,7 @@ int ShopItem::getCostForLevel(int level) const {
 // ShopUI 实现
 
 ShopUI::ShopUI(GameState* state, QWidget *parent)
-    : game_state(state) {
-    // Existing implementation
-}
-
-ShopUI::ShopUI(MainScene* scene, QWidget *parent)
-    : game_state(scene->getGameState()) {
-    // Similar implementation as GameState version
-} 
     : QWidget(parent), game_state(state) {
-    
     // 设置窗口样式
     setStyleSheet("background-color: rgba(20, 20, 30, 230);");
     
@@ -86,8 +78,19 @@ ShopUI::ShopUI(MainScene* scene, QWidget *parent)
     hide();
 }
 
+ShopUI::ShopUI(MainScene* scene, QWidget *parent)
+    : ShopUI(scene->getGameState(), parent) {
+}
+
 ShopUI::~ShopUI() {
     // QWidget会自动删除子控件
+    delete main_layout;
+    delete title_label;
+    delete coins_label;
+    delete items_scroll_area;
+    delete items_container;
+    delete items_layout;
+    delete close_button;
 }
 
 void ShopUI::initShopItems() {
@@ -233,4 +236,9 @@ void ShopUI::onUpgradeButtonClicked(int index) {
 void ShopUI::onCloseButtonClicked() {
     hide();
     emit shopClosed();
+}
+
+// 添加信号实现
+void ShopUI::shopClosed() {
+    // 信号实现为空，因为信号只是用来通知其他对象
 }
