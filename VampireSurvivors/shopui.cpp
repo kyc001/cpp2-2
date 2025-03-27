@@ -11,7 +11,15 @@ int ShopItem::getCostForLevel(int level) const {
 
 // ShopUI 实现
 
-ShopUI::ShopUI(GameState* state, QWidget *parent) 
+ShopUI::ShopUI(GameState* state, QWidget *parent)
+    : game_state(state) {
+    // Existing implementation
+}
+
+ShopUI::ShopUI(MainScene* scene, QWidget *parent)
+    : game_state(scene->getGameState()) {
+    // Similar implementation as GameState version
+} 
     : QWidget(parent), game_state(state) {
     
     // 设置窗口样式
@@ -225,4 +233,4 @@ void ShopUI::onUpgradeButtonClicked(int index) {
 void ShopUI::onCloseButtonClicked() {
     hide();
     emit shopClosed();
-} 
+}

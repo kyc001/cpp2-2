@@ -61,8 +61,8 @@ private:
     
     // Key press information
     std::list<int> key_pressed;
-    GameState* game_state;
     GameMap* game_map;
+    GameState* game_state;
     
     // Character type/style
     int hero_style;
@@ -86,6 +86,9 @@ public:
     int getLevel() const;
     int getPickupRange() const;
     void addPickupRange(int range);
+    void setMaxHealth(int maxHP);
+    void setBaseDamage(int damage);
+    void setPickupRange(int range);
     
     // Movement and actions
     void move(int dx, int dy);

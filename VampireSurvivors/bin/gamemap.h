@@ -8,7 +8,7 @@ class GameMap : public QObject {
     Q_OBJECT
 public:
     explicit GameMap(QObject *parent = nullptr);
-    ~GameMap() override;
+    virtual ~GameMap() override;
 
     QVector<QVector<int>> getBarries() const;
     void mapLoading();
