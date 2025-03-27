@@ -1,7 +1,7 @@
-#include "bin/enemycontroller.h"
-#include "bin/gamestate.h"
-#include "bin/enemy.h"
-#include "bin/gamemap.h"
+#include "../../include/core/enemycontroller.h"
+#include "../../include/entities/enemy.h"
+#include "../../include/core/gamestate.h"
+#include "../../include/core/gamemap.h"
 #include <ctime>
 #include <cstdlib>
 

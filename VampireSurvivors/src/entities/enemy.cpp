@@ -1,7 +1,7 @@
-#include "bin/enemy.h"
-#include "bin/hero.h"
-#include "bin/gamemap.h"
-#include "bin/gamestate.h"
+#include "../../include/entities/enemy.h"
+#include "../../include/entities/hero.h"
+#include "../../include/core/gamestate.h"
+#include "../../include/core/gamemap.h"
 #include <QtMath>
 #include <cstdlib>
 #include <ctime>

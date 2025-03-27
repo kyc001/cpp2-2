@@ -1,5 +1,6 @@
-#include "bin/upgradeui.h"
-#include "bin/hero.h"
+#include "../../include/ui/upgradeui.h"
+#include "../../include/entities/hero.h"
+#include "../../include/core/gamestate.h"
 #include <QGridLayout>
 
 UpgradeUI::UpgradeUI(QWidget *parent) : QWidget(parent), current_hero(nullptr) {

@@ -1,6 +1,6 @@
-#include "bin/shopui.h"
-#include "bin/mainscene.h"
-#include "bin/gamestate.h"
+#include "../../include/ui/shopui.h"
+#include "../../include/core/gamestate.h"
+#include "../../include/ui/mainscene.h"
 #include <QMessageBox>
 
 // ShopItem 实现
@@ -236,9 +236,4 @@ void ShopUI::onUpgradeButtonClicked(int index) {
 void ShopUI::onCloseButtonClicked() {
     hide();
     emit shopClosed();
-}
-
-// 添加信号实现
-void ShopUI::shopClosed() {
-    // 信号实现为空，因为信号只是用来通知其他对象
 }
