@@ -10,6 +10,7 @@
 #include <QVector>
 
 class GameState;
+class MainScene;  // 添加MainScene的前向声明
 
 // 商店项目类（全局强化选项）
 class ShopItem {
@@ -41,7 +42,7 @@ class ShopUI : public QWidget {
 public:
     explicit ShopUI(GameState* state, QWidget *parent = nullptr);
     explicit ShopUI(MainScene* scene, QWidget *parent = nullptr);
-    ~ShopUI() override;
+    virtual ~ShopUI() override;
     
     // 显示商店
     void showShop();

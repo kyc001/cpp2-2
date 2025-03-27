@@ -26,8 +26,10 @@ class MainScene : public QMainWindow
     Q_OBJECT
 
 public:
-    MainScene(QWidget *parent = nullptr);
-    ~MainScene();
+    explicit MainScene(QWidget *parent = nullptr);
+    ~MainScene() override;
+    
+    GameState* getGameState() const { return game_state; }
 
 protected:
     void paintEvent(QPaintEvent *event) override;

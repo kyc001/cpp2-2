@@ -212,9 +212,6 @@ void Hero::levelUp() {
     
     // 生成升级选项
     generateUpgradeOptions();
-    
-    // 发出升级信号
-    emit leveledUp();
 }
 
 void Hero::generateUpgradeOptions() {
