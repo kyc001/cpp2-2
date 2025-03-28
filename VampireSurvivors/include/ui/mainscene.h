@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QResizeEvent>
 
 class GameState;
 class Hero;
@@ -40,6 +41,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *event) override;
     void timerEvent(QTimerEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private slots:
     // 游戏状态相关槽

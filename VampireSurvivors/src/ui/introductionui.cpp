@@ -3,12 +3,14 @@
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QPixmap>
+#include <QScrollArea>
+#include <QLabel>
 
 IntroductionUI::IntroductionUI(QWidget *parent) : QWidget(parent)
 {
-    setWindowFlags(Qt::FramelessWindowHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
-    setFixedSize(800, 600);
+    setFixedSize(600, 500);
     hide();
     
     setupUI();
@@ -305,8 +307,27 @@ QWidget* IntroductionUI::createEnemiesTab()
     return tab;
 }
 
+void IntroductionUI::centerUI()
+{
+    if (parentWidget()) {
+        QRect parent_rect = parentWidget()->rect();
+        move(parentWidget()->mapToGlobal(QPoint(
+            parent_rect.width()/2 - width()/2,
+            parent_rect.height()/2 - height()/2
+        )));
+    }
+}
+
 void IntroductionUI::show()
 {
+    // 确保窗口保持在前
+    setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    activateWindow();
+    raise();
+    
+    // 居中显示
+    centerUI();
+    
     QWidget::show();
 }
 

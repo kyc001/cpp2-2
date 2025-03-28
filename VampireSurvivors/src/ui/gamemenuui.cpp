@@ -4,7 +4,7 @@
 
 GameMenuUI::GameMenuUI(QWidget *parent) : QWidget(parent)
 {
-    setWindowFlags(Qt::FramelessWindowHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedSize(300, 400);
     hide();
@@ -74,6 +74,14 @@ void GameMenuUI::setupUI()
 
 void GameMenuUI::show()
 {
+    // 确保窗口保持在前
+    setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    activateWindow();
+    raise();
+    
+    // 居中显示
+    centerUI();
+    
     QWidget::show();
 }
 
@@ -112,4 +120,15 @@ void GameMenuUI::onMainMenuButtonClicked()
 void GameMenuUI::onQuitButtonClicked()
 {
     emit quitGameSignal();
+}
+
+void GameMenuUI::centerUI()
+{
+    if (parentWidget()) {
+        QRect parent_rect = parentWidget()->rect();
+        move(parentWidget()->mapToGlobal(QPoint(
+            parent_rect.width()/2 - width()/2,
+            parent_rect.height()/2 - height()/2
+        )));
+    }
 } 

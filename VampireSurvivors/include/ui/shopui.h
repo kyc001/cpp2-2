@@ -49,6 +49,9 @@ public:
     
     // 更新商店内容
     void updateShopItems();
+
+    // 居中显示
+    void centerUI();
     
 signals:
     void shopClosed();

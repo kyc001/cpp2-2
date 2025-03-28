@@ -20,6 +20,7 @@ public:
     // 显示存档界面
     void showSaveUI(GameState *state);
     void hideSaveUI();
+    void centerUI();
     
 signals:
     // 关闭存档界面的信号
@@ -35,7 +36,6 @@ private slots:
 private:
     void setupUI();
     void updateSlotInfo();
-    void centerUI();
     void showMessage(const QString& title, const QString& message);
     
     QVector<QPushButton*> save_slots;
