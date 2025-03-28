@@ -26,6 +26,7 @@ public:
     void decreaseCooldown(double percentage);
     void increaseDuration(double percentage);
     void increaseRange(double percentage);
+    void levelUp(int levels = 1); // 提升武器等级
     
     // Weapon actions
     void attack();
@@ -44,6 +45,7 @@ private:
     int cooldown_time;    // Cooldown between attacks in ms
     int duration_time;    // Duration of attack in ms
     int range;            // Range/radius of damage area
+    int level;            // Weapon level
     
     Hero* owner;          // Owner of the weapon
     GameState* game_state;

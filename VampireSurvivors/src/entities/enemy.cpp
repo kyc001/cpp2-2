@@ -2,25 +2,55 @@
 #include "../../include/entities/hero.h"
 #include "../../include/core/gamestate.h"
 #include "../../include/core/gamemap.h"
+#include "../../include/utils/resourcemanager.h"
 #include <QtMath>
 #include <cstdlib>
 #include <ctime>
+#include <QRandomGenerator>
+#include <QPainter>
 
 Enemy::Enemy(int type, int x, int y, GameMap* map, GameState* state, QObject* parent)
-    : QObject(parent), enemy_type(type), my_x(x), my_y(y), real_x(x), real_y(y),
-      game_map(map), game_state(state), is_alive(true), is_active(true), current_cooldown(0) {
+    : QObject(parent), 
+      enemy_type(type), 
+      my_x(x), 
+      my_y(y), 
+      real_x(x), 
+      real_y(y),
+      my_HP(50),
+      my_attack(10),
+      my_speed(1),
+      attack_range(1),
+      attack_cooldown(30),
+      current_cooldown(0),
+      is_alive(true),
+      is_active(true),
+      enemy_attack_type(EnemyType::MELEE),
+      movement_type(EnemyMovement::FOLLOW_PLAYER),
+      direction_x(0),
+      direction_y(0),
+      game_map(map), 
+      game_state(state),
+      animation_frame(0),
+      animation_time(0),
+      is_attacking(false),
+      is_moving(false) {
     
     // Initialize enemy based on type
     initEnemy();
     
     // Set random direction for fixed movement type
     if (movement_type == EnemyMovement::FIXED_DIRECTION) {
-        // Random direction (-1, 0, 1) for both x and y, but not both 0
-        do {
-            direction_x = (std::rand() % 3) - 1;  // -1, 0, or 1
-            direction_y = (std::rand() % 3) - 1;  // -1, 0, or 1
-        } while (direction_x == 0 && direction_y == 0);
+        direction_x = QRandomGenerator::global()->bounded(-1, 2); // -1, 0, 1
+        direction_y = QRandomGenerator::global()->bounded(-1, 2); // -1, 0, 1
+        
+        // Ensure at least one direction is not 0
+        if (direction_x == 0 && direction_y == 0) {
+            direction_x = 1;
+        }
     }
+    
+    // Load enemy resources
+    ResourceManager::getInstance().loadEnemyResources(enemy_type);
 }
 
 Enemy::~Enemy() {
@@ -31,47 +61,56 @@ void Enemy::initEnemy() {
     // Initialize enemy parameters based on type
     switch(enemy_type) {
         case 0: // Basic melee enemy
-            my_HP = 30;
+            my_HP = 50;
             my_attack = 10;
-            my_speed = 2;
+            my_speed = 1;
             attack_range = 1; // Melee range
-            attack_cooldown = 1000; // 1 second
+            attack_cooldown = 30; // Attack cooldown frames
             enemy_attack_type = EnemyType::MELEE;
             movement_type = EnemyMovement::FOLLOW_PLAYER;
             break;
         case 1: // Fast melee enemy
-            my_HP = 20;
+            my_HP = 30;
             my_attack = 8;
-            my_speed = 3;
+            my_speed = 2;
             attack_range = 1; // Melee range
-            attack_cooldown = 800; // 0.8 seconds
+            attack_cooldown = 20; // 0.8 seconds
             enemy_attack_type = EnemyType::MELEE;
             movement_type = EnemyMovement::FOLLOW_PLAYER;
             break;
         case 2: // Ranged enemy
-            my_HP = 25;
+            my_HP = 40;
             my_attack = 15;
-            my_speed = 2;
+            my_speed = 1;
             attack_range = 5; // Ranged attack
-            attack_cooldown = 1500; // 1.5 seconds
+            attack_cooldown = 60; // 1.5 seconds
             enemy_attack_type = EnemyType::RANGED;
             movement_type = EnemyMovement::FIXED_DIRECTION;
             break;
         case 3: // Tank melee enemy
-            my_HP = 60;
+            my_HP = 150;
             my_attack = 20;
-            my_speed = 1;
+            my_speed = 0.5;
             attack_range = 1; // Melee range
-            attack_cooldown = 1200; // 1.2 seconds
+            attack_cooldown = 45; // 1.2 seconds
             enemy_attack_type = EnemyType::MELEE;
-            movement_type = EnemyMovement::FIXED_DIRECTION;
+            movement_type = EnemyMovement::FOLLOW_PLAYER;
+            break;
+        case 4: // Boss enemy
+            my_HP = 500;
+            my_attack = 30;
+            my_speed = 0.8;
+            attack_range = 2;
+            attack_cooldown = 60; // 1.5 seconds
+            enemy_attack_type = EnemyType::MELEE;
+            movement_type = EnemyMovement::FOLLOW_PLAYER;
             break;
         default: // Default enemy
-            my_HP = 30;
+            my_HP = 50;
             my_attack = 10;
-            my_speed = 2;
+            my_speed = 1;
             attack_range = 1;
-            attack_cooldown = 1000;
+            attack_cooldown = 30;
             enemy_attack_type = EnemyType::MELEE;
             movement_type = EnemyMovement::FOLLOW_PLAYER;
     }
@@ -208,6 +247,9 @@ void Enemy::update() {
     
     // Attack the player if possible
     attack(game_state->getHero());
+    
+    // Update animation
+    updateAnimation();
 }
 
 bool Enemy::isAlive() const {
@@ -236,4 +278,56 @@ EnemyMovement Enemy::getMovementType() const {
 
 void Enemy::takeDamage(int damage) {
     setHP(my_HP - damage);
+    
+    // 受到伤害时闪烁效果可以在这里添加
+}
+
+void Enemy::render(QPainter* painter) {
+    if (!painter || !is_alive || !is_active) return;
+    
+    // 获取屏幕位置
+    int screen_x = my_x * 32;  // 假设单元格大小为32x32
+    int screen_y = my_y * 32;
+    
+    QPixmap enemySprite;
+    
+    // 根据状态选择合适的精灵
+    if (is_attacking) {
+        // 攻击动画
+        enemySprite = ResourceManager::getInstance().getEnemyAttackImage(enemy_type, animation_frame % 3);
+    } else if (is_moving) {
+        // 行走动画
+        enemySprite = ResourceManager::getInstance().getEnemyWalkImage(enemy_type, animation_frame % 4);
+    } else {
+        // 静止状态
+        enemySprite = ResourceManager::getInstance().getEnemyIdleImage(enemy_type);
+    }
+    
+    if (!enemySprite.isNull()) {
+        // 绘制敌人精灵
+        painter->drawPixmap(screen_x - enemySprite.width()/2, screen_y - enemySprite.height()/2, enemySprite);
+    } else {
+        // 绘制后备显示（简单的彩色矩形）
+        painter->setBrush(QColor(200, 0, 0));
+        painter->drawEllipse(QPointF(screen_x, screen_y), 16, 16);
+    }
+}
+
+void Enemy::updateAnimation() {
+    // 更新动画计时器
+    animation_time++;
+    
+    // 每10帧更新一次动画帧
+    if (animation_time >= 10) {
+        animation_time = 0;
+        animation_frame++;
+        
+        // 如果是攻击动画且完成了周期，则结束攻击状态
+        if (is_attacking && animation_frame % 3 == 0) {
+            is_attacking = false;
+        }
+    }
+    
+    // 判断敌人是否正在移动
+    is_moving = true;  // 敌人通常总是在移动，可以根据速度判断
 }

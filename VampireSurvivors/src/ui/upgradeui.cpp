@@ -72,52 +72,87 @@ void UpgradeUI::setupUI() {
     hide();
 }
 
-void UpgradeUI::showUpgradeOptions(Hero* hero) {
+void UpgradeUI::showUpgradeOptions(Hero *hero) {
     if (!hero) {
         return;
     }
     
     current_hero = hero;
-    
-    // 获取可用升级选项
-    const std::vector<UpgradeOption*>& upgrades = hero->getAvailableUpgrades();
-    
-    // 如果没有可用选项则不显示
-    if (upgrades.empty()) {
-        hide();
-        return;
-    }
-    
-    // 更新按钮内容
-    for (int i = 0; i < qMin(static_cast<int>(upgrades.size()), upgrade_buttons.size()); i++) {
-        QPushButton* button = upgrade_buttons[i];
-        UpgradeOption* upgrade = upgrades[i];
-        
-        // 设置按钮文本显示升级信息
-        QString buttonText = QString("<h3>%1</h3><p>%2</p>")
-                                .arg(upgrade->getName())
-                                .arg(upgrade->getDescription());
-        
-        // 根据升级类型设置不同颜色
-        if (upgrade->getType() == UpgradeType::CHARACTER) {
-            buttonText = QString("<div style='color:#8AE234;'>%1</div>").arg(buttonText);
-        } else { // WEAPON
-            buttonText = QString("<div style='color:#729FCF;'>%1</div>").arg(buttonText);
-        }
-        
-        button->setText(buttonText);
-    }
-    
-    // 调整窗口大小以适应父窗口
-    if (parentWidget()) {
-        resize(parentWidget()->size());
-    }
-    
     is_showing = true;
     
-    // 显示升级界面
+    // 获取可用的升级选项
+    const std::vector<UpgradeOption*>& options = hero->getAvailableUpgrades();
+    
+    // 最多显示3个选项
+    int num_options = std::min(options.size(), static_cast<size_t>(3));
+    
+    // 设置按钮文本和显示状态
+    for (int i = 0; i < upgrade_buttons.size(); ++i) {
+        if (i < num_options) {
+            UpgradeOption* option = options[i];
+            
+            // 设置按钮文本为升级类型
+            QString upgradeTypeText = getUpgradeTypeText(option->getType());
+            
+            // 根据升级类型设置不同颜色
+            QString buttonStyle;
+            
+            switch (option->getType()) {
+                case UpgradeType::HEALTH:
+                    buttonStyle = "background-color: #ff5555; color: white; font-weight: bold;";
+                    break;
+                case UpgradeType::ATTACK:
+                    buttonStyle = "background-color: #ff9955; color: white; font-weight: bold;";
+                    break;
+                case UpgradeType::SPEED:
+                    buttonStyle = "background-color: #55ff55; color: white; font-weight: bold;";
+                    break;
+                case UpgradeType::PICKUP_RANGE:
+                    buttonStyle = "background-color: #55ffff; color: white; font-weight: bold;";
+                    break;
+                case UpgradeType::WEAPON_LEVEL:
+                    buttonStyle = "background-color: #5555ff; color: white; font-weight: bold;";
+                    break;
+                default:
+                    buttonStyle = "background-color: #aaaaaa; color: white; font-weight: bold;";
+                    break;
+            }
+            
+            upgrade_buttons[i]->setText(upgradeTypeText);
+            upgrade_buttons[i]->setStyleSheet(buttonStyle);
+            upgrade_buttons[i]->show();
+            
+            // 设置描述文本
+            upgrade_descriptions[i]->setText(option->getDescription());
+            upgrade_descriptions[i]->show();
+        } else {
+            upgrade_buttons[i]->hide();
+            upgrade_descriptions[i]->hide();
+        }
+    }
+    
+    // 居中显示UI
+    centerUI();
+    
+    // 显示升级选择界面
     show();
-    raise(); // 确保显示在最前面
+}
+
+QString UpgradeUI::getUpgradeTypeText(UpgradeType type) {
+    switch (type) {
+        case UpgradeType::HEALTH:
+            return "生命值 +";
+        case UpgradeType::ATTACK:
+            return "攻击力 +";
+        case UpgradeType::SPEED:
+            return "移动速度 +";
+        case UpgradeType::PICKUP_RANGE:
+            return "拾取范围 +";
+        case UpgradeType::WEAPON_LEVEL:
+            return "武器等级 +";
+        default:
+            return "未知升级";
+    }
 }
 
 void UpgradeUI::hideUpgradeOptions() {

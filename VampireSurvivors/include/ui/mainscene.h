@@ -8,6 +8,12 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QResizeEvent>
+#include <QVector>
+#include <QPair>
+
+namespace Ui {
+class MainScene;
+}
 
 class GameState;
 class Hero;
@@ -18,12 +24,6 @@ class SaveUI;
 class SettingsUI;
 class IntroductionUI;
 class GameMenuUI;
-
-QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainScene;
-}
-QT_END_NAMESPACE
 
 class MainScene : public QMainWindow
 {
@@ -155,6 +155,9 @@ private:
     int screen_height;
     int game_volume;
     int control_type; // 0 for WASD, 1 for Mouse
+    
+    // Resource loading
+    void loadResources();
 };
 
 #endif // MAINSCENE_H

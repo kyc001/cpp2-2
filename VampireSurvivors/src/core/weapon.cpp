@@ -5,7 +5,7 @@
 
 Weapon::Weapon(int type, Hero* owner, GameState* state, QObject* parent)
     : QObject(parent), weapon_type(type), owner(owner), game_state(state), 
-      is_active(false), is_cooling_down(false) {
+      is_active(false), is_cooling_down(false), level(1) {
     
     // Initialize cooldown and active timers
     cooldown_timer = new QTimer(this);
@@ -143,4 +143,15 @@ void Weapon::increaseDuration(double percentage) {
 
 void Weapon::increaseRange(double percentage) {
     range = static_cast<int>(range * (1.0 + percentage));
+}
+
+void Weapon::levelUp(int levels) {
+    level += levels;
+    
+    // 根据武器等级提升各项属性
+    // 每提升一级，伤害增加10%，冷却时间减少5%，持续时间增加5%，范围增加5%
+    increaseDamage(0.1 * levels);
+    decreaseCooldown(0.05 * levels);
+    increaseDuration(0.05 * levels);
+    increaseRange(0.05 * levels);
 } 

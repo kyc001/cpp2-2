@@ -12,6 +12,7 @@
 #include "../core/gamestate.h"
 #include <QRect>
 #include <QVector>
+#include <QPainter>
 
 // Forward declarations
 class GameMap;
@@ -20,26 +21,27 @@ class GameState;
 
 // 升级选项类型
 enum class UpgradeType {
-    CHARACTER,  // 角色属性升级
-    WEAPON      // 武器属性升级
+    HEALTH,     // 增加最大生命值
+    ATTACK,     // 增加攻击力
+    SPEED,      // 增加移动速度
+    PICKUP_RANGE, // 增加拾取范围
+    WEAPON_LEVEL  // 提升武器等级
 };
 
 // 升级选项类
 class UpgradeOption {
 public:
-    UpgradeOption(QString name, QString description, UpgradeType type, int value)
-        : name(name), description(description), type(type), value(value) {}
+    UpgradeOption(UpgradeType type, int value, const QString &desc)
+        : upgradeType(type), upgradeValue(value), description(desc) {}
     
-    QString getName() const { return name; }
+    UpgradeType getType() const { return upgradeType; }
+    int getValue() const { return upgradeValue; }
     QString getDescription() const { return description; }
-    UpgradeType getType() const { return type; }
-    int getValue() const { return value; }
     
 private:
-    QString name;
+    UpgradeType upgradeType;
+    int upgradeValue;
     QString description;
-    UpgradeType type;
-    int value;
 };
 
 class Hero : public QObject {
@@ -106,6 +108,12 @@ public:
     void setPosition(double x, double y);
     void setControlType(int type);
     
+    // 绘制和动画
+    void render(QPainter* painter);
+    void updateAnimation();
+    void setAttacking(bool attacking);
+    void setMoving(bool moving);
+    
 signals:
     void leveledUp(); // 角色升级信号
     
@@ -149,6 +157,12 @@ private:
     
     // 键盘输入
     std::vector<int> key_pressed;
+    
+    // 动画相关
+    int animation_frame;  // 当前动画帧
+    int animation_time;   // 动画计时器
+    bool is_attacking;    // 是否正在攻击
+    bool is_moving;       // 是否正在移动
 };
 
 #endif // HERO_H
