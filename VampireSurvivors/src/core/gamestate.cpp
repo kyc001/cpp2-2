@@ -13,6 +13,9 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QDir>
+#include <QDateTime>
+#include <QSettings>
+#include <QStandardPaths>
 
 GameState::GameState(QObject *parent) : QObject(parent), 
     my_hero(nullptr), my_map(nullptr), game_running(false), game_over(false),
@@ -569,4 +572,220 @@ int GameState::getSelectedCharacter() const {
 
 void GameState::setTotalCoins(int amount) {
     total_coins = amount;
+}
+
+bool GameState::saveGameToSlot(int slot)
+{
+    // 获取当前游戏状态信息
+    int current_score = getScore();
+    int current_level = 1;
+    QString character_name = "未知";
+    
+    if (my_hero) {
+        current_level = my_hero->getLevel();
+        switch (my_hero->getCharacterId()) {
+            case 0: character_name = "战士"; break;
+            case 1: character_name = "法师"; break;
+            case 2: character_name = "弓箭手"; break;
+            case 3: character_name = "盗贼"; break;
+            default: character_name = "未知";
+        }
+    }
+    
+    // 保存到指定槽位
+    QSettings settings("VampireSurvivors", "Saves");
+    QString save_key = QString("save_%1").arg(slot);
+    
+    settings.setValue(save_key + "/timestamp", QDateTime::currentDateTime());
+    settings.setValue(save_key + "/score", current_score);
+    settings.setValue(save_key + "/level", current_level);
+    settings.setValue(save_key + "/character", character_name);
+    settings.setValue(save_key + "/totalCoins", total_coins);
+    
+    // 保存详细游戏状态到文件
+    return saveGameData(getSaveSlotFilename(slot));
+}
+
+bool GameState::loadGameFromSlot(int slot)
+{
+    // 从设置检查槽位是否存在
+    QSettings settings("VampireSurvivors", "Saves");
+    QString save_key = QString("save_%1").arg(slot);
+    
+    if (!settings.contains(save_key + "/timestamp")) {
+        return false; // 槽位为空
+    }
+    
+    // 加载详细游戏状态
+    return loadGameData(getSaveSlotFilename(slot));
+}
+
+bool GameState::saveGameData(const QString &filename)
+{
+    // 创建一个JSON保存游戏状态
+    QJsonObject gameData;
+    
+    // 保存基本游戏信息
+    gameData["score"] = game_score;
+    gameData["gameTime"] = game_time;
+    gameData["totalCoins"] = total_coins;
+    
+    // 保存英雄信息
+    if (my_hero) {
+        QJsonObject heroData;
+        heroData["characterId"] = my_hero->getCharacterId();
+        heroData["level"] = my_hero->getLevel();
+        heroData["health"] = my_hero->getHealth();
+        heroData["maxHealth"] = my_hero->getMaxHealth();
+        heroData["experience"] = my_hero->getExperience();
+        heroData["x"] = my_hero->getX();
+        heroData["y"] = my_hero->getY();
+        
+        gameData["hero"] = heroData;
+    }
+    
+    // 保存全局升级
+    QJsonArray upgradesArray;
+    for (int level : global_upgrades) {
+        upgradesArray.append(level);
+    }
+    gameData["upgrades"] = upgradesArray;
+    
+    // 保存角色解锁状态
+    QJsonArray charactersArray;
+    for (bool unlocked : unlocked_characters) {
+        charactersArray.append(unlocked);
+    }
+    gameData["characters"] = charactersArray;
+    
+    // 保存到文件
+    QJsonDocument doc(gameData);
+    QFile file(filename);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning("无法打开存档文件进行写入");
+        return false;
+    }
+    
+    file.write(doc.toJson());
+    file.close();
+    
+    return true;
+}
+
+bool GameState::loadGameData(const QString &filename)
+{
+    QFile file(filename);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning("无法打开存档文件进行读取");
+        return false;
+    }
+    
+    QByteArray saveData = file.readAll();
+    file.close();
+    
+    QJsonDocument doc = QJsonDocument::fromJson(saveData);
+    if (doc.isNull() || !doc.isObject()) {
+        qWarning("存档文件格式错误");
+        return false;
+    }
+    
+    QJsonObject gameData = doc.object();
+    
+    // 重置当前游戏状态
+    pause();
+    
+    // 加载基本游戏信息
+    game_score = gameData["score"].toInt();
+    game_time = gameData["gameTime"].toInt();
+    total_coins = gameData["totalCoins"].toInt();
+    
+    // 加载英雄信息
+    if (gameData.contains("hero") && gameData["hero"].isObject()) {
+        QJsonObject heroData = gameData["hero"].toObject();
+        int characterId = heroData["characterId"].toInt();
+        
+        // 选择角色并初始化
+        selectCharacter(characterId);
+        init();
+        
+        // 设置英雄属性
+        if (my_hero) {
+            my_hero->setLevel(heroData["level"].toInt());
+            my_hero->setHealth(heroData["health"].toInt());
+            my_hero->setMaxHealth(heroData["maxHealth"].toInt());
+            my_hero->setExperience(heroData["experience"].toInt());
+            my_hero->setPosition(heroData["x"].toDouble(), heroData["y"].toDouble());
+        }
+    }
+    
+    // 加载全局升级
+    if (gameData.contains("upgrades") && gameData["upgrades"].isArray()) {
+        QJsonArray upgradesArray = gameData["upgrades"].toArray();
+        global_upgrades.clear();
+        for (int i = 0; i < upgradesArray.size(); i++) {
+            global_upgrades.append(upgradesArray[i].toInt());
+        }
+    }
+    
+    // 加载角色解锁状态
+    if (gameData.contains("characters") && gameData["characters"].isArray()) {
+        QJsonArray charactersArray = gameData["characters"].toArray();
+        unlocked_characters.clear();
+        for (int i = 0; i < charactersArray.size(); i++) {
+            unlocked_characters.append(charactersArray[i].toBool());
+        }
+    }
+    
+    // 发出信号更新UI
+    emit scoreUpdated(game_score);
+    emit timeUpdated(game_time);
+    emit coinsUpdated(game_coins);
+    
+    return true;
+}
+
+QString GameState::getSaveSlotFilename(int slot) const
+{
+    // 获取应用程序数据目录
+    QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QDir dir(dataPath);
+    
+    // 确保目录存在
+    if (!dir.exists()) {
+        dir.mkpath(".");
+    }
+    
+    // 返回完整的文件路径
+    return dir.filePath(QString("save_slot_%1.json").arg(slot));
+}
+
+void GameState::reset() {
+    // 停止当前游戏
+    pause();
+    game_over = false;
+    
+    // 清除当前游戏状态
+    delete my_hero;
+    my_hero = nullptr;
+    
+    delete my_map;
+    my_map = nullptr;
+    
+    // 清除敌人
+    for (Enemy* enemy : my_enemies) {
+        delete enemy;
+    }
+    my_enemies.clear();
+    
+    // 清除掉落物
+    for (Drop* drop : my_drops) {
+        delete drop;
+    }
+    my_drops.clear();
+    
+    // 重置游戏变量
+    game_time = 0;
+    game_score = 0;
+    game_coins = 0;
+    total_kills = 0;
 }

@@ -14,6 +14,9 @@ class Enemy;
 class UpgradeUI;
 class ShopUI;
 class SaveUI;
+class SettingsUI;
+class IntroductionUI;
+class GameMenuUI;
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -39,16 +42,38 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
+    // 游戏状态相关槽
     void onGameOver();
     void onScoreUpdated(int score);
     void onTimeUpdated(int time);
     void onCoinsUpdated(int coins);
+    void onHeroLeveledUp();
+    void onCharacterSelected(int character_id);
+    
+    // UI相关槽
     void onShopButtonClicked();
     void onShopClosed();
-    void onHeroLeveledUp();
     void onSaveButtonClicked();
     void onSaveClosed();
-    void onCharacterSelected(int character_id);
+    void onSettingsButtonClicked();
+    void onSettingsClosed();
+    void onIntroButtonClicked();
+    void onIntroClosed();
+    void onVolumeChanged(int volume);
+    void onScreenSizeChanged(int index);
+    void onControlTypeChanged(int type);
+    
+    // 游戏菜单槽
+    void onGameMenuResumeClicked();
+    void onGameMenuSettingsClicked();
+    void onGameMenuSaveClicked();
+    void onGameMenuMainMenuClicked();
+    void onGameMenuQuitClicked();
+    
+    // 主菜单槽
+    void onStartGameButtonClicked();
+    void onLoadGameButtonClicked();
+    void onMainMenuSettingsClicked();
 
 private:
     Ui::MainScene *ui;
@@ -72,6 +97,14 @@ private:
     QLabel *final_score_label;
     QPushButton *restart_button;
     
+    // Main menu UI
+    QWidget *main_menu;
+    QPushButton *start_game_button;
+    QPushButton *load_game_button;
+    QPushButton *intro_button;
+    QPushButton *settings_button;
+    QPushButton *quit_button;
+    
     // Timer ID
     int timer_id;
     
@@ -82,24 +115,44 @@ private:
     
     // UI setup methods
     void setupUI();
+    void setupMainMenu();
+    void showMainMenu();
+    void hideMainMenu();
     void showCharacterSelection();
     void hideCharacterSelection();
     void showGameOverScreen();
     void hideGameOverScreen();
+    void showGameUI();
+    void hideGameUI();
     
     // Game control methods
     void startGame();
     void restartGame();
     void pauseGame();
     void resumeGame();
+    void toggleGameMenu();
+    void quitGame();
+    void loadGame();
+    void returnToMainMenu();
     
     // Game components
     UpgradeUI *upgrade_ui;
     ShopUI *shop_ui;
     SaveUI *save_ui;
+    SettingsUI *settings_ui;
+    IntroductionUI *introduction_ui;
+    GameMenuUI *game_menu_ui;
     
     // Input state
     bool keys[4]; // Up, Right, Down, Left
+    
+    // Game state
+    bool is_game_running;
+    bool is_game_paused;
+    int screen_width;
+    int screen_height;
+    int game_volume;
+    int control_type; // 0 for WASD, 1 for Mouse
 };
 
 #endif // MAINSCENE_H

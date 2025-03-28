@@ -7,13 +7,13 @@
 #include <QRandomGenerator>
 #include <algorithm>
 
-Hero::Hero() : QObject(), is_alive(true), level(1), pickup_range(1) {
+Hero::Hero() : QObject(), is_alive(true), level(1), pickup_range(1), control_type(0) {
     // Default constructor
 }
 
 Hero::Hero(int style, QWidget* parent, GameMap* map_parent, GameState* state) 
     : QObject(parent), hero_style(style), game_map(map_parent), game_state(state), 
-      is_alive(true), level(1), pickup_range(1) {
+      is_alive(true), level(1), pickup_range(1), control_type(0) {
     
     // Initialize character based on style
     initCharacter();
@@ -402,4 +402,59 @@ void Hero::update() {
     
     // Auto-attack logic
     my_weapon->update();
+}
+
+int Hero::getCharacterId() const {
+    return hero_style;
+}
+
+int Hero::getHealth() const {
+    return my_HP;
+}
+
+int Hero::getMaxHealth() const {
+    return HP_MAX;
+}
+
+void Hero::setHealth(int value) {
+    setHP(value);
+}
+
+int Hero::getExperience() const {
+    return my_EXP;
+}
+
+void Hero::setExperience(int value) {
+    my_EXP = value;
+    
+    // 更新UI
+    EXP_bar->setValue(my_EXP);
+    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    
+    // 检查是否升级
+    if (my_EXP >= EXP_MAX) {
+        levelUp();
+    }
+}
+
+void Hero::setLevel(int value) {
+    level = value;
+    
+    // 更新升级所需经验
+    EXP_MAX = 100 + (level - 1) * 20;
+    
+    // 更新UI
+    level_label->setText(QString("LV: %1").arg(level));
+    EXP_bar->setRange(0, EXP_MAX);
+    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+}
+
+void Hero::setPosition(double x, double y) {
+    realpos = qMakePair(x, y);
+    abspos = qMakePair(static_cast<int>(x), static_cast<int>(y));
+}
+
+void Hero::setControlType(int type) {
+    // 0表示WASD控制，1表示鼠标控制
+    control_type = type;
 }

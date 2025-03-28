@@ -2,237 +2,169 @@
 #include "../../include/core/gamestate.h"
 #include "../../include/utils/savefile.h"
 
-SaveUI::SaveUI(QWidget* parent) : QWidget(parent), game_state(nullptr) {
-    // 设置窗口样式
-    setWindowTitle("存档管理");
-    setFixedSize(400, 350);
-    setStyleSheet(
-        "QWidget { background-color: rgba(0, 0, 0, 180); color: white; }"
-        "QLabel { font-size: 16px; }"
-        "QPushButton { background-color: #4a4a4a; border: none; padding: 8px; margin: 5px; border-radius: 5px; }"
-        "QPushButton:hover { background-color: #5a5a5a; }"
-        "QPushButton:pressed { background-color: #3a3a3a; }"
-    );
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QGridLayout>
+#include <QDateTime>
+#include <QSettings>
+#include <QMessageBox>
+
+SaveUI::SaveUI(QWidget *parent) : QWidget(parent), game_state(nullptr), is_showing(false)
+{
+    setWindowFlags(Qt::FramelessWindowHint);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setFixedSize(400, 500);
+    hide();
     
-    // 创建主布局
-    main_layout = new QVBoxLayout(this);
-    main_layout->setContentsMargins(20, 20, 20, 20);
-    main_layout->setSpacing(15);
+    setupUI();
+}
+
+SaveUI::~SaveUI()
+{
+}
+
+void SaveUI::setupUI()
+{
+    QVBoxLayout *main_layout = new QVBoxLayout(this);
     
     // 创建标题
-    title_label = new QLabel("存档管理", this);
+    QLabel *title_label = new QLabel("游戏存档", this);
     title_label->setAlignment(Qt::AlignCenter);
-    title_label->setStyleSheet("font-size: 24px; font-weight: bold; margin-bottom: 10px;");
-    main_layout->addWidget(title_label);
+    title_label->setStyleSheet("color: white; font-size: 24px; font-weight: bold;");
     
-    // 创建信息标签
-    info_label = new QLabel("管理你的游戏存档", this);
-    info_label->setAlignment(Qt::AlignCenter);
-    info_label->setStyleSheet("font-size: 14px; margin-bottom: 20px;");
-    main_layout->addWidget(info_label);
+    // 创建存档槽位网格
+    QGridLayout *slots_layout = new QGridLayout();
+    slots_layout->setSpacing(15);
     
-    // 创建按钮
-    save_button = new QPushButton("保存游戏", this);
-    load_button = new QPushButton("加载游戏", this);
-    export_button = new QPushButton("导出存档", this);
-    import_button = new QPushButton("导入存档", this);
-    reset_button = new QPushButton("重置存档", this);
+    // 创建5个存档槽
+    for (int i = 0; i < 5; i++) {
+        // 创建存档按钮
+        QPushButton *slot_button = new QPushButton(QString("存档 %1").arg(i + 1), this);
+        slot_button->setMinimumSize(350, 60);
+        slot_button->setStyleSheet("background-color: #4a90e2; color: white; border: none; border-radius: 5px; text-align: left; padding-left: 10px; font-size: 16px;");
+        connect(slot_button, &QPushButton::clicked, this, [this, i]() { onSaveSlotClicked(i); });
+        
+        // 创建存档信息标签
+        QLabel *info_label = new QLabel("空存档", this);
+        info_label->setStyleSheet("color: #aaaaaa; font-size: 14px; padding-left: 10px;");
+        
+        // 添加到网格
+        slots_layout->addWidget(slot_button, i * 2, 0);
+        slots_layout->addWidget(info_label, i * 2 + 1, 0);
+        
+        save_slots.append(slot_button);
+        slot_info_labels.append(info_label);
+    }
+    
+    // 创建关闭按钮
     close_button = new QPushButton("关闭", this);
+    close_button->setMinimumSize(120, 40);
+    close_button->setStyleSheet("background-color: #e24a4a; color: white; border: none; border-radius: 5px; font-size: 16px;");
+    connect(close_button, &QPushButton::clicked, this, &SaveUI::onCloseButtonClicked);
     
-    // 设置按钮样式
-    QString button_style = "font-size: 16px; padding: 10px;";
-    save_button->setStyleSheet(button_style);
-    load_button->setStyleSheet(button_style);
-    export_button->setStyleSheet(button_style);
-    import_button->setStyleSheet(button_style);
-    reset_button->setStyleSheet(button_style + "color: #ff7777;");
-    close_button->setStyleSheet(button_style);
+    // 添加到主布局
+    main_layout->addWidget(title_label);
+    main_layout->addLayout(slots_layout);
+    main_layout->addWidget(close_button, 0, Qt::AlignCenter);
+    main_layout->addStretch();
     
-    // 添加按钮到布局
-    main_layout->addWidget(save_button);
-    main_layout->addWidget(load_button);
-    main_layout->addWidget(export_button);
-    main_layout->addWidget(import_button);
-    main_layout->addWidget(reset_button);
-    main_layout->addSpacing(10);
-    main_layout->addWidget(close_button);
+    setLayout(main_layout);
     
-    // 连接信号和槽
-    connect(save_button, &QPushButton::clicked, this, &SaveUI::onSaveGameClicked);
-    connect(load_button, &QPushButton::clicked, this, &SaveUI::onLoadGameClicked);
-    connect(export_button, &QPushButton::clicked, this, &SaveUI::onExportSaveClicked);
-    connect(import_button, &QPushButton::clicked, this, &SaveUI::onImportSaveClicked);
-    connect(reset_button, &QPushButton::clicked, this, &SaveUI::onResetSaveClicked);
-    connect(close_button, &QPushButton::clicked, this, &SaveUI::onCloseClicked);
-    
-    // 初始隐藏窗口
-    hide();
+    // 设置样式
+    this->setStyleSheet("QWidget { background-color: rgba(40, 40, 40, 220); border-radius: 10px; padding: 20px; }");
 }
 
-void SaveUI::showSaveUI(GameState* gameState) {
-    game_state = gameState;
-    if (game_state) {
-        info_label->setText(QString("金币: %1").arg(game_state->getTotalCoins()));
-        show();
-    }
+void SaveUI::showSaveUI(GameState *state)
+{
+    game_state = state;
+    updateSlotInfo();
+    centerUI();
+    
+    is_showing = true;
+    show();
 }
 
-void SaveUI::onSaveGameClicked() {
-    if (!game_state) {
-        showMessage("错误", "游戏状态不可用");
-        return;
-    }
-    
-    if (game_state->saveGame()) {
-        showMessage("成功", "游戏已保存");
-    } else {
-        showMessage("错误", "保存游戏失败");
-    }
-}
-
-void SaveUI::onLoadGameClicked() {
-    if (!game_state) {
-        showMessage("错误", "游戏状态不可用");
-        return;
-    }
-    
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("确认");
-    msgBox.setText("加载游戏将覆盖当前游戏进度，确定继续吗？");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox.setDefaultButton(QMessageBox::No);
-    
-    int ret = msgBox.exec();
-    if (ret == QMessageBox::Yes) {
-        if (game_state->loadGame()) {
-            showMessage("成功", "游戏已加载");
-            
-            // 更新显示的金币数
-            info_label->setText(QString("金币: %1").arg(game_state->getTotalCoins()));
-        } else {
-            showMessage("错误", "加载游戏失败");
-        }
-    }
-}
-
-void SaveUI::onExportSaveClicked() {
-    if (!game_state) {
-        showMessage("错误", "游戏状态不可用");
-        return;
-    }
-    
-    QString filename = QFileDialog::getSaveFileName(this, 
-                                                    "导出存档", 
-                                                    QDir::homePath() + "/VampireSurvivors_Save.txt", 
-                                                    "文本文件 (*.txt)");
-    
-    if (filename.isEmpty()) {
-        return;
-    }
-    
-    SaveFile saveFile;
-    saveFile.setTotalCoins(game_state->getTotalCoins());
-    
-    // 从游戏状态获取全局升级和角色解锁状态
-    QVector<int> upgrades;
-    for (int i = 0; i < 10; i++) {  // 假设有10种升级类型
-        upgrades.append(game_state->getUpgradeLevel(i));
-    }
-    saveFile.setGlobalUpgrades(upgrades);
-    
-    if (saveFile.exportToFile(filename)) {
-        showMessage("成功", "存档已导出到:\n" + filename);
-    } else {
-        showMessage("错误", "导出存档失败");
-    }
-}
-
-void SaveUI::onImportSaveClicked() {
-    if (!game_state) {
-        showMessage("错误", "游戏状态不可用");
-        return;
-    }
-    
-    QString filename = QFileDialog::getOpenFileName(this, 
-                                                   "导入存档", 
-                                                   QDir::homePath(), 
-                                                   "文本文件 (*.txt)");
-    
-    if (filename.isEmpty()) {
-        return;
-    }
-    
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("确认");
-    msgBox.setText("导入存档将覆盖当前游戏进度，确定继续吗？");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox.setDefaultButton(QMessageBox::No);
-    
-    int ret = msgBox.exec();
-    if (ret == QMessageBox::Yes) {
-        SaveFile saveFile;
-        if (saveFile.importFromFile(filename)) {
-            // 将导入的数据应用到游戏状态
-            game_state->setTotalCoins(saveFile.getTotalCoins());
-            
-            // 应用全局升级
-            QVector<int> upgrades = saveFile.getGlobalUpgrades();
-            for (int i = 0; i < upgrades.size(); i++) {
-                game_state->setUpgradeLevel(i, upgrades[i]);
-            }
-            
-            showMessage("成功", "存档已导入");
-            
-            // 更新显示的金币数
-            info_label->setText(QString("金币: %1").arg(game_state->getTotalCoins()));
-        } else {
-            showMessage("错误", "导入存档失败，文件格式可能不正确");
-        }
-    }
-}
-
-void SaveUI::onResetSaveClicked() {
-    if (!game_state) {
-        showMessage("错误", "游戏状态不可用");
-        return;
-    }
-    
-    QMessageBox msgBox;
-    msgBox.setWindowTitle("警告");
-    msgBox.setText("重置存档将删除所有游戏进度和解锁内容，这个操作无法撤销！");
-    msgBox.setInformativeText("确定要重置吗？");
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox.setDefaultButton(QMessageBox::No);
-    msgBox.setIcon(QMessageBox::Warning);
-    
-    int ret = msgBox.exec();
-    if (ret == QMessageBox::Yes) {
-        SaveFile saveFile;
-        saveFile.clear();
-        
-        // 将重置的数据应用到游戏状态
-        game_state->setTotalCoins(saveFile.getTotalCoins());
-        
-        // 应用全局升级
-        QVector<int> upgrades = saveFile.getGlobalUpgrades();
-        for (int i = 0; i < upgrades.size(); i++) {
-            game_state->setUpgradeLevel(i, upgrades[i]);
-        }
-        
-        if (game_state->saveGame()) {
-            showMessage("成功", "存档已重置");
-            
-            // 更新显示的金币数
-            info_label->setText(QString("金币: %1").arg(game_state->getTotalCoins()));
-        } else {
-            showMessage("错误", "重置存档失败");
-        }
-    }
-}
-
-void SaveUI::onCloseClicked() {
+void SaveUI::hideSaveUI()
+{
+    is_showing = false;
     hide();
     emit saveUIClosed();
+}
+
+void SaveUI::updateSlotInfo()
+{
+    // 从配置文件加载存档信息
+    QSettings settings("VampireSurvivors", "Saves");
+    
+    for (int i = 0; i < 5; i++) {
+        QString save_key = QString("save_%1").arg(i);
+        if (settings.contains(save_key + "/timestamp")) {
+            // 读取存档信息
+            QDateTime timestamp = settings.value(save_key + "/timestamp").toDateTime();
+            int score = settings.value(save_key + "/score", 0).toInt();
+            int level = settings.value(save_key + "/level", 1).toInt();
+            QString character = settings.value(save_key + "/character", "未知").toString();
+            
+            // 更新UI
+            QString info = QString("角色: %1 | 等级: %2 | 分数: %3 | %4")
+                            .arg(character)
+                            .arg(level)
+                            .arg(score)
+                            .arg(timestamp.toString("yyyy-MM-dd hh:mm"));
+            
+            slot_info_labels[i]->setText(info);
+            save_slots[i]->setStyleSheet("background-color: #4a90e2; color: white; border: none; border-radius: 5px; text-align: left; padding-left: 10px; font-size: 16px;");
+        } else {
+            // 空存档
+            slot_info_labels[i]->setText("空存档");
+            save_slots[i]->setStyleSheet("background-color: #5a6268; color: white; border: none; border-radius: 5px; text-align: left; padding-left: 10px; font-size: 16px;");
+        }
+    }
+}
+
+void SaveUI::centerUI()
+{
+    if (parentWidget()) {
+        QRect parent_rect = parentWidget()->geometry();
+        move(parent_rect.center() - rect().center());
+    }
+}
+
+void SaveUI::onSaveSlotClicked(int slot)
+{
+    if (!game_state) return;
+    
+    // 确认存档
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("确认存档");
+    
+    // 检查是否覆盖存档
+    QSettings settings("VampireSurvivors", "Saves");
+    QString save_key = QString("save_%1").arg(slot);
+    
+    if (settings.contains(save_key + "/timestamp")) {
+        msgBox.setText(QString("确定要覆盖存档 %1 吗?").arg(slot + 1));
+    } else {
+        msgBox.setText(QString("确定要保存到存档 %1 吗?").arg(slot + 1));
+    }
+    
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    msgBox.setDefaultButton(QMessageBox::No);
+    
+    if (msgBox.exec() == QMessageBox::Yes) {
+        // 保存游戏状态
+        game_state->saveGameToSlot(slot);
+        
+        // 更新显示
+        updateSlotInfo();
+        
+        QMessageBox::information(this, "保存成功", QString("游戏已成功保存到存档 %1").arg(slot + 1));
+    }
+}
+
+void SaveUI::onCloseButtonClicked()
+{
+    hideSaveUI();
 }
 
 void SaveUI::showMessage(const QString& title, const QString& message) {
