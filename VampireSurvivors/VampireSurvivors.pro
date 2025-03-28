@@ -30,6 +30,9 @@ SOURCES += \
     src/ui/shopui.cpp \
     src/ui/upgradeui.cpp \
     src/ui/saveui.cpp \
+    src/ui/settingsui.cpp \
+    src/ui/introductionui.cpp \
+    src/ui/gamemenuui.cpp \
     src/utils/savefile.cpp \
     src/main.cpp
 
@@ -48,6 +51,9 @@ HEADERS += \
     include/ui/shopui.h \
     include/ui/upgradeui.h \
     include/ui/saveui.h \
+    include/ui/settingsui.h \
+    include/ui/introductionui.h \
+    include/ui/gamemenuui.h \
     include/utils/savefile.h
 
 # UI文件

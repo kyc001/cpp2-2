@@ -26,6 +26,7 @@ public:
     void pause();
     void resume();
     void gameOver();
+    void reset();
     
     // Game update loop
     void update();
@@ -83,6 +84,10 @@ public:
     // 解锁角色
     bool isCharacterUnlocked(int character_id) const;
     void unlockCharacter(int character_id);
+    
+    // Save/Load
+    bool saveGameToSlot(int slot);
+    bool loadGameFromSlot(int slot);
     
 signals:
     void gameOverSignal();
@@ -146,6 +151,15 @@ private:
     
     // 将全局升级应用到游戏中
     void applyGlobalUpgradesToGame();
+    
+    // Private methods
+    void increaseTime();
+    void checkLevelUp();
+    
+    // Save/Load utilities
+    bool saveGameData(const QString &filename);
+    bool loadGameData(const QString &filename);
+    QString getSaveSlotFilename(int slot) const;
 };
 
 #endif // GAMESTATE_H

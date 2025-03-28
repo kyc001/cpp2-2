@@ -10,6 +10,8 @@
 #include "../core/weapon.h"
 #include "../core/gamemap.h"
 #include "../core/gamestate.h"
+#include <QRect>
+#include <QVector>
 
 // Forward declarations
 class GameMap;
@@ -93,6 +95,17 @@ public:
     void setBaseDamage(int damage);
     void setPickupRange(int range);
     
+    // 将缺失的方法添加到这里
+    int getCharacterId() const;
+    int getHealth() const;
+    int getMaxHealth() const;
+    void setHealth(int value);
+    int getExperience() const;
+    void setExperience(int value);
+    void setLevel(int value);
+    void setPosition(double x, double y);
+    void setControlType(int type);
+    
 signals:
     void leveledUp(); // 角色升级信号
     
@@ -113,6 +126,7 @@ private:
     int level;
     int pickup_range;
     bool is_alive;
+    int control_type; // 控制类型：0=WASD，1=鼠标
     
     // UI元素
     QProgressBar* HP_bar;
