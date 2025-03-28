@@ -3,10 +3,12 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QSettings>
+#include <QButtonGroup>
 
-SettingsUI::SettingsUI(QWidget *parent) : QWidget(parent)
+SettingsUI::SettingsUI(QWidget *parent) : QWidget(parent),
+    current_volume(100), current_screen_index(0), current_control_type(0)
 {
-    setWindowFlags(Qt::FramelessWindowHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedSize(400, 400);
     hide();
@@ -120,7 +122,8 @@ void SettingsUI::setupUI()
     // 连接信号
     connect(volume_slider, &QSlider::valueChanged, this, &SettingsUI::onVolumeSliderChanged);
     connect(screen_size_combo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &SettingsUI::onScreenSizeComboChanged);
-    connect(control_type_group, QOverload<int>::of(&QButtonGroup::idClicked), this, &SettingsUI::onControlTypeChanged);
+    connect(wasd_radio, &QRadioButton::clicked, this, &SettingsUI::onControlTypeChanged);
+    connect(mouse_radio, &QRadioButton::clicked, this, &SettingsUI::onControlTypeChanged);
     connect(close_button, &QPushButton::clicked, this, &SettingsUI::onCloseButtonClicked);
     connect(save_button, &QPushButton::clicked, this, &SettingsUI::onSaveButtonClicked);
 }
@@ -129,6 +132,15 @@ void SettingsUI::show()
 {
     // 更新UI中的设置值
     loadSettings();
+    
+    // 确保窗口保持在前
+    setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    activateWindow();
+    raise();
+    
+    // 居中显示
+    centerUI();
+    
     QWidget::show();
 }
 
@@ -159,9 +171,11 @@ void SettingsUI::onScreenSizeComboChanged(int index)
     emit screenSizeChanged(index);
 }
 
-void SettingsUI::onControlTypeChanged(int id)
+void SettingsUI::onControlTypeChanged()
 {
-    emit controlTypeChanged(id);
+    int type = wasd_radio->isChecked() ? 0 : 1;
+    current_control_type = type;
+    emit controlTypeChanged(type);
 }
 
 void SettingsUI::onSaveButtonClicked()
@@ -176,7 +190,7 @@ void SettingsUI::saveSettings()
     QSettings settings("VampireSurvivors", "Settings");
     settings.setValue("volume", volume_slider->value());
     settings.setValue("screenSize", screen_size_combo->currentIndex());
-    settings.setValue("controlType", control_type_group->checkedId());
+    settings.setValue("controlType", wasd_radio->isChecked() ? 0 : 1);
 }
 
 void SettingsUI::loadSettings()
@@ -187,16 +201,30 @@ void SettingsUI::loadSettings()
     int volume = settings.value("volume", 100).toInt();
     volume_slider->setValue(volume);
     volume_label->setText(QString::number(volume));
+    current_volume = volume;
     
     // 加载窗口大小设置
     int screenSize = settings.value("screenSize", 0).toInt();
     screen_size_combo->setCurrentIndex(screenSize);
+    current_screen_index = screenSize;
     
     // 加载控制类型设置
     int controlType = settings.value("controlType", 0).toInt();
+    current_control_type = controlType;
     if (controlType == 0) {
         wasd_radio->setChecked(true);
     } else {
         mouse_radio->setChecked(true);
+    }
+}
+
+void SettingsUI::centerUI()
+{
+    if (parentWidget()) {
+        QRect parent_rect = parentWidget()->rect();
+        move(parentWidget()->mapToGlobal(QPoint(
+            parent_rect.width()/2 - width()/2,
+            parent_rect.height()/2 - height()/2
+        )));
     }
 }

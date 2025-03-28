@@ -6,6 +6,12 @@
 #include <QKeyEvent>
 #include <QRandomGenerator>
 #include <algorithm>
+#include <QProgressBar>
+#include <QLabel>
+#include <QPair>
+#include <QPainter>
+#include <QCursor>
+#include <cmath>
 
 Hero::Hero() : QObject(), is_alive(true), level(1), pickup_range(1), control_type(0) {
     // Default constructor
@@ -366,17 +372,42 @@ void Hero::processKeyRelease(int key) {
 void Hero::updateMovement() {
     int dx = 0, dy = 0;
     
-    // Process movement based on pressed keys
-    for (int key : key_pressed) {
-        switch (key) {
-            case Qt::Key_W: dy -= 1; break;
-            case Qt::Key_S: dy += 1; break;
-            case Qt::Key_A: dx -= 1; break;
-            case Qt::Key_D: dx += 1; break;
+    if (control_type == 0) {
+        // WASD键盘控制模式
+        for (int key : key_pressed) {
+            switch (key) {
+                case Qt::Key_W: dy -= 1; break;
+                case Qt::Key_S: dy += 1; break;
+                case Qt::Key_A: dx -= 1; break;
+                case Qt::Key_D: dx += 1; break;
+            }
+        }
+    } else if (control_type == 1 && game_state) {
+        // 鼠标控制模式 - 获取鼠标位置并向那个方向移动
+        QWidget* parent = qobject_cast<QWidget*>(game_state->parent());
+        if (parent) {
+            QPoint mousePos = parent->mapFromGlobal(QCursor::pos());
+            
+            // 转换屏幕坐标到游戏坐标
+            double mouseX = mousePos.x() / 20.0;  // 假设一个游戏单位是20像素
+            double mouseY = mousePos.y() / 20.0;
+            
+            // 计算方向向量
+            double diffX = mouseX - realpos.first;
+            double diffY = mouseY - realpos.second;
+            
+            // 如果鼠标不在角色附近，则移动
+            double distanceSquared = diffX * diffX + diffY * diffY;
+            if (distanceSquared > 1.0) { // 有一定距离才移动
+                // 归一化方向向量
+                double length = std::sqrt(distanceSquared);
+                dx = (diffX / length) * 2; // 乘以速度因子
+                dy = (diffY / length) * 2;
+            }
         }
     }
     
-    // Apply movement if there's a direction
+    // 应用移动
     if (dx != 0 || dy != 0) {
         move(dx, dy);
     }

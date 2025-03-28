@@ -11,7 +11,7 @@
 
 SaveUI::SaveUI(QWidget *parent) : QWidget(parent), game_state(nullptr), is_showing(false)
 {
-    setWindowFlags(Qt::FramelessWindowHint);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setFixedSize(400, 500);
     hide();
@@ -81,6 +81,11 @@ void SaveUI::showSaveUI(GameState *state)
     centerUI();
     
     is_showing = true;
+    
+    // 确保窗口保持在前
+    setWindowFlag(Qt::WindowStaysOnTopHint, true);
+    activateWindow();
+    raise();
     show();
 }
 
@@ -125,8 +130,11 @@ void SaveUI::updateSlotInfo()
 void SaveUI::centerUI()
 {
     if (parentWidget()) {
-        QRect parent_rect = parentWidget()->geometry();
-        move(parent_rect.center() - rect().center());
+        QRect parent_rect = parentWidget()->rect();
+        move(parentWidget()->mapToGlobal(QPoint(
+            parent_rect.width()/2 - width()/2,
+            parent_rect.height()/2 - height()/2
+        )));
     }
 }
 

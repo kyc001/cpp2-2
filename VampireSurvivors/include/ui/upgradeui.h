@@ -2,35 +2,41 @@
 #define UPGRADEUI_H
 
 #include <QWidget>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
 #include <QPushButton>
+#include <QLabel>
 #include <QVector>
 
 class Hero;
-class UpgradeOption;
 
+// 升级选择界面
 class UpgradeUI : public QWidget {
     Q_OBJECT
+    
 public:
     explicit UpgradeUI(QWidget *parent = nullptr);
-    ~UpgradeUI() override;
+    ~UpgradeUI();
     
     // 显示升级选项
-    void showUpgradeOptions(Hero* hero);
+    void showUpgradeOptions(Hero *hero);
+    void hideUpgradeOptions();
+    void centerUI();
+    
+signals:
+    // 升级完成的信号
+    void upgradeSelected();
     
 private slots:
-    void onOptionSelected(int index);
+    // 点击升级选项
+    void onUpgradeOptionClicked(int index);
     
 private:
-    QVBoxLayout* main_layout;
-    QLabel* title_label;
-    QHBoxLayout* options_layout;
+    void setupUI();
     
-    QVector<QPushButton*> option_buttons;
+    QVector<QPushButton*> upgrade_buttons;
+    QVector<QLabel*> upgrade_descriptions;
     
-    Hero* current_hero;
+    Hero *current_hero;
+    bool is_showing;
 };
 
 #endif // UPGRADEUI_H 

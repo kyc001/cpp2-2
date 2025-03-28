@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QScrollArea>
 
+// 游戏介绍界面
 class IntroductionUI : public QWidget
 {
     Q_OBJECT
@@ -18,11 +19,14 @@ public:
     void show();
     void hide();
     bool isVisible() const;
+    void centerUI();
 
 signals:
+    // 关闭游戏介绍界面的信号
     void introductionUIClosed();
 
 private slots:
+    // 关闭按钮点击槽函数
     void onCloseButtonClicked();
 
 private:

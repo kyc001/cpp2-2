@@ -21,6 +21,7 @@
 #include <QCloseEvent>
 #include <QVector>
 #include <QSettings>
+#include <QResizeEvent>
 
 MainScene::MainScene(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainScene), game_state(nullptr), timer_id(0),
@@ -394,6 +395,10 @@ void MainScene::renderMap(QPainter &painter)
         GameMap* map = game_state->getMap();
         QVector<QVector<int>> barriers = map->getBarries();
         
+        // 计算单元格大小，以适应窗口
+        double cellWidth = static_cast<double>(width()) / barriers[0].size();
+        double cellHeight = static_cast<double>(height()) / barriers.size();
+        
         // 使用深色绘制障碍物
         painter.setBrush(QColor(30, 30, 50));
         painter.setPen(Qt::NoPen);
@@ -401,10 +406,10 @@ void MainScene::renderMap(QPainter &painter)
         for (int y = 0; y < barriers.size(); y++) {
             for (int x = 0; x < barriers[y].size(); x++) {
                 if (barriers[y][x] == 1) {
-                    // 绘制障碍物
-                    int screenX = x * 20;
-                    int screenY = y * 20;
-                    painter.drawRect(screenX, screenY, 20, 20);
+                    // 绘制障碍物，使用相对窗口大小的坐标
+                    double screenX = x * cellWidth;
+                    double screenY = y * cellHeight;
+                    painter.drawRect(QRectF(screenX, screenY, cellWidth, cellHeight));
                 }
             }
         }
@@ -416,25 +421,46 @@ void MainScene::renderHero(QPainter &painter)
     Hero* hero = game_state->getHero();
     if (!hero) return;
     
-    // Draw hero
-    int x = hero->getX() * 20; // Scale to screen coordinates
-    int y = hero->getY() * 20;
+    GameMap* map = game_state->getMap();
+    if (!map) return;
+    
+    QVector<QVector<int>> barriers = map->getBarries();
+    if (barriers.isEmpty() || barriers[0].isEmpty()) return;
+    
+    // 计算单元格大小
+    double cellWidth = static_cast<double>(width()) / barriers[0].size();
+    double cellHeight = static_cast<double>(height()) / barriers.size();
+    
+    // 绘制英雄
+    double x = hero->getX() * cellWidth;
+    double y = hero->getY() * cellHeight;
+    double size = qMin(cellWidth, cellHeight) * 0.8; // 英雄大小略小于单元格
     
     painter.setBrush(QColor(0, 200, 0));
-    painter.drawRect(x - 10, y - 10, 20, 20);
+    painter.drawEllipse(QPointF(x, y), size/2, size/2);
 }
 
 void MainScene::renderEnemies(QPainter &painter)
 {
     QVector<Enemy*> enemies = game_state->getEnemies();
+    GameMap* map = game_state->getMap();
+    if (!map) return;
+    
+    QVector<QVector<int>> barriers = map->getBarries();
+    if (barriers.isEmpty() || barriers[0].isEmpty()) return;
+    
+    // 计算单元格大小
+    double cellWidth = static_cast<double>(width()) / barriers[0].size();
+    double cellHeight = static_cast<double>(height()) / barriers.size();
+    double size = qMin(cellWidth, cellHeight) * 0.8; // 敌人大小略小于单元格
     
     for (Enemy* enemy : enemies) {
         if (!enemy || !enemy->isActive()) continue;
         
-        int x = enemy->getX() * 20; // Scale to screen coordinates
-        int y = enemy->getY() * 20;
+        double x = enemy->getX() * cellWidth;
+        double y = enemy->getY() * cellHeight;
         
-        // Draw different colors for different enemy types
+        // 为不同敌人类型绘制不同颜色
         switch(enemy->getType()) {
             case 0: // Basic melee
                 painter.setBrush(QColor(200, 0, 0));
@@ -452,7 +478,7 @@ void MainScene::renderEnemies(QPainter &painter)
                 painter.setBrush(QColor(200, 0, 0));
         }
         
-        painter.drawRect(x - 10, y - 10, 20, 20);
+        painter.drawEllipse(QPointF(x, y), size/2, size/2);
     }
 }
 
@@ -607,12 +633,8 @@ void MainScene::onScreenSizeChanged(int index) {
     // 重新调整窗口大小
     resize(screen_width, screen_height);
     
-    // 更新所有UI组件的位置
-    // 这里需要更新所有需要居中的UI元素
-    if (game_menu_ui->isVisible()) {
-        game_menu_ui->move(width()/2 - game_menu_ui->width()/2, 
-                          height()/2 - game_menu_ui->height()/2);
-    }
+    // 通过触发resizeEvent来更新所有UI元素
+    // resizeEvent会自动被Qt调用
 }
 
 void MainScene::onControlTypeChanged(int type) {
@@ -735,4 +757,58 @@ void MainScene::returnToMainMenu() {
     
     // 显示主菜单
     showMainMenu();
+}
+
+void MainScene::resizeEvent(QResizeEvent *event)
+{
+    QMainWindow::resizeEvent(event);
+    
+    // 更新主菜单大小
+    if (main_menu) {
+        main_menu->setGeometry(0, 0, width(), height());
+    }
+    
+    // 更新角色选择UI大小
+    if (character_selection) {
+        character_selection->setGeometry(0, 0, width(), height());
+    }
+    
+    // 更新游戏结束屏幕大小
+    if (game_over_screen) {
+        game_over_screen->setGeometry(0, 0, width(), height());
+    }
+    
+    // 更新游戏UI元素位置
+    if (shop_button) {
+        shop_button->setGeometry(width() - 90, 10, 80, 30);
+    }
+    
+    if (save_button) {
+        save_button->setGeometry(width() - 90, 50, 80, 30);
+    }
+    
+    // 居中显示各种弹出UI
+    if (game_menu_ui && game_menu_ui->isVisible()) {
+        game_menu_ui->centerUI();
+    }
+    
+    if (settings_ui && settings_ui->isVisible()) {
+        settings_ui->centerUI();
+    }
+    
+    if (save_ui && save_ui->isVisible()) {
+        save_ui->centerUI();
+    }
+    
+    if (introduction_ui && introduction_ui->isVisible()) {
+        introduction_ui->centerUI();
+    }
+    
+    if (upgrade_ui && upgrade_ui->isVisible()) {
+        upgrade_ui->centerUI();
+    }
+    
+    if (shop_ui && shop_ui->isVisible()) {
+        shop_ui->centerUI();
+    }
 }

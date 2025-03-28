@@ -237,3 +237,14 @@ void ShopUI::onCloseButtonClicked() {
     hide();
     emit shopClosed();
 }
+
+void ShopUI::centerUI()
+{
+    if (parentWidget()) {
+        QRect parent_rect = parentWidget()->rect();
+        move(parentWidget()->mapToGlobal(QPoint(
+            parent_rect.width()/2 - width()/2,
+            parent_rect.height()/2 - height()/2
+        )));
+    }
+}
