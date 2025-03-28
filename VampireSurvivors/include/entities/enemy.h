@@ -7,6 +7,7 @@
 class Hero;
 class GameMap;
 class GameState;
+class QPainter;
 
 enum class EnemyMovement {
     FOLLOW_PLAYER,  // Move towards player
@@ -55,6 +56,10 @@ public:
     // Damage methods
     void takeDamage(int damage);
     
+    // 渲染和动画
+    void render(QPainter* painter);
+    void updateAnimation();
+    
 private:
     int enemy_type;
     int my_x;
@@ -63,7 +68,7 @@ private:
     double real_y;
     int my_HP;
     int my_attack;
-    int my_speed;
+    double my_speed;
     int attack_range;
     int attack_cooldown;
     int current_cooldown;
@@ -80,6 +85,12 @@ private:
     
     GameMap* game_map;
     GameState* game_state;
+    
+    // 动画相关
+    int animation_frame;  // 当前动画帧
+    int animation_time;   // 动画计时器
+    bool is_attacking;    // 是否正在攻击
+    bool is_moving;       // 是否正在移动
     
     // Initialize enemy based on type
     void initEnemy();

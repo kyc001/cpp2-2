@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QVector>
+#include "../entities/hero.h" // 包含 Hero 类以获取 UpgradeType 定义
 
 class Hero;
 
@@ -31,6 +32,7 @@ private slots:
     
 private:
     void setupUI();
+    QString getUpgradeTypeText(UpgradeType type);
     
     QVector<QPushButton*> upgrade_buttons;
     QVector<QLabel*> upgrade_descriptions;

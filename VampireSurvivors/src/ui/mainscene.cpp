@@ -11,6 +11,7 @@
 #include "../../include/ui/settingsui.h"
 #include "../../include/ui/introductionui.h"
 #include "../../include/ui/gamemenuui.h"
+#include "../../include/utils/resourcemanager.h"
 #include <QPainter>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -42,6 +43,9 @@ MainScene::MainScene(QWidget *parent)
     connect(game_state, &GameState::scoreUpdated, this, &MainScene::onScoreUpdated);
     connect(game_state, &GameState::timeUpdated, this, &MainScene::onTimeUpdated);
     connect(game_state, &GameState::coinsUpdated, this, &MainScene::onCoinsUpdated);
+    
+    // 加载资源
+    loadResources();
     
     // Setup UI
     setupUI();
@@ -370,115 +374,158 @@ void MainScene::onCoinsUpdated(int coins)
 
 void MainScene::paintEvent(QPaintEvent *event)
 {
-    Q_UNUSED(event);
-    
     QPainter painter(this);
     
-    // 清除背景
-    painter.fillRect(rect(), QColor(20, 20, 30));
-    
-    // 只有在游戏运行时渲染
-    if (game_state && game_state->isRunning()) {
+    if (is_game_running) {
+        // 绘制游戏背景
+        QPixmap bgPixmap = ResourceManager::getInstance().getBackgroundImage("game");
+        if (!bgPixmap.isNull()) {
+            painter.drawPixmap(0, 0, width(), height(), bgPixmap);
+        } else {
+            // 后备方案：绘制纯色背景
+            painter.fillRect(rect(), QColor(30, 30, 40));
+        }
+        
+        // 渲染地图
         renderMap(painter);
-        renderEnemies(painter);
-        renderHero(painter);
+        
+        // 渲染英雄
+        Hero* hero = game_state->getHero();
+        if (hero && hero->isAlive()) {
+            hero->render(&painter);
+        }
+        
+        // 渲染敌人
+        QVector<Enemy*> enemies = game_state->getEnemies();
+        for (Enemy* enemy : enemies) {
+            if (enemy && enemy->isActive()) {
+                enemy->render(&painter);
+            }
+        }
+        
+        // 渲染武器和投射物
+        // ...
+    } else if (main_menu->isVisible()) {
+        // 绘制菜单背景
+        QPixmap bgPixmap = ResourceManager::getInstance().getBackgroundImage("menu");
+        if (!bgPixmap.isNull()) {
+            painter.drawPixmap(0, 0, width(), height(), bgPixmap);
+        } else {
+            // 后备方案：绘制纯色背景
+            painter.fillRect(rect(), QColor(20, 20, 30));
+        }
+    } else if (character_selection->isVisible()) {
+        // 绘制选择界面背景
+        QPixmap bgPixmap = ResourceManager::getInstance().getBackgroundImage("menu");
+        if (!bgPixmap.isNull()) {
+            painter.drawPixmap(0, 0, width(), height(), bgPixmap);
+        } else {
+            // 后备方案：绘制纯色背景
+            painter.fillRect(rect(), QColor(25, 25, 35));
+        }
+        
+        // 添加角色预览
+        int x = width() / 2 - 200;
+        for (int i = 0; i < 4; i++) {
+            QPixmap heroPixmap = ResourceManager::getInstance().getHeroIdleImage(i);
+            if (!heroPixmap.isNull()) {
+                painter.drawPixmap(x + i * 100, height() / 2 - 100, heroPixmap);
+            }
+        }
+    } else if (game_over_screen->isVisible()) {
+        // 绘制游戏结束背景
+        QPixmap bgPixmap = ResourceManager::getInstance().getBackgroundImage("dark");
+        if (!bgPixmap.isNull()) {
+            painter.drawPixmap(0, 0, width(), height(), bgPixmap);
+        } else {
+            // 后备方案：绘制纯色背景
+            painter.fillRect(rect(), QColor(10, 10, 15));
+        }
     }
+    
+    QMainWindow::paintEvent(event);
 }
 
 void MainScene::renderMap(QPainter &painter)
 {
-    // Draw map background
-    painter.fillRect(rect(), QColor(50, 50, 70));
+    GameMap* map = game_state->getMap();
+    if (!map) return;
     
-    // Draw map barriers
-    if (game_state && game_state->getMap()) {
-        GameMap* map = game_state->getMap();
-        QVector<QVector<int>> barriers = map->getBarries();
-        
-        // 计算单元格大小，以适应窗口
-        double cellWidth = static_cast<double>(width()) / barriers[0].size();
-        double cellHeight = static_cast<double>(height()) / barriers.size();
-        
-        // 使用深色绘制障碍物
-        painter.setBrush(QColor(30, 30, 50));
-        painter.setPen(Qt::NoPen);
-        
+    QVector<QVector<int>> barriers = map->getBarries();
+    if (barriers.isEmpty() || barriers[0].isEmpty()) return;
+    
+    // 计算单元格大小
+    double cellWidth = static_cast<double>(width()) / barriers[0].size();
+    double cellHeight = static_cast<double>(height()) / barriers.size();
+    
+    // 绘制地图背景
+    QPixmap floorTile = ResourceManager::getInstance().getFloorTile("stone");
+    if (!floorTile.isNull()) {
+        // 平铺地板纹理
         for (int y = 0; y < barriers.size(); y++) {
-            for (int x = 0; x < barriers[y].size(); x++) {
-                if (barriers[y][x] == 1) {
-                    // 绘制障碍物，使用相对窗口大小的坐标
-                    double screenX = x * cellWidth;
-                    double screenY = y * cellHeight;
-                    painter.drawRect(QRectF(screenX, screenY, cellWidth, cellHeight));
+            for (int x = 0; x < barriers[0].size(); x++) {
+                painter.drawPixmap(
+                    x * cellWidth, 
+                    y * cellHeight, 
+                    cellWidth, 
+                    cellHeight, 
+                    floorTile
+                );
+            }
+        }
+    } else {
+        // 后备方案：绘制纯色背景
+        painter.fillRect(rect(), QColor(50, 50, 50));
+    }
+    
+    // 绘制障碍物
+    QPixmap wallTile = ResourceManager::getInstance().getObstacle("wall");
+    QPixmap rockTile = ResourceManager::getInstance().getObstacle("rock");
+    
+    for (int y = 0; y < barriers.size(); y++) {
+        for (int x = 0; x < barriers[0].size(); x++) {
+            if (barriers[y][x] == 1) {
+                // 绘制墙壁
+                if (!wallTile.isNull()) {
+                    painter.drawPixmap(
+                        x * cellWidth, 
+                        y * cellHeight, 
+                        cellWidth, 
+                        cellHeight, 
+                        wallTile
+                    );
+                } else {
+                    // 后备方案：绘制纯色障碍物
+                    painter.fillRect(
+                        x * cellWidth, 
+                        y * cellHeight, 
+                        cellWidth, 
+                        cellHeight, 
+                        QColor(100, 100, 100)
+                    );
+                }
+            } else if (barriers[y][x] == 2) {
+                // 绘制岩石
+                if (!rockTile.isNull()) {
+                    painter.drawPixmap(
+                        x * cellWidth, 
+                        y * cellHeight, 
+                        cellWidth, 
+                        cellHeight, 
+                        rockTile
+                    );
+                } else {
+                    // 后备方案：绘制纯色障碍物
+                    painter.fillRect(
+                        x * cellWidth, 
+                        y * cellHeight, 
+                        cellWidth, 
+                        cellHeight, 
+                        QColor(120, 100, 80)
+                    );
                 }
             }
         }
-    }
-}
-
-void MainScene::renderHero(QPainter &painter)
-{
-    Hero* hero = game_state->getHero();
-    if (!hero) return;
-    
-    GameMap* map = game_state->getMap();
-    if (!map) return;
-    
-    QVector<QVector<int>> barriers = map->getBarries();
-    if (barriers.isEmpty() || barriers[0].isEmpty()) return;
-    
-    // 计算单元格大小
-    double cellWidth = static_cast<double>(width()) / barriers[0].size();
-    double cellHeight = static_cast<double>(height()) / barriers.size();
-    
-    // 绘制英雄
-    double x = hero->getX() * cellWidth;
-    double y = hero->getY() * cellHeight;
-    double size = qMin(cellWidth, cellHeight) * 0.8; // 英雄大小略小于单元格
-    
-    painter.setBrush(QColor(0, 200, 0));
-    painter.drawEllipse(QPointF(x, y), size/2, size/2);
-}
-
-void MainScene::renderEnemies(QPainter &painter)
-{
-    QVector<Enemy*> enemies = game_state->getEnemies();
-    GameMap* map = game_state->getMap();
-    if (!map) return;
-    
-    QVector<QVector<int>> barriers = map->getBarries();
-    if (barriers.isEmpty() || barriers[0].isEmpty()) return;
-    
-    // 计算单元格大小
-    double cellWidth = static_cast<double>(width()) / barriers[0].size();
-    double cellHeight = static_cast<double>(height()) / barriers.size();
-    double size = qMin(cellWidth, cellHeight) * 0.8; // 敌人大小略小于单元格
-    
-    for (Enemy* enemy : enemies) {
-        if (!enemy || !enemy->isActive()) continue;
-        
-        double x = enemy->getX() * cellWidth;
-        double y = enemy->getY() * cellHeight;
-        
-        // 为不同敌人类型绘制不同颜色
-        switch(enemy->getType()) {
-            case 0: // Basic melee
-                painter.setBrush(QColor(200, 0, 0));
-                break;
-            case 1: // Fast melee
-                painter.setBrush(QColor(200, 100, 0));
-                break;
-            case 2: // Ranged
-                painter.setBrush(QColor(200, 0, 200));
-                break;
-            case 3: // Tank
-                painter.setBrush(QColor(150, 0, 0));
-                break;
-            default:
-                painter.setBrush(QColor(200, 0, 0));
-        }
-        
-        painter.drawEllipse(QPointF(x, y), size/2, size/2);
     }
 }
 
@@ -810,5 +857,28 @@ void MainScene::resizeEvent(QResizeEvent *event)
     
     if (shop_ui && shop_ui->isVisible()) {
         shop_ui->centerUI();
+    }
+}
+
+void MainScene::loadResources() {
+    // 加载UI资源
+    ResourceManager::getInstance().loadUIResources();
+    
+    // 加载地图资源
+    ResourceManager::getInstance().loadMapResources();
+    
+    // 加载所有英雄资源
+    for (int i = 0; i < 4; i++) {
+        ResourceManager::getInstance().loadHeroResources(i);
+    }
+    
+    // 加载所有敌人资源
+    for (int i = 0; i < 5; i++) {
+        ResourceManager::getInstance().loadEnemyResources(i);
+    }
+    
+    // 加载所有武器资源
+    for (int i = 0; i < 4; i++) {
+        ResourceManager::getInstance().loadWeaponResources(i);
     }
 }

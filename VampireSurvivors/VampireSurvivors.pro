@@ -34,6 +34,7 @@ SOURCES += \
     src/ui/introductionui.cpp \
     src/ui/gamemenuui.cpp \
     src/utils/savefile.cpp \
+    src/utils/resourcemanager.cpp \
     src/main.cpp
 
 # 头文件
@@ -54,7 +55,8 @@ HEADERS += \
     include/ui/settingsui.h \
     include/ui/introductionui.h \
     include/ui/gamemenuui.h \
-    include/utils/savefile.h
+    include/utils/savefile.h \
+    include/utils/resourcemanager.h
 
 # UI文件
 FORMS += \

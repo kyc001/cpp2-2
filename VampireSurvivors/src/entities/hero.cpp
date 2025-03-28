@@ -2,6 +2,7 @@
 #include "../../include/core/gamestate.h"
 #include "../../include/core/weapon.h"
 #include "../../include/core/gamemap.h"
+#include "../../include/utils/resourcemanager.h"
 #include <QWidget>
 #include <QKeyEvent>
 #include <QRandomGenerator>
@@ -56,6 +57,15 @@ Hero::Hero(int style, QWidget* parent, GameMap* map_parent, GameState* state)
     
     // Create weapon
     my_weapon = new Weapon(weapon_type, this, game_state);
+    
+    // 加载英雄资源
+    ResourceManager::getInstance().loadHeroResources(hero_style);
+    
+    // 初始化动画帧计数器
+    animation_frame = 0;
+    animation_time = 0;
+    is_attacking = false;
+    is_moving = false;
 }
 
 Hero::~Hero() {
@@ -231,49 +241,39 @@ void Hero::generateUpgradeOptions() {
     // 生成三个随机升级选项
     for (int i = 0; i < 3; i++) {
         int optionType = QRandomGenerator::global()->bounded(5); // 0-4，5种不同的升级选项
+        UpgradeType upgradeType;
+        int value = 0;
+        QString description;
         
         switch (optionType) {
             case 0: // 增加最大生命值
-                available_upgrades.push_back(new UpgradeOption(
-                    "生命值+20",
-                    "增加20点最大生命值",
-                    UpgradeType::CHARACTER,
-                    optionType
-                ));
+                upgradeType = UpgradeType::HEALTH;
+                value = 20;
+                description = "增加20点最大生命值";
                 break;
             case 1: // 增加攻击力
-                available_upgrades.push_back(new UpgradeOption(
-                    "攻击力+5",
-                    "增加5点攻击力",
-                    UpgradeType::CHARACTER,
-                    optionType
-                ));
+                upgradeType = UpgradeType::ATTACK;
+                value = 5;
+                description = "增加5点攻击力";
                 break;
             case 2: // 增加移动速度
-                available_upgrades.push_back(new UpgradeOption(
-                    "移动速度+0.5",
-                    "增加移动速度",
-                    UpgradeType::CHARACTER,
-                    optionType
-                ));
+                upgradeType = UpgradeType::SPEED;
+                value = 1; // 实际值会乘以0.5
+                description = "增加移动速度";
                 break;
-            case 3: // 增加武器伤害
-                available_upgrades.push_back(new UpgradeOption(
-                    "武器伤害+10%",
-                    "增加武器伤害10%",
-                    UpgradeType::WEAPON,
-                    optionType
-                ));
+            case 3: // 增加拾取范围
+                upgradeType = UpgradeType::PICKUP_RANGE;
+                value = 1;
+                description = "增加拾取范围";
                 break;
-            case 4: // 减少武器冷却时间
-                available_upgrades.push_back(new UpgradeOption(
-                    "武器冷却-10%",
-                    "减少武器冷却时间10%",
-                    UpgradeType::WEAPON,
-                    optionType
-                ));
+            case 4: // 提升武器等级
+                upgradeType = UpgradeType::WEAPON_LEVEL;
+                value = 1;
+                description = "提升武器等级";
                 break;
         }
+        
+        available_upgrades.push_back(new UpgradeOption(upgradeType, value, description));
     }
 }
 
@@ -285,25 +285,23 @@ void Hero::applyUpgrade(int upgradeIndex) {
     
     UpgradeOption* selectedUpgrade = available_upgrades[upgradeIndex];
     
-    switch (selectedUpgrade->getValue()) {
-        case 0: // 增加最大生命值
-            HP_MAX += 20;
-            setHP(my_HP + 20); // 同时恢复部分血量
+    switch (selectedUpgrade->getType()) {
+        case UpgradeType::HEALTH: // 增加最大生命值
+            HP_MAX += selectedUpgrade->getValue();
+            setHP(my_HP + selectedUpgrade->getValue()); // 同时恢复部分血量
             break;
-        case 1: // 增加攻击力
-            addAttack(5);
+        case UpgradeType::ATTACK: // 增加攻击力
+            addAttack(selectedUpgrade->getValue());
             break;
-        case 2: // 增加移动速度
-            addSpeed(0.5);
+        case UpgradeType::SPEED: // 增加移动速度
+            addSpeed(selectedUpgrade->getValue() * 0.5);
             break;
-        case 3: // 增加武器伤害
+        case UpgradeType::PICKUP_RANGE: // 增加拾取范围
+            addPickupRange(selectedUpgrade->getValue() * 10);
+            break;
+        case UpgradeType::WEAPON_LEVEL: // 提升武器等级
             if (my_weapon) {
-                my_weapon->increaseDamage(0.1); // 增加10%伤害
-            }
-            break;
-        case 4: // 减少武器冷却时间
-            if (my_weapon) {
-                my_weapon->decreaseCooldown(0.1); // 减少10%冷却时间
+                my_weapon->levelUp(selectedUpgrade->getValue());
             }
             break;
     }
@@ -428,8 +426,11 @@ void Hero::takeDamage(int damage) {
 }
 
 void Hero::update() {
-    // Update movement
+    // 更新移动
     updateMovement();
+    
+    // 更新动画
+    updateAnimation();
     
     // Auto-attack logic
     my_weapon->update();
@@ -488,4 +489,68 @@ void Hero::setPosition(double x, double y) {
 void Hero::setControlType(int type) {
     // 0表示WASD控制，1表示鼠标控制
     control_type = type;
+}
+
+// 绘制角色
+void Hero::render(QPainter* painter) {
+    if (!painter || !is_alive) return;
+    
+    // 获取屏幕位置
+    int screen_x = abspos.first * 32;  // 假设单元格大小为32x32
+    int screen_y = abspos.second * 32;
+    
+    QPixmap heroSprite;
+    
+    // 根据状态选择合适的精灵
+    if (is_attacking) {
+        // 攻击动画
+        heroSprite = ResourceManager::getInstance().getHeroAttackImage(hero_style, animation_frame % 3);
+    } else if (is_moving) {
+        // 行走动画
+        heroSprite = ResourceManager::getInstance().getHeroWalkImage(hero_style, animation_frame % 4);
+    } else {
+        // 静止状态
+        heroSprite = ResourceManager::getInstance().getHeroIdleImage(hero_style);
+    }
+    
+    if (!heroSprite.isNull()) {
+        // 绘制英雄精灵
+        painter->drawPixmap(screen_x - heroSprite.width()/2, screen_y - heroSprite.height()/2, heroSprite);
+    } else {
+        // 绘制后备显示（简单的彩色矩形）
+        painter->setBrush(QColor(0, 200, 0));
+        painter->drawEllipse(QPointF(screen_x, screen_y), 16, 16);
+    }
+}
+
+// 更新角色动画
+void Hero::updateAnimation() {
+    // 更新动画计时器
+    animation_time++;
+    
+    // 每10帧更新一次动画帧
+    if (animation_time >= 10) {
+        animation_time = 0;
+        animation_frame++;
+        
+        // 如果是攻击动画且完成了周期，则结束攻击状态
+        if (is_attacking && animation_frame % 3 == 0) {
+            is_attacking = false;
+        }
+    }
+}
+
+// 设置攻击状态
+void Hero::setAttacking(bool attacking) {
+    is_attacking = attacking;
+    if (attacking) {
+        // 重置动画帧以便从头开始攻击动画
+        animation_frame = 0;
+        animation_time = 0;
+    }
+}
+
+// 设置移动状态
+void Hero::setMoving(bool moving) {
+    is_moving = moving;
 }
