@@ -187,7 +187,7 @@ void SettingsUI::onSaveButtonClicked()
 
 void SettingsUI::saveSettings()
 {
-    QSettings settings("VampireSurvivors", "Settings");
+    QSettings settings("NightSurvivors", "Settings");
     settings.setValue("volume", volume_slider->value());
     settings.setValue("screenSize", screen_size_combo->currentIndex());
     settings.setValue("controlType", wasd_radio->isChecked() ? 0 : 1);
@@ -195,7 +195,7 @@ void SettingsUI::saveSettings()
 
 void SettingsUI::loadSettings()
 {
-    QSettings settings("VampireSurvivors", "Settings");
+    QSettings settings("NightSurvivors", "Settings");
     
     // 加载音量设置
     int volume = settings.value("volume", 100).toInt();

@@ -1,5 +1,5 @@
 @echo off
-echo Cleaning VampireSurvivors...
+echo Cleaning NightSurvivors...
 
 :: 删除构建目录
 if exist build rmdir /S /Q build

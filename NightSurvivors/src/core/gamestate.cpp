@@ -413,7 +413,7 @@ bool GameState::saveGame() {
     save_file->setUnlockedCharacters(unlocked_characters);
     
     // 保存到文件
-    QString saveDir = QDir::homePath() + "/.vampiresurvivors";
+    QString saveDir = QDir::homePath() + "/.nightsurvivors";
     QDir().mkpath(saveDir);
     
     return save_file->saveToFile(saveDir + "/save.dat");
@@ -425,7 +425,7 @@ bool GameState::loadGame() {
     }
     
     // 尝试从文件加载
-    QString saveDir = QDir::homePath() + "/.vampiresurvivors";
+    QString saveDir = QDir::homePath() + "/.nightsurvivors";
     bool result = save_file->loadFromFile(saveDir + "/save.dat");
     
     if (result) {
@@ -593,7 +593,7 @@ bool GameState::saveGameToSlot(int slot)
     }
     
     // 保存到指定槽位
-    QSettings settings("VampireSurvivors", "Saves");
+    QSettings settings("NightSurvivors", "Saves");
     QString save_key = QString("save_%1").arg(slot);
     
     settings.setValue(save_key + "/timestamp", QDateTime::currentDateTime());
@@ -609,7 +609,7 @@ bool GameState::saveGameToSlot(int slot)
 bool GameState::loadGameFromSlot(int slot)
 {
     // 从设置检查槽位是否存在
-    QSettings settings("VampireSurvivors", "Saves");
+    QSettings settings("NightSurvivors", "Saves");
     QString save_key = QString("save_%1").arg(slot);
     
     if (!settings.contains(save_key + "/timestamp")) {

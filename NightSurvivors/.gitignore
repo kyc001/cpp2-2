@@ -79,4 +79,62 @@ CMakeLists.txt.user*
 .pch/
 .rcc/
 .uic/
-/build*/
+
+# 构建目录
+/build/
+/build-release/
+/bin/
+
+# 编译器临时文件
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dll
+*.exe
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Qt Creator临时文件
+*.user
+*.user.*
+CMakeLists.txt.user*
+
+# Visual Studio临时文件
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.suo
+*.db
+*.opendb
+*.pdb
+ipch/
+x64/
+Debug/
+Release/
+
+# VSCode临时文件
+.vscode/.history
+
+# CMake临时文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# 操作系统临时文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 其他临时文件
+*.log
+*.bak
+*~
+*.swp

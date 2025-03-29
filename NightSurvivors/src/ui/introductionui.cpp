@@ -39,6 +39,7 @@ void IntroductionUI::setupUI()
     );
     
     // 添加选项卡
+    tab_widget->addTab(createGameplayTab(), "游戏玩法");
     tab_widget->addTab(createControlsTab(), "操作控制");
     tab_widget->addTab(createHeroesTab(), "英雄介绍");
     tab_widget->addTab(createEnemiesTab(), "敌人介绍");
@@ -60,6 +61,78 @@ void IntroductionUI::setupUI()
     
     // 连接信号
     connect(close_button, &QPushButton::clicked, this, &IntroductionUI::onCloseButtonClicked);
+}
+
+QWidget* IntroductionUI::createGameplayTab()
+{
+    QWidget *tab = new QWidget();
+    QVBoxLayout *layout = new QVBoxLayout(tab);
+    
+    QScrollArea *scroll_area = new QScrollArea();
+    scroll_area->setWidgetResizable(true);
+    scroll_area->setFrameShape(QFrame::NoFrame);
+    
+    QWidget *scroll_content = new QWidget();
+    QVBoxLayout *content_layout = new QVBoxLayout(scroll_content);
+    
+    // 游戏目标
+    QLabel *goal_title = new QLabel("游戏目标");
+    goal_title->setStyleSheet("color: #ffcc00; font-size: 20px; font-weight: bold;");
+    
+    QLabel *goal_desc = new QLabel(
+        "《暗夜幸存者》是一款Roguelike生存动作游戏，你的目标是：\n\n"
+        "- 在每局游戏中尽可能地生存更长时间（15或30分钟）\n"
+        "- 击败尽可能多的敌人获取经验和金币\n"
+        "- 通过升级和装备组合构建最强大的角色\n"
+        "- 击败精英敌人和最终BOSS\n"
+        "- 解锁所有角色和永久升级"
+    );
+    goal_desc->setStyleSheet("color: white; font-size: 16px;");
+    goal_desc->setWordWrap(true);
+    
+    // 核心玩法
+    QLabel *core_title = new QLabel("核心玩法");
+    core_title->setStyleSheet("color: #ffcc00; font-size: 20px; font-weight: bold;");
+    
+    QLabel *core_desc = new QLabel(
+        "1. **自动攻击**：角色会自动攻击最近的敌人，你需要专注于走位和策略\n\n"
+        "2. **经验升级**：击败敌人获得经验宝石，升级后可以从三个随机选项中选择一项能力提升\n\n"
+        "3. **武器组合**：随着游戏进行，你可以获得和升级多种武器，构建独特的战斗风格\n\n"
+        "4. **敌人波次**：随着时间增加，敌人数量和强度会不断提升，每5分钟会刷新一次难度\n\n"
+        "5. **金币与商店**：收集金币用于在游戏中购买临时强化，或在游戏结束后用于永久升级"
+    );
+    core_desc->setStyleSheet("color: white; font-size: 16px;");
+    core_desc->setWordWrap(true);
+    
+    // 进阶策略
+    QLabel *strategy_title = new QLabel("进阶策略");
+    strategy_title->setStyleSheet("color: #ffcc00; font-size: 20px; font-weight: bold;");
+    
+    QLabel *strategy_desc = new QLabel(
+        "- **合理移动**：尽量避开敌人包围，利用地形限制敌人移动\n\n"
+        "- **选择升级**：根据当前武器和敌人类型选择合适的升级\n\n"
+        "- **资源管理**：合理使用道具，留意健康宝石的位置\n\n"
+        "- **精英狩猎**：优先击杀精英敌人获取更多奖励\n\n"
+        "- **成长系统**：合理利用永久升级点数，优先提升核心属性"
+    );
+    strategy_desc->setStyleSheet("color: white; font-size: 16px;");
+    strategy_desc->setWordWrap(true);
+    
+    // 添加到布局
+    content_layout->addWidget(goal_title);
+    content_layout->addWidget(goal_desc);
+    content_layout->addSpacing(20);
+    content_layout->addWidget(core_title);
+    content_layout->addWidget(core_desc);
+    content_layout->addSpacing(20);
+    content_layout->addWidget(strategy_title);
+    content_layout->addWidget(strategy_desc);
+    content_layout->addStretch(1);
+    
+    scroll_area->setWidget(scroll_content);
+    layout->addWidget(scroll_area);
+    
+    return tab;
 }
 
 QWidget* IntroductionUI::createControlsTab()
