@@ -19,33 +19,42 @@
 
 GameState::GameState(QObject *parent) : QObject(parent), 
     my_hero(nullptr), my_map(nullptr), game_running(false), game_over(false),
-    game_time(0), game_score(0), total_kills(0), selected_character(0),
-    game_coins(0), total_coins(0), coin_multiplier(1.0), save_file(nullptr),
-    spawn_rate(3000), max_enemies(50) {
+    game_time(0), max_game_time(0), game_score(0), total_kills(0), selected_character(0),
+    game_coins(0), total_coins(0), coin_multiplier(1.0f), save_file(nullptr),
+    spawn_rate(5), max_enemies(100), my_screenCenterX(0), my_screenCenterY(0) {
     
     // Initialize screen center
     my_screenCenterX = 400;
     my_screenCenterY = 300;
     
-    // 初始化全局升级等级
-    global_upgrades.resize(5, 0); // 5种全局升级，初始等级为0
+    // Initialize global upgrades
+    global_upgrades.resize(5);
+    for (int i = 0; i < global_upgrades.size(); i++) {
+        global_upgrades[i] = 0;
+    }
     
-    // 初始化角色解锁状态
-    unlocked_characters.resize(5, false); // 预留5个角色
-    unlocked_characters[0] = true; // 默认解锁第一个角色
+    // Initialize character unlock status
+    unlocked_characters.resize(4);
+    unlocked_characters[0] = true;  // Default unlock warrior
+    for (int i = 1; i < unlocked_characters.size(); i++) {
+        unlocked_characters[i] = false;
+    }
     
-    // 创建存档对象
-    save_file = new SaveFile();
+    // Create save file object
+    save_file = new SaveFile(this);
     
     // Create game timer (updates every 16ms ~ 60fps)
     game_timer = new QTimer(this);
-    connect(game_timer, &QTimer::timeout, this, &GameState::update);
+    connect(game_timer, &QTimer::timeout, this, &GameState::increaseTime);
     
     // Create spawn timer
     spawn_timer = new QTimer(this);
     connect(spawn_timer, &QTimer::timeout, this, &GameState::spawnEnemies);
     
-    // 加载游戏存档
+    // Create game map
+    my_map = new GameMap(this);
+    
+    // Load game save
     loadGame();
 }
 
@@ -59,13 +68,13 @@ GameState::~GameState() {
     }
     my_enemies.clear();
     
-    // 删除所有掉落物
+    // Delete all drops
     for (Drop* drop : my_drops) {
         delete drop;
     }
     my_drops.clear();
     
-    // 删除存档对象
+    // Delete save file object
     delete save_file;
     
     // Delete timers
@@ -81,10 +90,10 @@ void GameState::init() {
     QWidget* parent_widget = qobject_cast<QWidget*>(parent());
     my_hero = new Hero(selected_character, parent_widget, my_map, this);
     
-    // 应用全局升级
+    // Apply global upgrades
     applyGlobalUpgradesToGame();
     
-    // 连接英雄升级信号
+    // Connect hero level up signal
     connect(my_hero, &Hero::leveledUp, this, &GameState::onHeroLeveledUp);
     
     // Reset game variables
@@ -101,7 +110,7 @@ void GameState::init() {
     }
     my_enemies.clear();
     
-    // 清理掉落物
+    // Clear drops
     for (Drop* drop : my_drops) {
         delete drop;
     }
@@ -145,7 +154,7 @@ void GameState::gameOver() {
     game_timer->stop();
     spawn_timer->stop();
     
-    // 游戏结束时保存金币
+    // Save coins when game ends
     total_coins += game_coins;
     saveGame();
     
@@ -201,7 +210,7 @@ int GameState::getScore() const {
 }
 
 void GameState::addCoins(int amount) {
-    // 应用金币获取倍率
+    // Apply coin multiplier
     amount = static_cast<int>(amount * coin_multiplier);
     game_coins += amount;
     emit coinsUpdated(game_coins);
@@ -254,20 +263,20 @@ QVector<Drop*> GameState::getDrops() const {
 }
 
 void GameState::spawnDrop(int x, int y) {
-    // 生成随机掉落物
+    // Generate random drop
     int dropRand = QRandomGenerator::global()->bounded(100);
     
-    if (dropRand < 15) { // 15% 概率掉落生命值
-        Drop* drop = new Drop(DropType::HEALTH, 20, x, y, this);
+    if (dropRand < 15) { // 15% chance for health
+        Drop* drop = new Drop(DropType::HEALTH, 20, x, y, this, this);
         addDrop(drop);
-    } else if (dropRand < 40) { // 25% 概率掉落经验值
-        Drop* drop = new Drop(DropType::EXPERIENCE, 10, x, y, this);
+    } else if (dropRand < 40) { // 25% chance for experience
+        Drop* drop = new Drop(DropType::EXPERIENCE, 10, x, y, this, this);
         addDrop(drop);
-    } else if (dropRand < 70) { // 30% 概率掉落金币
-        Drop* drop = new Drop(DropType::COIN, 1, x, y, this);
+    } else if (dropRand < 70) { // 30% chance for coins
+        Drop* drop = new Drop(DropType::COIN, 1, x, y, this, this);
         addDrop(drop);
-    } else if (dropRand < 80) { // 10% 概率掉落临时增强
-        Drop* drop = new Drop(DropType::POWER_UP, 5, x, y, this);
+    } else if (dropRand < 80) { // 10% chance for temporary power-up
+        Drop* drop = new Drop(DropType::POWER_UP, 5, x, y, this, this);
         addDrop(drop);
     }
 }
@@ -287,33 +296,42 @@ void GameState::spawnEnemies() {
     int spawn_count = qMin(5, max_enemies - my_enemies.size());
     
     for (int i = 0; i < spawn_count; i++) {
-        // Pick a random enemy type
-        int enemy_type = QRandomGenerator::global()->bounded(4); // 0-3
+        // Pick a random enemy type (0-3)
+        int enemy_type = QRandomGenerator::global()->bounded(4);
         
         // Pick a random spawn position at the edge of the map
         int x, y;
         int edge = QRandomGenerator::global()->bounded(4); // 0-3 for top, right, bottom, left
         
+        int mapWidth = 800;
+        int mapHeight = 600;
+        
+        // 使用固定值代替map_width和map_height
+        if (my_map) {
+            mapWidth = my_map->getWidth();
+            mapHeight = my_map->getHeight();
+        }
+        
         switch (edge) {
             case 0: // Top
-                x = QRandomGenerator::global()->bounded(my_map->getWidth());
+                x = QRandomGenerator::global()->bounded(mapWidth);
                 y = 0;
                 break;
             case 1: // Right
-                x = my_map->getWidth() - 1;
-                y = QRandomGenerator::global()->bounded(my_map->getHeight());
+                x = mapWidth - 1;
+                y = QRandomGenerator::global()->bounded(mapHeight);
                 break;
             case 2: // Bottom
-                x = QRandomGenerator::global()->bounded(my_map->getWidth());
-                y = my_map->getHeight() - 1;
+                x = QRandomGenerator::global()->bounded(mapWidth);
+                y = mapHeight - 1;
                 break;
             case 3: // Left
                 x = 0;
-                y = QRandomGenerator::global()->bounded(my_map->getHeight());
+                y = QRandomGenerator::global()->bounded(mapHeight);
                 break;
         }
         
-        // Create and add the enemy
+        // 简单创建敌人，不依赖资源文件
         Enemy* enemy = new Enemy(enemy_type, x, y, my_map, this);
         addEnemy(enemy);
     }
@@ -335,42 +353,42 @@ void GameState::applyGlobalUpgrade(int type, int level) {
     if (type >= 0 && type < global_upgrades.size()) {
         global_upgrades[type] = level;
         
-        // 应用升级效果
+        // Apply upgrade effect
         if (my_hero) {
             switch (type) {
-                case 0: // 最大生命值
+                case 0: // Maximum health
                     my_hero->setMaxHealth(100 + level * 20);
                     break;
-                case 1: // 基础攻击力
+                case 1: // Base attack
                     my_hero->setBaseDamage(5 + level * 2);
                     break;
-                // 其他升级类型可以在此添加...
+                // Other upgrade types can be added here...
             }
         }
         
-        // 保存游戏
+        // Save game
         saveGame();
     }
 }
 
 void GameState::applyGlobalUpgradesToGame() {
-    // 将全局升级效果应用到游戏中
+    // Apply global upgrade effects to the game
     if (my_hero) {
-        // 最大生命值
+        // Maximum health
         int max_health_level = global_upgrades[0];
         my_hero->setMaxHealth(100 + max_health_level * 20);
         
-        // 基础攻击力
+        // Base attack
         int attack_level = global_upgrades[1];
         my_hero->setBaseDamage(5 + attack_level * 2);
         
-        // 拾取范围 (第4个升级)
+        // Pickup range (4th upgrade)
         if (global_upgrades.size() > 3) {
             int pickup_range_level = global_upgrades[3];
             my_hero->setPickupRange(30 + pickup_range_level * 10);
         }
         
-        // 金币获取倍率 (第3个升级)
+        // Coin multiplier (3rd upgrade)
         if (global_upgrades.size() > 2) {
             int coin_level = global_upgrades[2];
             coin_multiplier = 1.0f + (coin_level * 0.1f);
@@ -403,16 +421,16 @@ bool GameState::saveGame() {
         return false;
     }
     
-    // 保存总金币
+    // Save total coins
     save_file->setTotalCoins(total_coins);
     
-    // 保存全局升级等级
+    // Save global upgrade levels
     save_file->setGlobalUpgrades(global_upgrades);
     
-    // 保存角色解锁状态
+    // Save character unlock status
     save_file->setUnlockedCharacters(unlocked_characters);
     
-    // 保存到文件
+    // Save to file
     QString saveDir = QDir::homePath() + "/.nightsurvivors";
     QDir().mkpath(saveDir);
     
@@ -424,31 +442,31 @@ bool GameState::loadGame() {
         return false;
     }
     
-    // 尝试从文件加载
+    // Try to load from file
     QString saveDir = QDir::homePath() + "/.nightsurvivors";
     bool result = save_file->loadFromFile(saveDir + "/save.dat");
     
     if (result) {
-        // 读取总金币
+        // Read total coins
         total_coins = save_file->getTotalCoins();
         
-        // 读取全局升级等级
+        // Read global upgrade levels
         global_upgrades = save_file->getGlobalUpgrades();
         
-        // 读取角色解锁状态
+        // Read character unlock status
         unlocked_characters = save_file->getUnlockedCharacters();
         
-        // 确保数组大小一致
+        // Ensure array size consistency
         if (global_upgrades.size() < 5) {
             global_upgrades.resize(5, 0);
         }
         
-        if (unlocked_characters.size() < 5) {
-            unlocked_characters.resize(5, false);
-            unlocked_characters[0] = true; // 确保第一个角色解锁
+        if (unlocked_characters.size() < 4) {
+            unlocked_characters.resize(4, false);
+            unlocked_characters[0] = true; // Ensure first character is unlocked
         }
         
-        // 应用全局升级
+        // Apply global upgrades
         if (my_hero) {
             applyGlobalUpgradesToGame();
         }
@@ -474,7 +492,7 @@ void GameState::unlockCharacter(int character_id) {
 }
 
 void GameState::onHeroLeveledUp() {
-    // 发送信号通知UI显示升级选项
+    // Send signal to UI to display level up options
     emit levelUpOptionsReady();
 }
 
@@ -488,7 +506,7 @@ void GameState::cleanupEnemies() {
             game_score += 10;
             total_kills++;
             
-            // 概率生成掉落物
+            // Probability for drop generation
             spawnDrop(enemy->getX(), enemy->getY());
         }
     }
@@ -507,14 +525,14 @@ void GameState::cleanupEnemies() {
 void GameState::cleanupDrops() {
     QVector<Drop*> inactive_drops;
     
-    // 收集非活跃掉落物
+    // Collect inactive drops
     for (Drop* drop : my_drops) {
         if (drop && !drop->isActive()) {
             inactive_drops.append(drop);
         }
     }
     
-    // 移除并删除非活跃掉落物
+    // Remove and delete inactive drops
     for (Drop* drop : inactive_drops) {
         my_drops.removeOne(drop);
         delete drop;
@@ -535,9 +553,9 @@ void GameState::checkDropPickup() {
             int dropX = drop->getX();
             int dropY = drop->getY();
             
-            // 检查是否在拾取范围内
+            // Check if in pickup range
             if (abs(heroX - dropX) <= pickupRange && abs(heroY - dropY) <= pickupRange) {
-                // 应用掉落物效果
+                // Apply drop effect
                 drop->applyEffect(my_hero);
             }
         }
@@ -576,23 +594,23 @@ void GameState::setTotalCoins(int amount) {
 
 bool GameState::saveGameToSlot(int slot)
 {
-    // 获取当前游戏状态信息
+    // Get current game state information
     int current_score = getScore();
     int current_level = 1;
-    QString character_name = "未知";
+    QString character_name = "Unknown";
     
     if (my_hero) {
         current_level = my_hero->getLevel();
         switch (my_hero->getCharacterId()) {
-            case 0: character_name = "战士"; break;
-            case 1: character_name = "法师"; break;
-            case 2: character_name = "弓箭手"; break;
-            case 3: character_name = "盗贼"; break;
-            default: character_name = "未知";
+            case 0: character_name = "Warrior"; break;
+            case 1: character_name = "Mage"; break;
+            case 2: character_name = "Archer"; break;
+            case 3: character_name = "Thief"; break;
+            default: character_name = "Unknown";
         }
     }
     
-    // 保存到指定槽位
+    // Save to specified slot
     QSettings settings("NightSurvivors", "Saves");
     QString save_key = QString("save_%1").arg(slot);
     
@@ -602,35 +620,35 @@ bool GameState::saveGameToSlot(int slot)
     settings.setValue(save_key + "/character", character_name);
     settings.setValue(save_key + "/totalCoins", total_coins);
     
-    // 保存详细游戏状态到文件
+    // Save detailed game state to file
     return saveGameData(getSaveSlotFilename(slot));
 }
 
 bool GameState::loadGameFromSlot(int slot)
 {
-    // 从设置检查槽位是否存在
+    // Check if slot exists in settings
     QSettings settings("NightSurvivors", "Saves");
     QString save_key = QString("save_%1").arg(slot);
     
     if (!settings.contains(save_key + "/timestamp")) {
-        return false; // 槽位为空
+        return false; // Slot is empty
     }
     
-    // 加载详细游戏状态
+    // Load detailed game state
     return loadGameData(getSaveSlotFilename(slot));
 }
 
 bool GameState::saveGameData(const QString &filename)
 {
-    // 创建一个JSON保存游戏状态
+    // Create a JSON to save game state
     QJsonObject gameData;
     
-    // 保存基本游戏信息
+    // Save basic game information
     gameData["score"] = game_score;
     gameData["gameTime"] = game_time;
     gameData["totalCoins"] = total_coins;
     
-    // 保存英雄信息
+    // Save hero information
     if (my_hero) {
         QJsonObject heroData;
         heroData["characterId"] = my_hero->getCharacterId();
@@ -644,25 +662,25 @@ bool GameState::saveGameData(const QString &filename)
         gameData["hero"] = heroData;
     }
     
-    // 保存全局升级
+    // Save global upgrades
     QJsonArray upgradesArray;
     for (int level : global_upgrades) {
         upgradesArray.append(level);
     }
     gameData["upgrades"] = upgradesArray;
     
-    // 保存角色解锁状态
+    // Save character unlock status
     QJsonArray charactersArray;
     for (bool unlocked : unlocked_characters) {
         charactersArray.append(unlocked);
     }
     gameData["characters"] = charactersArray;
     
-    // 保存到文件
+    // Save to file
     QJsonDocument doc(gameData);
     QFile file(filename);
     if (!file.open(QIODevice::WriteOnly)) {
-        qWarning("无法打开存档文件进行写入");
+        qWarning("Unable to open save file for writing");
         return false;
     }
     
@@ -676,7 +694,7 @@ bool GameState::loadGameData(const QString &filename)
 {
     QFile file(filename);
     if (!file.open(QIODevice::ReadOnly)) {
-        qWarning("无法打开存档文件进行读取");
+        qWarning("Unable to open save file for reading");
         return false;
     }
     
@@ -685,30 +703,30 @@ bool GameState::loadGameData(const QString &filename)
     
     QJsonDocument doc = QJsonDocument::fromJson(saveData);
     if (doc.isNull() || !doc.isObject()) {
-        qWarning("存档文件格式错误");
+        qWarning("Save file format error");
         return false;
     }
     
     QJsonObject gameData = doc.object();
     
-    // 重置当前游戏状态
+    // Reset current game state
     pause();
     
-    // 加载基本游戏信息
+    // Load basic game information
     game_score = gameData["score"].toInt();
     game_time = gameData["gameTime"].toInt();
     total_coins = gameData["totalCoins"].toInt();
     
-    // 加载英雄信息
+    // Load hero information
     if (gameData.contains("hero") && gameData["hero"].isObject()) {
         QJsonObject heroData = gameData["hero"].toObject();
         int characterId = heroData["characterId"].toInt();
         
-        // 选择角色并初始化
+        // Select character and initialize
         selectCharacter(characterId);
         init();
         
-        // 设置英雄属性
+        // Set hero attributes
         if (my_hero) {
             my_hero->setLevel(heroData["level"].toInt());
             my_hero->setHealth(heroData["health"].toInt());
@@ -718,7 +736,7 @@ bool GameState::loadGameData(const QString &filename)
         }
     }
     
-    // 加载全局升级
+    // Load global upgrades
     if (gameData.contains("upgrades") && gameData["upgrades"].isArray()) {
         QJsonArray upgradesArray = gameData["upgrades"].toArray();
         global_upgrades.clear();
@@ -727,7 +745,7 @@ bool GameState::loadGameData(const QString &filename)
         }
     }
     
-    // 加载角色解锁状态
+    // Load character unlock status
     if (gameData.contains("characters") && gameData["characters"].isArray()) {
         QJsonArray charactersArray = gameData["characters"].toArray();
         unlocked_characters.clear();
@@ -736,7 +754,7 @@ bool GameState::loadGameData(const QString &filename)
         }
     }
     
-    // 发出信号更新UI
+    // Send signal to update UI
     emit scoreUpdated(game_score);
     emit timeUpdated(game_time);
     emit coinsUpdated(game_coins);
@@ -746,46 +764,144 @@ bool GameState::loadGameData(const QString &filename)
 
 QString GameState::getSaveSlotFilename(int slot) const
 {
-    // 获取应用程序数据目录
+    // Get application data directory
     QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QDir dir(dataPath);
     
-    // 确保目录存在
+    // Ensure directory exists
     if (!dir.exists()) {
         dir.mkpath(".");
     }
     
-    // 返回完整的文件路径
+    // Return full file path
     return dir.filePath(QString("save_slot_%1.json").arg(slot));
 }
 
 void GameState::reset() {
-    // 停止当前游戏
+    // Stop current game
     pause();
     game_over = false;
     
-    // 清除当前游戏状态
+    // Clear current game state
     delete my_hero;
     my_hero = nullptr;
     
     delete my_map;
     my_map = nullptr;
     
-    // 清除敌人
+    // Clear enemies
     for (Enemy* enemy : my_enemies) {
         delete enemy;
     }
     my_enemies.clear();
     
-    // 清除掉落物
+    // Clear drops
     for (Drop* drop : my_drops) {
         delete drop;
     }
     my_drops.clear();
     
-    // 重置游戏变量
+    // Reset game variables
     game_time = 0;
     game_score = 0;
     game_coins = 0;
     total_kills = 0;
+}
+
+void GameState::setMaxGameTime(int seconds)
+{
+    max_game_time = seconds;
+    // Set current game time to max (countdown starts)
+    game_time = max_game_time;
+    emit timeUpdated(game_time);
+}
+
+void GameState::increaseTime()
+{
+    if (game_running && !game_over) {
+        // Use countdown
+        if (max_game_time > 0) {
+            game_time--;
+            if (game_time <= 0) {
+                // Time ends, game ends
+                game_time = 0;
+                gameOver();
+            }
+        } else {
+            // No max time set, use timer
+            game_time++;
+        }
+        
+        emit timeUpdated(game_time);
+        
+        // Check level up every 5 seconds
+        if (game_time % 5 == 0) {
+            checkLevelUp();
+        }
+        
+        // Save every 10 seconds
+        if (game_time % 10 == 0) {
+            saveGame();
+        }
+    }
+}
+
+SaveFile* GameState::getSaveFile() const 
+{
+    return save_file;
+}
+
+void GameState::checkLevelUp()
+{
+    // 每30秒给予玩家一次随机增益
+    if (game_time > 0 && game_time % 30 == 0 && my_hero && my_hero->isAlive()) {
+        // 生成随机增益类型 (0-4)
+        int upgradeType = QRandomGenerator::global()->bounded(5);
+        
+        // 应用不同类型的增益
+        switch (upgradeType) {
+            case 0: // 增加最大生命值
+                my_hero->setMaxHealth(my_hero->getMaxHealth() + 20);
+                my_hero->heal(20); // 同时恢复一些生命值
+                break;
+                
+            case 1: // 增加攻击力
+                my_hero->addAttack(5);
+                break;
+                
+            case 2: // 增加移动速度
+                my_hero->addSpeed(0.2f);
+                break;
+                
+            case 3: // 增加拾取范围
+                my_hero->addPickupRange(15);
+                break;
+                
+            case 4: // 临时能力提升
+                my_hero->applyPowerUp(10);
+                break;
+        }
+        
+        // 显示增益信息
+        QString upgradeMsg;
+        switch (upgradeType) {
+            case 0: upgradeMsg = "最大生命值+20!"; break;
+            case 1: upgradeMsg = "攻击力+5!"; break;
+            case 2: upgradeMsg = "移动速度+20%!"; break;
+            case 3: upgradeMsg = "拾取范围+15!"; break;
+            case 4: upgradeMsg = "临时能力提升!"; break;
+        }
+        
+        // 这里是发送消息通知UI显示增益信息
+        // 实际实现需要添加相应的信号和槽
+        emit messageSignal(upgradeMsg);
+    }
+}
+
+QVector<int> GameState::getGlobalUpgrades() const {
+    return global_upgrades;
+}
+
+QVector<bool> GameState::getUnlockedCharacters() const {
+    return unlocked_characters;
 }

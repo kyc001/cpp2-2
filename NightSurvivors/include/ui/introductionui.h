@@ -24,6 +24,7 @@ public:
 signals:
     // 关闭游戏介绍界面的信号
     void introductionUIClosed();
+    void introClosed();
 
 private slots:
     // 关闭按钮点击槽函数
@@ -31,13 +32,13 @@ private slots:
 
 private:
     void setupUI();
-    QWidget* createGameplayTab();
-    QWidget* createControlsTab();
-    QWidget* createHeroesTab();
-    QWidget* createEnemiesTab();
+    QWidget *createGameplayTab();
+    QWidget *createControlsTab();
+    QWidget *createHeroesTab();
+    QWidget *createEnemiesTab();
 
     QTabWidget *tab_widget;
     QPushButton *close_button;
 };
 
-#endif // INTRODUCTIONUI_H 
+#endif // INTRODUCTIONUI_H

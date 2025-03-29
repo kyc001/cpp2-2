@@ -28,6 +28,14 @@ signals:
     void mainMenuSignal();
     void quitGameSignal();
 
+    // 在 GameMenuUI 类的 signals: 部分添加
+signals:
+    void resumeClicked();
+    void settingsClicked();
+    void saveClicked();
+    void mainMenuClicked();
+    void quitClicked();
+
 private slots:
     // 按钮槽函数
     void onResumeButtonClicked();
@@ -47,4 +55,4 @@ private:
     QPushButton *quit_button;
 };
 
-#endif // GAMEMENUUI_H 
+#endif // GAMEMENUUI_H

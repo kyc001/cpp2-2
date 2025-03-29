@@ -2,48 +2,71 @@
 #define SAVEUI_H
 
 #include <QWidget>
-#include <QPushButton>
-#include <QLabel>
+#include <QList>
+#include <QEvent>
 #include <QVector>
-#include <QMessageBox>
 
+class QLabel;
+class QVBoxLayout;
+class QScrollArea;
 class GameState;
 
-// 存档管理界面
-class SaveUI : public QWidget {
+class SaveUI : public QWidget
+{
     Q_OBJECT
-    
+
 public:
     explicit SaveUI(QWidget *parent = nullptr);
-    ~SaveUI();
-    
-    // 显示存档界面
-    void showSaveUI(GameState *state);
-    void hideSaveUI();
-    void centerUI();
-    
+    virtual ~SaveUI();
+
+    // 设置游戏状态
+    void setGameState(GameState *state);
+
+    // 显示保存或加载模式
+    void showSaveMode();
+    void showLoadMode();
+
 signals:
-    // 关闭存档界面的信号
-    void saveUIClosed();
-    
+    // 信号
+    void saveClosed();
+    void saveSlotSelected(int slot);
+    void loadGameRequested();
+    void backRequested();
+
+    // 在 SaveUI 类的 public: 部分添加
+public:
+    void centerUI();
+
+protected:
+    // 事件处理
+    bool eventFilter(QObject *obj, QEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
+
 private slots:
-    // 保存游戏槽函数
-    void onSaveSlotClicked(int slot);
-    
-    // 关闭界面槽函数
-    void onCloseButtonClicked();
-    
+    // 私有槽函数
+    void onNewSaveClicked();
+    void onDeleteClicked();
+    void onLoadClicked();
+    void onBackClicked();
+
 private:
+    // 设置UI
     void setupUI();
-    void updateSlotInfo();
-    void showMessage(const QString& title, const QString& message);
-    
-    QVector<QPushButton*> save_slots;
-    QVector<QLabel*> slot_info_labels;
-    QPushButton *close_button;
-    
+    void refreshSaveList();
+    QWidget *createSaveItem(int slot);
+    void selectSaveSlot(int slot);
+
+    // 成员变量
     GameState *game_state;
-    bool is_showing;
+    bool is_save_mode;
+    int selected_slot;
+
+    // UI组件
+    QLabel *title_label;
+    QScrollArea *scroll_area;
+    QWidget *save_list_widget;
+    QVBoxLayout *save_list_layout;
+    QVector<QWidget *> save_widgets;
 };
 
-#endif // SAVEUI_H 
+#endif // SAVEUI_H

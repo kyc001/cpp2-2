@@ -45,7 +45,7 @@ public:
     virtual ~ShopUI() override;
     
     // 显示商店
-    void showShop();
+    void show();
     
     // 更新商店内容
     void updateShopItems();
@@ -60,7 +60,12 @@ private slots:
     void onUpgradeButtonClicked(int type);
     void onCloseButtonClicked();
     
+protected:
+    // 事件过滤器，用于处理界面元素的悬停提示
+    bool eventFilter(QObject *watched, QEvent *event) override;
+    
 private:
+    void setupUI();
     GameState* game_state;
     
     QVBoxLayout* main_layout;
@@ -69,7 +74,6 @@ private:
     QScrollArea* items_scroll_area;
     QWidget* items_container;
     QVBoxLayout* items_layout;
-    QPushButton* close_button;
     
     QVector<ShopItem> shop_items;
     QVector<QLabel*> level_labels;

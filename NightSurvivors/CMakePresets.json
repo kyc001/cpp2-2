@@ -1,51 +1,58 @@
 {
-  "version": 3,
-  "configurePresets": [
-    {
-      "name": "windows-default",
-      "displayName": "Windows Default",
-      "description": "针对Windows的默认构建配置",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "D:/Qt20250127/6.8.1/mingw_64/bin/gcc.exe",
-        "CMAKE_CXX_COMPILER": "D:/Qt20250127/6.8.1/mingw_64/bin/g++.exe",
-        "CMAKE_PREFIX_PATH": "D:/Qt20250127/6.8.1/mingw_64",
-        "CMAKE_BUILD_TYPE": "Debug"
-      },
-      "environment": {
-        "PATH": "D:/Qt20250127/6.8.1/mingw_64/bin;$penv{PATH}"
-      }
-    },
-    {
-      "name": "windows-release",
-      "displayName": "Windows Release",
-      "description": "针对Windows的发布构建配置",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build-release",
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "D:/Qt20250127/6.8.1/mingw_64/bin/gcc.exe",
-        "CMAKE_CXX_COMPILER": "D:/Qt20250127/6.8.1/mingw_64/bin/g++.exe",
-        "CMAKE_PREFIX_PATH": "D:/Qt20250127/6.8.1/mingw_64",
-        "CMAKE_BUILD_TYPE": "Release"
-      },
-      "environment": {
-        "PATH": "D:/Qt20250127/6.8.1/mingw_64/bin;$penv{PATH}"
-      }
-    }
-  ],
-  "buildPresets": [
-    {
-      "name": "windows-debug",
-      "displayName": "Debug",
-      "configurePreset": "windows-default",
-      "configuration": "Debug"
-    },
-    {
-      "name": "windows-release",
-      "displayName": "Release",
-      "configurePreset": "windows-release",
-      "configuration": "Release"
-    }
-  ]
-} 
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "windows-default",
+            "displayName": "Windows Default",
+            "description": "针对Windows的默认构建配置",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "D:/Qt20250127/Tools/mingw1310_64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "D:/Qt20250127/Tools/mingw1310_64/bin/g++.exe",
+                "CMAKE_PREFIX_PATH": "D:/Qt20250127/6.8.1/mingw_64",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_AUTOMOC_RELAXED_MODE": "TRUE"
+            },
+            "environment": {
+                "PATH": "D:/Qt20250127/Tools/mingw1310_64/bin;D:/Qt20250127/6.8.1/mingw_64/bin;$penv{PATH}"
+            }
+        },
+        {
+            "name": "windows-release",
+            "displayName": "Windows Release",
+            "description": "针对Windows的发布构建配置",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build-release",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "D:/Qt20250127/Tools/mingw1310_64/bin/gcc.exe",
+                "CMAKE_CXX_COMPILER": "D:/Qt20250127/Tools/mingw1310_64/bin/g++.exe",
+                "CMAKE_PREFIX_PATH": "D:/Qt20250127/6.8.1/mingw_64",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "environment": {
+                "PATH": "D:/Qt20250127/Tools/mingw1310_64/bin;D:/Qt20250127/6.8.1/mingw_64/bin;$penv{PATH}"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-debug",
+            "displayName": "Debug",
+            "configurePreset": "windows-default",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-release",
+            "displayName": "Release",
+            "configurePreset": "windows-release",
+            "configuration": "Release"
+        },
+        {
+            "name": "windows-clean",
+            "displayName": "Clean",
+            "configurePreset": "windows-default",
+            "targets": "clean"
+        }
+    ]
+}

@@ -55,10 +55,13 @@ public:
     int getHP() const;
     int getMaxHP() const;
     void setHP(int HP);
+    void heal(int amount);  // 添加恢复生命值方法
     int getEXP() const;
     void addEXP(int exp);
+    void addExperience(int amount);  // 添加经验值方法
     int getAttack() const;
     void addAttack(int attack);
+    void applyPowerUp(int amount);  // 添加临时能力提升方法
     int getSpeed() const;
     void addSpeed(float speed);
     int getWeaponType() const;

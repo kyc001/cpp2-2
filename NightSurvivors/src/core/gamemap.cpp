@@ -1,74 +1,90 @@
 #include "../../include/core/gamemap.h"
+#include <QRandomGenerator>
+#include <QPainter>
 
-GameMap::GameMap(QObject *parent) : QObject(parent) {
-    // Initialize with a 30x20 map
-    map_width = 30;
-    map_height = 20;
-    
-    // Initialize map with no barriers
-    barriers.resize(map_height);
-    for(int i = 0; i < map_height; i++) {
-        barriers[i].resize(map_width, 0);
+GameMap::GameMap(QObject *parent) : QObject(parent), width(50), height(50)
+{
+    generateMap();
+}
+
+GameMap::~GameMap()
+{
+}
+
+void GameMap::generateMap()
+{
+    // 生成一个简单的50x50地图
+    barriers.resize(height);
+    for (int i = 0; i < height; i++) {
+        barriers[i].resize(width);
+        for (int j = 0; j < width; j++) {
+            // 边界设置为墙
+            if (i == 0 || j == 0 || i == height - 1 || j == width - 1) {
+                barriers[i][j] = 1; // 墙
+            }
+            // 随机生成一些障碍
+            else if (QRandomGenerator::global()->bounded(100) < 8) {
+                barriers[i][j] = QRandomGenerator::global()->bounded(2) + 1; // 1=墙，2=岩石
+            }
+            else {
+                barriers[i][j] = 0; // 空白
+            }
+        }
     }
     
-    // Load barriers
-    loadBarriers();
+    // 确保中心区域是空的（玩家初始位置）
+    int centerX = width / 2;
+    int centerY = height / 2;
+    for (int i = centerY - 3; i <= centerY + 3; i++) {
+        for (int j = centerX - 3; j <= centerX + 3; j++) {
+            if (i >= 0 && i < height && j >= 0 && j < width) {
+                barriers[i][j] = 0;
+            }
+        }
+    }
 }
 
-GameMap::~GameMap() {
-    // Destructor
+bool GameMap::isBarrier(int x, int y) const
+{
+    if (x < 0 || y < 0 || x >= width || y >= height) {
+        return true; // 边界外视为障碍
+    }
+    return barriers[y][x] > 0;
 }
 
-QVector<QVector<int>> GameMap::getBarries() const {
+int GameMap::getWidth() const
+{
+    return width;
+}
+
+int GameMap::getHeight() const
+{
+    return height;
+}
+
+QVector<QVector<int>> GameMap::getBarries() const
+{
     return barriers;
 }
 
-void GameMap::mapLoading() {
-    // Map loading logic
-}
-
-void GameMap::loadBarriers() {
-    // Place at least 5 obstacles as required
-    // 1 represents an obstacle
+// 计算路径（简单的直线路径）
+QVector<QPair<int, int>> GameMap::calculatePath(int startX, int startY, int endX, int endY) const
+{
+    QVector<QPair<int, int>> path;
     
-    // Obstacle 1: A small 2x2 block near the top left
-    barriers[5][5] = 1;
-    barriers[5][6] = 1;
-    barriers[6][5] = 1;
-    barriers[6][6] = 1;
-    
-    // Obstacle 2: A wall in the middle
-    for(int i = 8; i < 12; i++) {
-        barriers[10][i] = 1;
+    // 如果起点和终点相同，返回空路径
+    if (startX == endX && startY == endY) {
+        return path;
     }
     
-    // Obstacle 3: Bottom right corner obstacle
-    barriers[15][25] = 1;
-    barriers[16][25] = 1;
-    barriers[15][26] = 1;
-    
-    // Obstacle 4: Bottom left corner obstacle
-    barriers[15][5] = 1;
-    barriers[16][5] = 1;
-    barriers[15][4] = 1;
-    
-    // Obstacle 5: Top right corner obstacle
-    barriers[5][25] = 1;
-    barriers[6][25] = 1;
-    barriers[5][24] = 1;
-}
-
-int GameMap::getWidth() const {
-    return map_width;
-}
-
-int GameMap::getHeight() const {
-    return map_height;
-}
-
-bool GameMap::isBarrier(int x, int y) const {
-    if(x < 0 || x >= map_width || y < 0 || y >= map_height) {
-        return true; // Map boundaries are barriers
+    // 如果终点是障碍，不可到达
+    if (isBarrier(endX, endY)) {
+        return path;
     }
-    return barriers[y][x] == 1;
+    
+    // 简单的直线路径
+    path.append(QPair<int, int>(startX, startY));
+    path.append(QPair<int, int>(endX, endY));
+    
+    return path;
 }

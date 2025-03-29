@@ -2,53 +2,59 @@
 #define DROP_H
 
 #include <QObject>
+#include <QPainter>
 #include <QRect>
 
-class GameState;
 class Hero;
+class GameState;
 
-// 掉落物类型
-enum class DropType {
-    HEALTH,       // 回复生命值
-    EXPERIENCE,   // 经验值
-    COIN,         // 金币
-    POWER_UP      // 临时增强
+// 定义掉落物类型枚举 - 移到类外以便全局访问
+enum class DropType
+{
+    HEALTH,     // 生命值回复
+    EXPERIENCE, // 经验值
+    COIN,       // 金币
+    POWER_UP    // 能力提升
 };
 
-class Drop : public QObject {
+class Drop : public QObject
+{
     Q_OBJECT
+
 public:
-    explicit Drop(DropType type, int value, int x, int y, GameState* state, QObject* parent = nullptr);
-    ~Drop() override;
-    
-    // 位置相关
-    int getX() const;
-    int getY() const;
-    
-    // 状态相关
+    explicit Drop(DropType type, int value, int x, int y, GameState *state, QObject *parent = nullptr);
+    ~Drop();
+
     bool isActive() const;
-    void setActive(bool active);
-    
-    // 类型和价值
     DropType getType() const;
     int getValue() const;
-    
-    // 碰撞检测
+    int getX() const;
+    int getY() const;
+    void applyEffect(Hero *hero);
+    void update();
+    void render(QPainter *painter);
     QRect getCollisionRect() const;
-    
-    // 被拾取时的效果
-    void applyEffect(Hero* hero);
-    
+
 private:
-    DropType drop_type;
-    int drop_value;
-    
-    int x_pos;
-    int y_pos;
-    
-    bool is_active;
-    
-    GameState* game_state;
+    DropType type;
+    int value;
+    int x;
+    int y;
+    bool active;
+    GameState *gameState;
+
+    // 新增生命周期计数器
+    int lifeTime;
+
+    // 渲染相关
+    QPixmap sprite;
+    int animationFrame;
+    int animationCounter;
+    bool collected;
+    int collectedAnimationCounter;
+
+    // 颜色
+    QColor dropColor;
 };
 
-#endif // DROP_H 
+#endif // DROP_H
