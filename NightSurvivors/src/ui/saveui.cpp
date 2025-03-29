@@ -99,7 +99,7 @@ void SaveUI::hideSaveUI()
 void SaveUI::updateSlotInfo()
 {
     // 从配置文件加载存档信息
-    QSettings settings("VampireSurvivors", "Saves");
+    QSettings settings("NightSurvivors", "Saves");
     
     for (int i = 0; i < 5; i++) {
         QString save_key = QString("save_%1").arg(i);
@@ -147,7 +147,7 @@ void SaveUI::onSaveSlotClicked(int slot)
     msgBox.setWindowTitle("确认存档");
     
     // 检查是否覆盖存档
-    QSettings settings("VampireSurvivors", "Saves");
+    QSettings settings("NightSurvivors", "Saves");
     QString save_key = QString("save_%1").arg(slot);
     
     if (settings.contains(save_key + "/timestamp")) {

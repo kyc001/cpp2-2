@@ -31,6 +31,7 @@ private slots:
 
 private:
     void setupUI();
+    QWidget* createGameplayTab();
     QWidget* createControlsTab();
     QWidget* createHeroesTab();
     QWidget* createEnemiesTab();

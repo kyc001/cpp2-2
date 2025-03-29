@@ -36,20 +36,28 @@ Hero::Hero(int style, QWidget* parent, GameMap* map_parent, GameState* state)
     HP_bar->setRange(0, HP_MAX);
     HP_bar->setValue(my_HP);
     HP_bar->setGeometry(10, 10, 200, 20);
+    HP_bar->setStyleSheet("QProgressBar { border: 2px solid #555; border-radius: 5px; background-color: #333; } "
+                         "QProgressBar::chunk { background-color: #e33c3c; }");
+    HP_bar->setTextVisible(false);
     
     EXP_bar->setRange(0, EXP_MAX);
     EXP_bar->setValue(my_EXP);
     EXP_bar->setGeometry(10, 40, 200, 20);
+    EXP_bar->setStyleSheet("QProgressBar { border: 2px solid #555; border-radius: 5px; background-color: #333; } "
+                           "QProgressBar::chunk { background-color: #4c96e8; }");
+    EXP_bar->setTextVisible(false);
     
-    HP_label->setText(QString("HP: %1/%2").arg(my_HP).arg(HP_MAX));
+    HP_label->setText(QString("血量: %1/%2").arg(my_HP).arg(HP_MAX));
     HP_label->setGeometry(220, 10, 100, 20);
+    HP_label->setStyleSheet("color: #ff5555; font-size: 14px; font-weight: bold;");
     
-    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
     EXP_label->setGeometry(220, 40, 100, 20);
+    EXP_label->setStyleSheet("color: #55aaff; font-size: 14px; font-weight: bold;");
     
-    level_label->setText(QString("LV: %1").arg(level));
+    level_label->setText(QString("等级: %1").arg(level));
     level_label->setGeometry(220, 70, 100, 20);
-    level_label->setStyleSheet("color: white; font-size: 16px;");
+    level_label->setStyleSheet("color: #ffcc00; font-size: 16px; font-weight: bold;");
     
     // Set starting position
     abspos = qMakePair(game_map->getWidth() / 2, game_map->getHeight() / 2);
@@ -144,7 +152,7 @@ void Hero::setHP(int HP) {
     
     // Update UI
     HP_bar->setValue(my_HP);
-    HP_label->setText(QString("HP: %1/%2").arg(my_HP).arg(HP_MAX));
+    HP_label->setText(QString("血量: %1/%2").arg(my_HP).arg(HP_MAX));
 }
 
 int Hero::getEXP() const {
@@ -156,7 +164,7 @@ void Hero::addEXP(int exp) {
     
     // Update UI
     EXP_bar->setValue(my_EXP);
-    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
     
     // 检查是否升级
     if (my_EXP >= EXP_MAX) {
@@ -224,8 +232,8 @@ void Hero::levelUp() {
     // 更新UI
     EXP_bar->setRange(0, EXP_MAX);
     EXP_bar->setValue(my_EXP);
-    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
-    level_label->setText(QString("LV: %1").arg(level));
+    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    level_label->setText(QString("等级: %1").arg(level));
     
     // 生成升级选项
     generateUpgradeOptions();
@@ -461,7 +469,7 @@ void Hero::setExperience(int value) {
     
     // 更新UI
     EXP_bar->setValue(my_EXP);
-    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
     
     // 检查是否升级
     if (my_EXP >= EXP_MAX) {
@@ -476,9 +484,9 @@ void Hero::setLevel(int value) {
     EXP_MAX = 100 + (level - 1) * 20;
     
     // 更新UI
-    level_label->setText(QString("LV: %1").arg(level));
+    level_label->setText(QString("等级: %1").arg(level));
     EXP_bar->setRange(0, EXP_MAX);
-    EXP_label->setText(QString("EXP: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
 }
 
 void Hero::setPosition(double x, double y) {

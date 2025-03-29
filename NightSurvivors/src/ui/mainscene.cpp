@@ -1,5 +1,5 @@
 #include "../../include/ui/mainscene.h"
-#include "../../ui/ui_mainscene.h"
+#include "ui_mainscene.h"
 #include "../../include/core/gamestate.h"
 #include "../../include/entities/hero.h"
 #include "../../include/entities/enemy.h"
@@ -32,7 +32,7 @@ MainScene::MainScene(QWidget *parent)
     ui->setupUi(this);
     
     // Set window title and size
-    setWindowTitle("吸血鬼生存者");
+    setWindowTitle("暗夜幸存者");
     resize(screen_width, screen_height);
     
     // Create game state
@@ -189,7 +189,7 @@ void MainScene::setupMainMenu()
     QVBoxLayout *main_layout = new QVBoxLayout(main_menu);
     
     // 标题
-    QLabel *title = new QLabel("吸血鬼生存者", main_menu);
+    QLabel *title = new QLabel("暗夜幸存者", main_menu);
     title->setAlignment(Qt::AlignCenter);
     title->setStyleSheet("color: white; font-size: 48px; font-weight: bold; margin: 40px;");
     
@@ -313,26 +313,59 @@ void MainScene::onCharacterSelected(int character)
     startGame();
 }
 
-void MainScene::startGame()
-{
-    // 隐藏角色选择UI
+void MainScene::startGame() {
+    // 隐藏角色选择界面和主菜单
     hideCharacterSelection();
-    
-    // 初始化游戏
-    game_state->init();
-    
-    // 开始游戏
-    game_state->start();
+    hideMainMenu();
     
     // 显示游戏UI
     showGameUI();
     
-    // 开始渲染计时器
-    if (timer_id == 0) {
-        timer_id = startTimer(16); // ~60 fps
-    }
+    // 开始游戏
+    game_state->start();
     
-    // 更新游戏状态
+    // 显示游戏说明提示
+    QWidget* tutorial_tip = new QWidget(this);
+    tutorial_tip->setGeometry(width()/2 - 200, height() - 200, 400, 150);
+    tutorial_tip->setStyleSheet("background-color: rgba(0, 0, 0, 180); border: 2px solid #555; border-radius: 10px;");
+    
+    QVBoxLayout* tip_layout = new QVBoxLayout(tutorial_tip);
+    
+    QLabel* tip_title = new QLabel("游戏目标", tutorial_tip);
+    tip_title->setStyleSheet("color: #ffcc00; font-size: 18px; font-weight: bold;");
+    tip_title->setAlignment(Qt::AlignCenter);
+    
+    QLabel* tip_content = new QLabel(
+        "· 生存尽可能长的时间\n"
+        "· 击败敌人获得经验和金币\n"
+        "· 升级获得强力技能\n"
+        "· 按ESC键查看更多游戏帮助", 
+        tutorial_tip
+    );
+    tip_content->setStyleSheet("color: white; font-size: 14px;");
+    tip_content->setAlignment(Qt::AlignLeft);
+    
+    QPushButton* close_tip = new QPushButton("了解", tutorial_tip);
+    close_tip->setStyleSheet(
+        "QPushButton { background-color: #446688; color: white; border: none; border-radius: 5px; padding: 5px 15px; }"
+        "QPushButton:hover { background-color: #5588aa; }"
+    );
+    
+    tip_layout->addWidget(tip_title);
+    tip_layout->addWidget(tip_content);
+    tip_layout->addWidget(close_tip, 0, Qt::AlignCenter);
+    
+    // 连接关闭按钮信号
+    connect(close_tip, &QPushButton::clicked, tutorial_tip, &QWidget::deleteLater);
+    
+    // 显示提示，5秒后自动消失
+    tutorial_tip->show();
+    QTimer::singleShot(8000, tutorial_tip, &QWidget::deleteLater);
+    
+    // 启动游戏计时器
+    timer_id = startTimer(16); // ~60 FPS
+    
+    // 设置游戏状态
     is_game_running = true;
     is_game_paused = false;
 }

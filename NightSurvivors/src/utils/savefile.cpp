@@ -49,7 +49,7 @@ bool SaveFile::exportToFile(const QString& filename) {
     }
     
     // 构建导出文本格式
-    QString exportText = "VampireSurvivors_SaveData\n";
+    QString exportText = "NightSurvivors_SaveData\n";
     exportText += QString("TotalCoins:%1\n").arg(total_coins);
     
     // 添加全局升级
@@ -88,7 +88,7 @@ bool SaveFile::importFromFile(const QString& filename) {
     file.close();
     
     QStringList lines = content.split("\n");
-    if (lines.size() < 4 || lines[0] != "VampireSurvivors_SaveData") {
+    if (lines.size() < 4 || lines[0] != "NightSurvivors_SaveData") {
         return false; // 无效的存档文件
     }
     
