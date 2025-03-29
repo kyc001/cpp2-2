@@ -28,6 +28,7 @@ public:
 signals:
     // 关闭设置界面的信号
     void settingsUIClosed();
+    void settingsClosed();
 
     // 设置更新的信号
     void volumeChanged(int volume);
@@ -63,4 +64,4 @@ private:
     int current_control_type;
 };
 
-#endif // SETTINGSUI_H 
+#endif // SETTINGSUI_H

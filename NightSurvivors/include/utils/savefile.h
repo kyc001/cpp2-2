@@ -2,56 +2,53 @@
 #define SAVEFILE_H
 
 #include <QString>
+#include <QStringList>
+#include <QObject>
+#include <QDateTime>
 #include <QVector>
 #include <QJsonObject>
-#include <QJsonArray>
-#include <QJsonDocument>
+
+class GameState;
 
 // 存档处理类
-class SaveFile {
+class SaveFile : public QObject {
+    Q_OBJECT
+    
 public:
-    SaveFile();
+    explicit SaveFile(QObject* parent = nullptr);
+    virtual ~SaveFile();
     
-    // 加载和保存
-    bool loadFromFile(const QString& filename);
-    bool saveToFile(const QString& filename);
+    // 自动存档和加载
+    bool saveGame(GameState* gameState);
+    bool loadGame(GameState* gameState);
     
-    // 导入和导出
-    bool exportToFile(const QString& filename);
-    bool importFromFile(const QString& filename);
+    // 获取存档槽列表
+    QStringList getSaveSlots();
     
-    // 获取和设置数据
-    int getTotalCoins() const;
-    void setTotalCoins(int coins);
+    // 存档槽操作
+    bool saveGameToSlot(GameState* gameState, int slot);
+    bool loadGameFromSlot(GameState* gameState, int slot);
+    bool deleteSaveSlot(int slot);
     
-    QVector<int> getGlobalUpgrades() const;
+    // 获取存档元数据
+    QString getSaveMetadata(int slot);
+    
+    // 获取游戏状态数据
+    int getTotalCoins();
+    QVector<int> getGlobalUpgrades();
+    QVector<bool> getUnlockedCharacters();
+    
+    // 设置游戏状态数据
+    void setTotalCoins(int totalCoins);
     void setGlobalUpgrades(const QVector<int>& upgrades);
+    void setUnlockedCharacters(const QVector<bool>& characters);
     
-    // 获取和设置单个全局升级等级
-    int getUpgradeLevel(int type) const;
-    void setUpgradeLevel(int type, int level);
-    
-    // 获取和设置解锁的角色
-    QVector<bool> getUnlockedCharacters() const;
-    void setUnlockedCharacters(const QVector<bool>& unlocked);
-    
-    // 检查角色是否已解锁
-    bool isCharacterUnlocked(int character_id) const;
-    void unlockCharacter(int character_id);
-    
-    // 清除所有数据（重置）
-    void clear();
+    // 文件操作
+    bool loadFromFile(const QString& filePath);
+    bool saveToFile(const QString& filePath);
     
 private:
-    int total_coins;                 // 总金币
-    QVector<int> global_upgrades;    // 全局升级等级
-    QVector<bool> unlocked_characters; // 解锁的角色
-    
-    // 将数据转换为JSON
-    QJsonObject toJson() const;
-    
-    // 从JSON加载数据
-    bool fromJson(const QJsonObject& json);
+    QJsonObject loadSaveData(int slot);
 };
 
 #endif // SAVEFILE_H 

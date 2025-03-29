@@ -1,23 +1,295 @@
 #include "../../include/utils/resourcemanager.h"
 #include <QDebug>
+#include <QFile>
+#include <QDirIterator>
 
-// 单例实例获取
-ResourceManager& ResourceManager::getInstance() {
-    static ResourceManager instance;
-    return instance;
-}
+// 初始化静态实例
+ResourceManager* ResourceManager::instance = nullptr;
 
-// 构造函数
-ResourceManager::ResourceManager() {
-    // 初始化
+ResourceManager::ResourceManager(QObject* parent) : QObject(parent)
+{
     qDebug() << "ResourceManager: 初始化...";
 }
 
-// 析构函数
-ResourceManager::~ResourceManager() {
-    // 清理资源
-    pixmapCache.clear();
-    qDebug() << "ResourceManager: 释放资源...";
+ResourceManager::~ResourceManager()
+{
+    clearResources();
+}
+
+ResourceManager& ResourceManager::getInstance()
+{
+    if (!instance) {
+        instance = new ResourceManager();
+    }
+    return *instance;
+}
+
+void ResourceManager::loadResources()
+{
+    // 不加载资源
+}
+
+void ResourceManager::clearResources()
+{
+    // 清空所有资源缓存
+    ui_resources.clear();
+    map_resources.clear();
+    enemy_resources.clear();
+    weapon_resources.clear();
+    hero_resources.clear();
+}
+
+QPixmap ResourceManager::getUIResource(const QString& name)
+{
+    if (ui_resources.contains(name)) {
+        return ui_resources[name];
+    }
+    
+    // 尝试加载资源
+    QString path = ":/resources/ui/" + name;
+    QPixmap pixmap(path);
+    
+    if (!pixmap.isNull()) {
+        ui_resources[name] = pixmap;
+        return pixmap;
+    }
+    
+    // 返回一个空的pixmap
+    return QPixmap();
+}
+
+QPixmap ResourceManager::getMapResource(const QString& name)
+{
+    if (map_resources.contains(name)) {
+        return map_resources[name];
+    }
+    
+    // 尝试加载资源
+    QString path = ":/resources/maps/" + name;
+    QPixmap pixmap(path);
+    
+    if (!pixmap.isNull()) {
+        map_resources[name] = pixmap;
+        return pixmap;
+    }
+    
+    // 返回一个空的pixmap
+    return QPixmap();
+}
+
+QPixmap ResourceManager::getEnemyImage(const QString& type, const QString& animation, int frame)
+{
+    QString key = QString("%1_%2_%3").arg(type).arg(animation).arg(frame);
+    
+    if (enemy_resources.contains(key)) {
+        return enemy_resources[key];
+    }
+    
+    // 尝试加载资源
+    QString path = QString(":/resources/enemies/%1/%1_%2_%3.png").arg(type).arg(animation).arg(frame);
+    QPixmap pixmap(path);
+    
+    // 如果没有找到带数字的帧，尝试不带数字的版本（如idle图像）
+    if (pixmap.isNull() && animation == "idle") {
+        path = QString(":/resources/enemies/%1/%1_idle.png").arg(type);
+        pixmap = QPixmap(path);
+    }
+    
+    if (!pixmap.isNull()) {
+        enemy_resources[key] = pixmap;
+        return pixmap;
+    }
+    
+    // 返回一个空的pixmap
+    return QPixmap();
+}
+
+QPixmap ResourceManager::getWeaponImage(const QString& type, const QString& animation, int frame)
+{
+    QString key = QString("%1_%2_%3").arg(type).arg(animation).arg(frame);
+    
+    if (weapon_resources.contains(key)) {
+        return weapon_resources[key];
+    }
+    
+    // 尝试加载资源
+    QString path;
+    
+    if (animation == "base") {
+        path = QString(":/resources/weapons/%1/%1.png").arg(type);
+    } else {
+        path = QString(":/resources/weapons/%1/effects/%1_effect_%2.png").arg(type).arg(frame);
+    }
+    
+    QPixmap pixmap(path);
+    
+    if (!pixmap.isNull()) {
+        weapon_resources[key] = pixmap;
+        return pixmap;
+    }
+    
+    // 返回一个空的pixmap
+    return QPixmap();
+}
+
+QPixmap ResourceManager::getHeroImage(const QString& type, const QString& animation, int frame)
+{
+    QString key = QString("%1_%2_%3").arg(type).arg(animation).arg(frame);
+    
+    if (hero_resources.contains(key)) {
+        return hero_resources[key];
+    }
+    
+    // 尝试加载资源
+    QString path;
+    
+    if (animation == "idle") {
+        path = QString(":/resources/heroes/%1/%1_idle.png").arg(type);
+    } else if (animation == "attack") {
+        path = QString(":/resources/heroes/%1/%1_attack_%2.png").arg(type).arg(frame);
+    } else if (animation == "walk") {
+        path = QString(":/resources/heroes/%1/%1_walk_%2.png").arg(type).arg(frame);
+    }
+    
+    QPixmap pixmap(path);
+    
+    if (!pixmap.isNull()) {
+        hero_resources[key] = pixmap;
+        return pixmap;
+    }
+    
+    // 返回一个空的pixmap
+    return QPixmap();
+}
+
+bool ResourceManager::loadUIResources()
+{
+    // 加载按钮
+    ui_resources["button_normal"] = QPixmap(":/ui/buttons/button_normal.png");
+    ui_resources["button_fancy"] = QPixmap(":/ui/buttons/button_fancy.png");
+    ui_resources["button_wood"] = QPixmap(":/ui/buttons/button_wood.png");
+    
+    // 加载背景
+    ui_resources["bg_menu"] = QPixmap(":/ui/backgrounds/bg_menu.png");
+    ui_resources["bg_game"] = QPixmap(":/ui/backgrounds/bg_game.png");
+    ui_resources["bg_dark"] = QPixmap(":/ui/backgrounds/bg_dark.png");
+    
+    // 加载框架
+    ui_resources["frame_basic"] = QPixmap(":/ui/frames/frame_basic.png");
+    ui_resources["frame_ornate"] = QPixmap(":/ui/frames/frame_ornate.png");
+    ui_resources["frame_minimal"] = QPixmap(":/ui/frames/frame_minimal.png");
+    
+    // 加载图标
+    ui_resources["icon_coin"] = QPixmap(":/ui/icons/icon_coin.png");
+    ui_resources["icon_health"] = QPixmap(":/ui/icons/icon_health.png");
+    ui_resources["icon_magic"] = QPixmap(":/ui/icons/icon_magic.png");
+    ui_resources["icon_shield"] = QPixmap(":/ui/icons/icon_shield.png");
+    ui_resources["icon_weapon"] = QPixmap(":/ui/icons/icon_weapon.png");
+    ui_resources["icon_xp"] = QPixmap(":/ui/icons/icon_xp.png");
+    
+    // 加载条形
+    ui_resources["bar_health"] = QPixmap(":/ui/bars/bar_health.png");
+    ui_resources["bar_mana"] = QPixmap(":/ui/bars/bar_mana.png");
+    ui_resources["bar_xp"] = QPixmap(":/ui/bars/bar_xp.png");
+    
+    qDebug() << "ResourceManager: 成功加载UI资源";
+    return true;
+}
+
+bool ResourceManager::loadMapResources()
+{
+    bool success = true;
+    
+    // 加载地形
+    QStringList terrainTypes = {"dirt", "grass", "stone", "wood"};
+    for (const QString& type : terrainTypes) {
+        QString path = QString(":/maps/floors/%1.png").arg(type);
+        success &= loadPixmap(path);
+    }
+    
+    // 加载障碍物
+    QStringList obstacleTypes = {"barrel", "crate", "rock", "tree", "wall"};
+    for (const QString& type : obstacleTypes) {
+        QString path = QString(":/maps/obstacles/%1.png").arg(type);
+        success &= loadPixmap(path);
+    }
+    
+    // 加载装饰物
+    QStringList decorTypes = {"flower", "grass", "gravestone", "torch"};
+    for (const QString& type : decorTypes) {
+        QString path = QString(":/maps/decorations/%1.png").arg(type);
+        success &= loadPixmap(path);
+    }
+    
+    // 加载地图预设
+    QStringList presetTypes = {"cemetery", "dungeon", "forest"};
+    for (const QString& type : presetTypes) {
+        QString path = QString(":/maps/presets/%1.png").arg(type);
+        success &= loadPixmap(path);
+    }
+    
+    if (success) {
+        qDebug() << "ResourceManager: 成功加载地图资源";
+    } else {
+        qDebug() << "ResourceManager: 部分地图资源加载失败";
+    }
+    
+    return success;
+}
+
+void ResourceManager::loadEnemyResources(const QString& enemyType)
+{
+    // 加载敌人静止状态图像
+    QString idlePath = QString(":/resources/enemies/%1/%1_idle.png").arg(enemyType);
+    enemy_resources[QString("%1_idle_0").arg(enemyType)] = QPixmap(idlePath);
+    
+    // 加载敌人攻击动画
+    for (int i = 0; i < 3; ++i) {
+        QString attackPath = QString(":/resources/enemies/%1/%1_attack_%2.png").arg(enemyType).arg(i);
+        enemy_resources[QString("%1_attack_%2").arg(enemyType).arg(i)] = QPixmap(attackPath);
+    }
+    
+    // 加载敌人行走动画
+    for (int i = 0; i < 4; ++i) {
+        QString walkPath = QString(":/resources/enemies/%1/%1_walk_%2.png").arg(enemyType).arg(i);
+        enemy_resources[QString("%1_walk_%2").arg(enemyType).arg(i)] = QPixmap(walkPath);
+    }
+    
+    qDebug() << "ResourceManager: 成功加载敌人类型:" << "\"" + enemyType + "\"";
+}
+
+void ResourceManager::loadWeaponResources(const QString& weaponType)
+{
+    // 加载武器基础图像
+    QString basePath = QString(":/resources/weapons/%1/%1.png").arg(weaponType);
+    weapon_resources[QString("%1_base_0").arg(weaponType)] = QPixmap(basePath);
+    
+    // 加载武器特效
+    for (int i = 0; i < 4; ++i) {
+        QString effectPath = QString(":/resources/weapons/%1/effects/%1_effect_%2.png").arg(weaponType).arg(i);
+        weapon_resources[QString("%1_effect_%2").arg(weaponType).arg(i)] = QPixmap(effectPath);
+    }
+    
+    qDebug() << "ResourceManager: 成功加载武器资源:" << "\"" + weaponType + "\"";
+}
+
+void ResourceManager::loadHeroResources(const QString& heroType)
+{
+    // 加载英雄静止状态图像
+    QString idlePath = QString(":/resources/heroes/%1/%1_idle.png").arg(heroType);
+    hero_resources[QString("%1_idle_0").arg(heroType)] = QPixmap(idlePath);
+    
+    // 加载英雄攻击动画
+    for (int i = 0; i < 3; ++i) {
+        QString attackPath = QString(":/resources/heroes/%1/%1_attack_%2.png").arg(heroType).arg(i);
+        hero_resources[QString("%1_attack_%2").arg(heroType).arg(i)] = QPixmap(attackPath);
+    }
+    
+    // 加载英雄行走动画
+    for (int i = 0; i < 4; ++i) {
+        QString walkPath = QString(":/resources/heroes/%1/%1_walk_%2.png").arg(heroType).arg(i);
+        hero_resources[QString("%1_walk_%2").arg(heroType).arg(i)] = QPixmap(walkPath);
+    }
 }
 
 // 加载英雄资源
@@ -259,47 +531,6 @@ QPixmap ResourceManager::getWeaponEffectImage(int weaponType, int frame) const {
     return getPixmap(effectPath);
 }
 
-// 加载地图资源
-bool ResourceManager::loadMapResources() {
-    bool success = true;
-    
-    // 加载地板材质
-    QStringList floorTypes = {"grass", "dirt", "stone", "wood"};
-    for (const QString& type : floorTypes) {
-        QString path = QString(":/maps/floors/%1.png").arg(type);
-        success &= loadPixmap(path);
-    }
-    
-    // 加载障碍物
-    QStringList obstacleTypes = {"tree", "rock", "wall", "crate", "barrel"};
-    for (const QString& type : obstacleTypes) {
-        QString path = QString(":/maps/obstacles/%1.png").arg(type);
-        success &= loadPixmap(path);
-    }
-    
-    // 加载装饰物
-    QStringList decorationTypes = {"flower", "grass", "torch", "gravestone"};
-    for (const QString& type : decorationTypes) {
-        QString path = QString(":/maps/decorations/%1.png").arg(type);
-        success &= loadPixmap(path);
-    }
-    
-    // 加载预设地图
-    QStringList mapTypes = {"dungeon", "forest", "cemetery"};
-    for (const QString& type : mapTypes) {
-        QString path = QString(":/maps/presets/%1.png").arg(type);
-        success &= loadPixmap(path);
-    }
-    
-    if (success) {
-        qDebug() << "ResourceManager: 成功加载地图资源";
-    } else {
-        qDebug() << "ResourceManager: 部分地图资源加载失败";
-    }
-    
-    return success;
-}
-
 // 获取地板材质
 QPixmap ResourceManager::getFloorTile(const QString& type) const {
     QString path = QString(":/maps/floors/%1.png").arg(type);
@@ -322,54 +553,6 @@ QPixmap ResourceManager::getDecoration(const QString& type) const {
 QPixmap ResourceManager::getMapPreset(const QString& type) const {
     QString path = QString(":/maps/presets/%1.png").arg(type);
     return getPixmap(path);
-}
-
-// 加载UI资源
-bool ResourceManager::loadUIResources() {
-    bool success = true;
-    
-    // 加载按钮
-    QStringList buttonStyles = {"normal", "fancy", "wood"};
-    for (const QString& style : buttonStyles) {
-        QString path = QString(":/ui/buttons/button_%1.png").arg(style);
-        success &= loadPixmap(path);
-    }
-    
-    // 加载图标
-    QStringList iconTypes = {"health", "xp", "coin", "weapon", "shield", "magic"};
-    for (const QString& type : iconTypes) {
-        QString path = QString(":/ui/icons/icon_%1.png").arg(type);
-        success &= loadPixmap(path);
-    }
-    
-    // 加载状态条
-    QStringList barTypes = {"health", "mana", "xp"};
-    for (const QString& type : barTypes) {
-        QString path = QString(":/ui/bars/bar_%1.png").arg(type);
-        success &= loadPixmap(path);
-    }
-    
-    // 加载背景
-    QStringList bgTypes = {"menu", "game", "dark"};
-    for (const QString& type : bgTypes) {
-        QString path = QString(":/ui/backgrounds/bg_%1.png").arg(type);
-        success &= loadPixmap(path);
-    }
-    
-    // 加载框架
-    QStringList frameStyles = {"basic", "ornate", "minimal"};
-    for (const QString& style : frameStyles) {
-        QString path = QString(":/ui/frames/frame_%1.png").arg(style);
-        success &= loadPixmap(path);
-    }
-    
-    if (success) {
-        qDebug() << "ResourceManager: 成功加载UI资源";
-    } else {
-        qDebug() << "ResourceManager: 部分UI资源加载失败";
-    }
-    
-    return success;
 }
 
 // 获取按钮图像
@@ -463,4 +646,27 @@ QString ResourceManager::weaponTypeToString(int weaponType) const {
         case 3: return "dagger";
         default: return "";
     }
+}
+
+QPixmap ResourceManager::getPixmap(const QString &name)
+{
+    // 不使用资源文件，返回空的QPixmap
+    Q_UNUSED(name);
+    return QPixmap();
+}
+
+QString ResourceManager::getImagePath(const QString &name)
+{
+    // 不使用资源文件，返回空字符串
+    Q_UNUSED(name);
+    return QString();
+}
+
+QPixmap ResourceManager::getHeroPixmap(HeroType type, HeroAction action, int frame)
+{
+    // 不使用资源文件，返回空的QPixmap
+    Q_UNUSED(type);
+    Q_UNUSED(action);
+    Q_UNUSED(frame);
+    return QPixmap();
 } 

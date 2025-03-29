@@ -15,7 +15,7 @@ class UpgradeUI : public QWidget {
     
 public:
     explicit UpgradeUI(QWidget *parent = nullptr);
-    ~UpgradeUI();
+    ~UpgradeUI() override;
     
     // 显示升级选项
     void showUpgradeOptions(Hero *hero);
@@ -29,6 +29,10 @@ signals:
 private slots:
     // 点击升级选项
     void onUpgradeOptionClicked(int index);
+    
+protected:
+    // 事件过滤器，用于处理按钮的悬停提示
+    bool eventFilter(QObject *watched, QEvent *event) override;
     
 private:
     void setupUI();

@@ -33,16 +33,6 @@ set(CMAKE_AUTOUIC_OPTIONS -tr QObject::tr)
 # 查找Qt包
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
-# 设置资源文件
-set(RESOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/resources/game_resources.qrc
-)
-
-# 设置UI文件
-set(UI_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/forms/mainscene.ui
-)
-
 # 设置源文件
 set(SOURCE_FILES
     src/core/gamestate.cpp
@@ -88,6 +78,17 @@ set(HEADER_FILES
     include/utils/savefile.h
 )
 
+# 设置UI文件
+set(UI_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/forms/mainscene.ui
+)
+
+# 注释掉资源文件
+# 解除注释，确保资源文件能够正确加载
+set(RESOURCE_FILES
+   ${CMAKE_CURRENT_SOURCE_DIR}/resources/game_resources.qrc
+)
+
 # 添加可执行文件
 add_executable(${PROJECT_NAME}
     ${SOURCE_FILES}
@@ -117,7 +118,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_compile_options(${PROJECT_NAME} PRIVATE
     -Wall
     -Wextra
-    -Wno-unused-parameter
+    -Wpedantic
+#    -Werror
 )
 
 # 设置输出目录
@@ -133,4 +135,23 @@ if(WIN32)
         WIN32
         MINGW_HAS_SECURE_API=1
     )
-endif() 
+    
+    # 确保可执行文件能够找到 Qt DLL
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E echo "正在复制 Qt 库到目标目录..."
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+                $<TARGET_FILE:Qt6::Core>
+                $<TARGET_FILE:Qt6::Gui>
+                $<TARGET_FILE:Qt6::Widgets>
+                ${CMAKE_CURRENT_SOURCE_DIR}/bin
+        )
+    endif()
+endif()
+
+# Install the executable
+install(TARGETS ${PROJECT_NAME}
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+) 

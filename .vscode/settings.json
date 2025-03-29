@@ -8,8 +8,19 @@
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "files.associations": {
         "*.h": "cpp",
-        "*.cpp": "cpp"
+        "*.cpp": "cpp",
+        "new": "cpp",
+        "array": "cpp",
+        "charconv": "cpp",
+        "compare": "cpp",
+        "functional": "cpp",
+        "ratio": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "variant": "cpp"
     },
     "editor.formatOnSave": true,
-    "cmake.useCMakePresets": true
+    "cmake.useCMakePresets": true,
+    "cmake.sourceDirectory": "D:/Survivors/NightSurvivors"
 }

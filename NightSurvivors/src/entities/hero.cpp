@@ -13,552 +13,723 @@
 #include <QPainter>
 #include <QCursor>
 #include <cmath>
+#include <QTimer>
 
-Hero::Hero() : QObject(), is_alive(true), level(1), pickup_range(1), control_type(0) {
-    // Default constructor
+Hero::Hero() : QObject(), level(1), pickup_range(1), is_alive(true), control_type(0)
+{
+    // 默认构造函数，实际不使用
 }
 
-Hero::Hero(int style, QWidget* parent, GameMap* map_parent, GameState* state) 
-    : QObject(parent), hero_style(style), game_map(map_parent), game_state(state), 
-      is_alive(true), level(1), pickup_range(1), control_type(0) {
-    
-    // Initialize character based on style
+Hero::Hero(int style, QWidget *parent, GameMap *map_parent, GameState *state)
+    : QObject(parent),
+      hero_style(style),
+      HP_MAX(100),
+      my_HP(100),
+      EXP_MAX(100),
+      my_EXP(0),
+      my_attack(10),
+      my_speed(5.0f),
+      weapon_type(style), // 武器类型与角色类型对应
+      level(1),
+      pickup_range(100),
+      is_alive(true),
+      control_type(0),
+      game_map(map_parent),
+      game_state(state),
+      my_weapon(nullptr),
+      animation_frame(0),
+      animation_time(0),
+      is_attacking(false),
+      is_moving(false)
+{
+    // 初始化角色位置（地图中心）
+    if (game_map)
+    {
+        int map_width = game_map->getWidth();
+        int map_height = game_map->getHeight();
+        abspos = qMakePair(map_width / 2, map_height / 2);
+        realpos = qMakePair(abspos.first * 1.0, abspos.second * 1.0);
+    }
+    else
+    {
+        abspos = qMakePair(0, 0);
+        realpos = qMakePair(0.0, 0.0);
+    }
+
+    // 根据角色风格初始化属性
     initCharacter();
-    
-    // Create UI elements
-    HP_bar = new QProgressBar(parent);
-    EXP_bar = new QProgressBar(parent);
-    HP_label = new QLabel(parent);
-    EXP_label = new QLabel(parent);
-    level_label = new QLabel(parent);
-    
-    // Configure UI elements
-    HP_bar->setRange(0, HP_MAX);
-    HP_bar->setValue(my_HP);
-    HP_bar->setGeometry(10, 10, 200, 20);
-    HP_bar->setStyleSheet("QProgressBar { border: 2px solid #555; border-radius: 5px; background-color: #333; } "
-                         "QProgressBar::chunk { background-color: #e33c3c; }");
-    HP_bar->setTextVisible(false);
-    
-    EXP_bar->setRange(0, EXP_MAX);
-    EXP_bar->setValue(my_EXP);
-    EXP_bar->setGeometry(10, 40, 200, 20);
-    EXP_bar->setStyleSheet("QProgressBar { border: 2px solid #555; border-radius: 5px; background-color: #333; } "
-                           "QProgressBar::chunk { background-color: #4c96e8; }");
-    EXP_bar->setTextVisible(false);
-    
-    HP_label->setText(QString("血量: %1/%2").arg(my_HP).arg(HP_MAX));
-    HP_label->setGeometry(220, 10, 100, 20);
-    HP_label->setStyleSheet("color: #ff5555; font-size: 14px; font-weight: bold;");
-    
-    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
-    EXP_label->setGeometry(220, 40, 100, 20);
-    EXP_label->setStyleSheet("color: #55aaff; font-size: 14px; font-weight: bold;");
-    
-    level_label->setText(QString("等级: %1").arg(level));
-    level_label->setGeometry(220, 70, 100, 20);
-    level_label->setStyleSheet("color: #ffcc00; font-size: 16px; font-weight: bold;");
-    
-    // Set starting position
-    abspos = qMakePair(game_map->getWidth() / 2, game_map->getHeight() / 2);
-    realpos = qMakePair(abspos.first * 1.0, abspos.second * 1.0);
-    
-    // Create weapon
+
+    // 创建武器
     my_weapon = new Weapon(weapon_type, this, game_state);
-    
-    // 加载英雄资源
-    ResourceManager::getInstance().loadHeroResources(hero_style);
-    
-    // 初始化动画帧计数器
-    animation_frame = 0;
-    animation_time = 0;
-    is_attacking = false;
-    is_moving = false;
 }
 
-Hero::~Hero() {
-    delete HP_bar;
-    delete EXP_bar;
-    delete HP_label;
-    delete EXP_label;
-    delete level_label;
-    delete my_weapon;
-    
-    // 清理升级选项
-    for (auto upgrade : available_upgrades) {
-        delete upgrade;
-    }
-    available_upgrades.clear();
-}
-
-void Hero::initCharacter() {
-    // Initialize based on character style
-    switch(hero_style) {
-        case 0: // Warrior
-            HP_MAX = 200;
-            my_HP = HP_MAX;
-            EXP_MAX = 100;
-            my_EXP = 0;
-            my_attack = 15;
-            my_speed = 3;
-            weapon_type = 0; // Sword
-            break;
-        case 1: // Mage
-            HP_MAX = 120;
-            my_HP = HP_MAX;
-            EXP_MAX = 100;
-            my_EXP = 0;
-            my_attack = 20;
-            my_speed = 4;
-            weapon_type = 1; // Magic wand
-            break;
-        case 2: // Archer
-            HP_MAX = 150;
-            my_HP = HP_MAX;
-            EXP_MAX = 100;
-            my_EXP = 0;
-            my_attack = 12;
-            my_speed = 5;
-            weapon_type = 2; // Bow
-            break;
-        default: // Default
-            HP_MAX = 150;
-            my_HP = HP_MAX;
-            EXP_MAX = 100;
-            my_EXP = 0;
-            my_attack = 10;
-            my_speed = 4;
-            weapon_type = 0;
+Hero::~Hero()
+{
+    if (my_weapon)
+    {
+        delete my_weapon;
+        my_weapon = nullptr;
     }
 }
 
-int Hero::getHP() const {
+void Hero::initCharacter()
+{
+    // 根据角色类型设置不同的初始属性
+    switch (hero_style)
+    {
+    case 0: // 战士
+        HP_MAX = 120;
+        my_HP = HP_MAX;
+        my_attack = 15;
+        my_speed = 4.5f;
+        break;
+
+    case 1: // 法师
+        HP_MAX = 80;
+        my_HP = HP_MAX;
+        my_attack = 20;
+        my_speed = 4.0f;
+        break;
+
+    case 2: // 弓箭手
+        HP_MAX = 90;
+        my_HP = HP_MAX;
+        my_attack = 12;
+        my_speed = 5.0f;
+        break;
+
+    case 3: // 盗贼
+        HP_MAX = 100;
+        my_HP = HP_MAX;
+        my_attack = 10;
+        my_speed = 6.0f;
+        break;
+
+    default:
+        // 默认战士属性
+        HP_MAX = 120;
+        my_HP = HP_MAX;
+        my_attack = 15;
+        my_speed = 4.5f;
+        break;
+    }
+
+    // 武器类型与角色类型对应
+    weapon_type = hero_style;
+}
+
+int Hero::getHP() const
+{
     return my_HP;
 }
 
-int Hero::getMaxHP() const {
+int Hero::getMaxHP() const
+{
     return HP_MAX;
 }
 
-void Hero::setHP(int HP) {
-    my_HP = HP;
-    if (my_HP > HP_MAX) {
-        my_HP = HP_MAX;
-    }
-    if (my_HP <= 0) {
-        my_HP = 0;
+void Hero::setHP(int HP)
+{
+    my_HP = qBound(0, HP, HP_MAX);
+
+    // 检查是否死亡
+    if (my_HP <= 0)
+    {
         is_alive = false;
     }
-    
-    // Update UI
-    HP_bar->setValue(my_HP);
-    HP_label->setText(QString("血量: %1/%2").arg(my_HP).arg(HP_MAX));
 }
 
-int Hero::getEXP() const {
+int Hero::getEXP() const
+{
     return my_EXP;
 }
 
-void Hero::addEXP(int exp) {
+void Hero::addEXP(int exp)
+{
     my_EXP += exp;
-    
-    // Update UI
-    EXP_bar->setValue(my_EXP);
-    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
-    
+
     // 检查是否升级
-    if (my_EXP >= EXP_MAX) {
+    if (my_EXP >= EXP_MAX)
+    {
         levelUp();
     }
 }
 
-int Hero::getAttack() const {
+int Hero::getAttack() const
+{
     return my_attack;
 }
 
-void Hero::addAttack(int attack) {
+void Hero::addAttack(int attack)
+{
     my_attack += attack;
 }
 
-int Hero::getSpeed() const {
-    return my_speed;
+int Hero::getSpeed() const
+{
+    return static_cast<int>(my_speed);
 }
 
-void Hero::addSpeed(float speed) {
+void Hero::addSpeed(float speed)
+{
     my_speed += speed;
 }
 
-int Hero::getWeaponType() const {
+int Hero::getWeaponType() const
+{
     return weapon_type;
 }
 
-int Hero::getLevel() const {
+int Hero::getLevel() const
+{
     return level;
 }
 
-int Hero::getPickupRange() const {
+int Hero::getPickupRange() const
+{
     return pickup_range;
 }
 
-void Hero::addPickupRange(int range) {
+void Hero::addPickupRange(int range)
+{
     pickup_range += range;
 }
 
-void Hero::setMaxHealth(int maxHP) {
-    HP_MAX = maxHP;
-    if (my_HP > HP_MAX) {
-        my_HP = HP_MAX;
-    }
-}
-
-void Hero::setBaseDamage(int damage) {
-    my_attack = damage;
-}
-
-void Hero::setPickupRange(int range) {
-    pickup_range = range;
-}
-
-void Hero::levelUp() {
+void Hero::levelUp()
+{
     // 升级
     level++;
-    
-    // 重置经验值
-    my_EXP = 0;
-    
-    // 提高升级所需经验
-    EXP_MAX = 100 + (level - 1) * 20;
-    
-    // 更新UI
-    EXP_bar->setRange(0, EXP_MAX);
-    EXP_bar->setValue(my_EXP);
-    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
-    level_label->setText(QString("等级: %1").arg(level));
-    
+
+    // 设置新的经验值和上限
+    my_EXP = my_EXP - EXP_MAX;
+    EXP_MAX = 100 + level * 20; // 每级增加20点经验上限
+
     // 生成升级选项
     generateUpgradeOptions();
+
+    // 发送升级信号
+    emit leveledUp();
 }
 
-void Hero::generateUpgradeOptions() {
-    // 清理之前的升级选项
-    for (auto upgrade : available_upgrades) {
-        delete upgrade;
-    }
-    available_upgrades.clear();
-    
-    // 生成三个随机升级选项
-    for (int i = 0; i < 3; i++) {
-        int optionType = QRandomGenerator::global()->bounded(5); // 0-4，5种不同的升级选项
-        UpgradeType upgradeType;
-        int value = 0;
-        QString description;
-        
-        switch (optionType) {
-            case 0: // 增加最大生命值
-                upgradeType = UpgradeType::HEALTH;
-                value = 20;
-                description = "增加20点最大生命值";
-                break;
-            case 1: // 增加攻击力
-                upgradeType = UpgradeType::ATTACK;
-                value = 5;
-                description = "增加5点攻击力";
-                break;
-            case 2: // 增加移动速度
-                upgradeType = UpgradeType::SPEED;
-                value = 1; // 实际值会乘以0.5
-                description = "增加移动速度";
-                break;
-            case 3: // 增加拾取范围
-                upgradeType = UpgradeType::PICKUP_RANGE;
-                value = 1;
-                description = "增加拾取范围";
-                break;
-            case 4: // 提升武器等级
-                upgradeType = UpgradeType::WEAPON_LEVEL;
-                value = 1;
-                description = "提升武器等级";
-                break;
-        }
-        
-        available_upgrades.push_back(new UpgradeOption(upgradeType, value, description));
-    }
-}
-
-// 应用升级选项
-void Hero::applyUpgrade(int upgradeIndex) {
-    if (upgradeIndex < 0 || upgradeIndex >= available_upgrades.size()) {
-        return;
-    }
-    
-    UpgradeOption* selectedUpgrade = available_upgrades[upgradeIndex];
-    
-    switch (selectedUpgrade->getType()) {
-        case UpgradeType::HEALTH: // 增加最大生命值
-            HP_MAX += selectedUpgrade->getValue();
-            setHP(my_HP + selectedUpgrade->getValue()); // 同时恢复部分血量
-            break;
-        case UpgradeType::ATTACK: // 增加攻击力
-            addAttack(selectedUpgrade->getValue());
-            break;
-        case UpgradeType::SPEED: // 增加移动速度
-            addSpeed(selectedUpgrade->getValue() * 0.5);
-            break;
-        case UpgradeType::PICKUP_RANGE: // 增加拾取范围
-            addPickupRange(selectedUpgrade->getValue() * 10);
-            break;
-        case UpgradeType::WEAPON_LEVEL: // 提升武器等级
-            if (my_weapon) {
-                my_weapon->levelUp(selectedUpgrade->getValue());
-            }
-            break;
-    }
-    
-    // 清理升级选项
-    for (auto upgrade : available_upgrades) {
-        delete upgrade;
-    }
-    available_upgrades.clear();
-}
-
-bool Hero::hasLeveledUp() const {
+bool Hero::hasLeveledUp() const
+{
     return !available_upgrades.empty();
 }
 
-const std::vector<UpgradeOption*>& Hero::getAvailableUpgrades() const {
+const std::vector<UpgradeOption *> &Hero::getAvailableUpgrades() const
+{
     return available_upgrades;
 }
 
-void Hero::move(int dx, int dy) {
-    // Calculate new position
-    double new_x = realpos.first + dx * (my_speed / 10.0);
-    double new_y = realpos.second + dy * (my_speed / 10.0);
-    
-    // Calculate grid position
-    int new_grid_x = qRound(new_x);
-    int new_grid_y = qRound(new_y);
-    
-    // Check for barriers
-    if (!game_map->isBarrier(new_grid_x, new_grid_y)) {
-        realpos = qMakePair(new_x, new_y);
-        abspos = qMakePair(new_grid_x, new_grid_y);
+void Hero::applyUpgrade(int upgradeIndex)
+{
+    if (upgradeIndex < 0 || static_cast<size_t>(upgradeIndex) >= available_upgrades.size())
+    {
+        {
+            return;
+        }
+
+        // 获取所选升级选项
+        UpgradeOption *upgrade = available_upgrades[upgradeIndex];
+
+        // 应用升级效果
+        switch (upgrade->getType())
+        {
+        case UpgradeType::HEALTH:
+            HP_MAX += upgrade->getValue();
+            my_HP += upgrade->getValue();
+            break;
+
+        case UpgradeType::ATTACK:
+            my_attack += upgrade->getValue();
+            break;
+
+        case UpgradeType::SPEED:
+            my_speed += upgrade->getValue() / 10.0f; // 转换为小数增量
+            break;
+
+        case UpgradeType::PICKUP_RANGE:
+            pickup_range += upgrade->getValue();
+            break;
+
+        case UpgradeType::WEAPON_LEVEL:
+            if (my_weapon)
+            {
+                my_weapon->levelUp(upgrade->getValue());
+            }
+            break;
+        }
+
+        // 清理升级选项
+        for (auto option : available_upgrades)
+        {
+            delete option;
+        }
+        available_upgrades.clear();
     }
 }
 
-void Hero::attack() {
-    if (my_weapon->canAttack()) {
+void Hero::move(int dx, int dy)
+{
+    if (!is_alive)
+    {
+        return;
+    }
+
+    double newX = realpos.first + dx * my_speed;
+    double newY = realpos.second + dy * my_speed;
+
+    // 检查新位置是否有障碍物
+    int new_grid_x = static_cast<int>(newX);
+    int new_grid_y = static_cast<int>(newY);
+
+    if (game_map && !game_map->isBarrier(new_grid_x, new_grid_y))
+    {
+        realpos.first = newX;
+        realpos.second = newY;
+
+        // 更新整数位置
+        abspos.first = static_cast<int>(realpos.first);
+        abspos.second = static_cast<int>(realpos.second);
+    }
+}
+
+void Hero::updateMovement()
+{
+    if (!is_alive)
+    {
+        return;
+    }
+
+    // 根据当前按下的键移动
+    int dx = 0;
+    int dy = 0;
+
+    // 处理按下的键
+    for (int key : key_pressed)
+    {
+        switch (key)
+        {
+        case Qt::Key_W:
+        case Qt::Key_Up:
+            dy -= 1;
+            break;
+
+        case Qt::Key_S:
+        case Qt::Key_Down:
+            dy += 1;
+            break;
+
+        case Qt::Key_A:
+        case Qt::Key_Left:
+            dx -= 1;
+            break;
+
+        case Qt::Key_D:
+        case Qt::Key_Right:
+            dx += 1;
+            break;
+        }
+    }
+
+    // 对斜向移动进行归一化
+    if (dx != 0 && dy != 0)
+    {
+        double length = sqrt(dx * dx + dy * dy);
+        dx = static_cast<int>(dx / length);
+        dy = static_cast<int>(dy / length);
+    }
+
+    // 如果有移动输入，更新移动状态
+    if (dx != 0 || dy != 0)
+    {
+        is_moving = true;
+    }
+    else
+    {
+        is_moving = false;
+    }
+
+    // 移动角色
+    move(dx, dy);
+}
+
+int Hero::getX() const
+{
+    return abspos.first;
+}
+
+int Hero::getY() const
+{
+    return abspos.second;
+}
+
+QPair<double, double> Hero::getRealPos() const
+{
+    return realpos;
+}
+
+void Hero::attack()
+{
+    if (!is_alive || !my_weapon)
+    {
+        return;
+    }
+
+    // 尝试使用武器攻击
+    if (my_weapon->canAttack())
+    {
+        is_attacking = true;
         my_weapon->attack();
     }
 }
 
-int Hero::getX() const {
-    return abspos.first;
+QRect Hero::getCollisionRect() const
+{
+    int size = 40; // 角色碰撞箱大小
+    return QRect(abspos.first - size / 2, abspos.second - size / 2, size, size);
 }
 
-int Hero::getY() const {
-    return abspos.second;
+bool Hero::isAlive() const
+{
+    return is_alive;
 }
 
-QPair<double, double> Hero::getRealPos() const {
-    return realpos;
+void Hero::takeDamage(int damage)
+{
+    if (!is_alive)
+    {
+        return;
+    }
+
+    // 应用伤害
+    setHP(my_HP - damage);
 }
 
-void Hero::processKeyPress(int key) {
-    // Add key to pressed keys if not already there
-    if (std::find(key_pressed.begin(), key_pressed.end(), key) == key_pressed.end()) {
+void Hero::update()
+{
+    if (!is_alive)
+    {
+        return;
+    }
+
+    // 更新移动
+    updateMovement();
+
+    // 更新武器
+    if (my_weapon)
+    {
+        my_weapon->update();
+    }
+
+    // 自动攻击（类似吸血鬼幸存者）
+    attack();
+
+    // 更新动画
+    updateAnimation();
+}
+
+void Hero::processKeyPress(int key)
+{
+    // 添加按键
+    if (!key_pressed.empty() && std::find(key_pressed.begin(), key_pressed.end(), key) == key_pressed.end())
+    {
+        key_pressed.push_back(key);
+    }
+    else if (key_pressed.empty())
+    {
         key_pressed.push_back(key);
     }
 }
 
-void Hero::processKeyRelease(int key) {
-    // Remove key from pressed keys
-    key_pressed.erase(std::remove(key_pressed.begin(), key_pressed.end(), key), key_pressed.end());
-}
-
-void Hero::updateMovement() {
-    int dx = 0, dy = 0;
-    
-    if (control_type == 0) {
-        // WASD键盘控制模式
-        for (int key : key_pressed) {
-            switch (key) {
-                case Qt::Key_W: dy -= 1; break;
-                case Qt::Key_S: dy += 1; break;
-                case Qt::Key_A: dx -= 1; break;
-                case Qt::Key_D: dx += 1; break;
-            }
-        }
-    } else if (control_type == 1 && game_state) {
-        // 鼠标控制模式 - 获取鼠标位置并向那个方向移动
-        QWidget* parent = qobject_cast<QWidget*>(game_state->parent());
-        if (parent) {
-            QPoint mousePos = parent->mapFromGlobal(QCursor::pos());
-            
-            // 转换屏幕坐标到游戏坐标
-            double mouseX = mousePos.x() / 20.0;  // 假设一个游戏单位是20像素
-            double mouseY = mousePos.y() / 20.0;
-            
-            // 计算方向向量
-            double diffX = mouseX - realpos.first;
-            double diffY = mouseY - realpos.second;
-            
-            // 如果鼠标不在角色附近，则移动
-            double distanceSquared = diffX * diffX + diffY * diffY;
-            if (distanceSquared > 1.0) { // 有一定距离才移动
-                // 归一化方向向量
-                double length = std::sqrt(distanceSquared);
-                dx = (diffX / length) * 2; // 乘以速度因子
-                dy = (diffY / length) * 2;
-            }
-        }
-    }
-    
-    // 应用移动
-    if (dx != 0 || dy != 0) {
-        move(dx, dy);
+void Hero::processKeyRelease(int key)
+{
+    // 移除按键
+    auto it = std::find(key_pressed.begin(), key_pressed.end(), key);
+    if (it != key_pressed.end())
+    {
+        key_pressed.erase(it);
     }
 }
 
-QRect Hero::getCollisionRect() const {
-    int x = abspos.first;
-    int y = abspos.second;
-    return QRect(x - 0.5, y - 0.5, 1, 1); // 1x1 collision box
+void Hero::setMaxHealth(int maxHP)
+{
+    HP_MAX = maxHP;
+    if (my_HP > HP_MAX)
+    {
+        my_HP = HP_MAX;
+    }
 }
 
-bool Hero::isAlive() const {
-    return is_alive;
+void Hero::setBaseDamage(int damage)
+{
+    my_attack = damage;
 }
 
-void Hero::takeDamage(int damage) {
-    setHP(my_HP - damage);
+void Hero::setPickupRange(int range)
+{
+    pickup_range = range;
 }
 
-void Hero::update() {
-    // 更新移动
-    updateMovement();
-    
-    // 更新动画
-    updateAnimation();
-    
-    // Auto-attack logic
-    my_weapon->update();
-}
-
-int Hero::getCharacterId() const {
+int Hero::getCharacterId() const
+{
     return hero_style;
 }
 
-int Hero::getHealth() const {
+int Hero::getHealth() const
+{
     return my_HP;
 }
 
-int Hero::getMaxHealth() const {
+int Hero::getMaxHealth() const
+{
     return HP_MAX;
 }
 
-void Hero::setHealth(int value) {
+void Hero::setHealth(int value)
+{
     setHP(value);
 }
 
-int Hero::getExperience() const {
+int Hero::getExperience() const
+{
     return my_EXP;
 }
 
-void Hero::setExperience(int value) {
+void Hero::setExperience(int value)
+{
     my_EXP = value;
-    
-    // 更新UI
-    EXP_bar->setValue(my_EXP);
-    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
-    
-    // 检查是否升级
-    if (my_EXP >= EXP_MAX) {
+    if (my_EXP >= EXP_MAX)
+    {
         levelUp();
     }
 }
 
-void Hero::setLevel(int value) {
+void Hero::setLevel(int value)
+{
     level = value;
-    
-    // 更新升级所需经验
-    EXP_MAX = 100 + (level - 1) * 20;
-    
-    // 更新UI
-    level_label->setText(QString("等级: %1").arg(level));
-    EXP_bar->setRange(0, EXP_MAX);
-    EXP_label->setText(QString("经验: %1/%2").arg(my_EXP).arg(EXP_MAX));
+    EXP_MAX = 100 + level * 20; // 更新经验上限
 }
 
-void Hero::setPosition(double x, double y) {
-    realpos = qMakePair(x, y);
-    abspos = qMakePair(static_cast<int>(x), static_cast<int>(y));
+void Hero::setPosition(double x, double y)
+{
+    realpos.first = x;
+    realpos.second = y;
+    abspos.first = static_cast<int>(x);
+    abspos.second = static_cast<int>(y);
 }
 
-void Hero::setControlType(int type) {
-    // 0表示WASD控制，1表示鼠标控制
+void Hero::setControlType(int type)
+{
     control_type = type;
 }
 
-// 绘制角色
-void Hero::render(QPainter* painter) {
-    if (!painter || !is_alive) return;
-    
-    // 获取屏幕位置
-    int screen_x = abspos.first * 32;  // 假设单元格大小为32x32
-    int screen_y = abspos.second * 32;
-    
-    QPixmap heroSprite;
-    
-    // 根据状态选择合适的精灵
-    if (is_attacking) {
-        // 攻击动画
-        heroSprite = ResourceManager::getInstance().getHeroAttackImage(hero_style, animation_frame % 3);
-    } else if (is_moving) {
-        // 行走动画
-        heroSprite = ResourceManager::getInstance().getHeroWalkImage(hero_style, animation_frame % 4);
-    } else {
-        // 静止状态
-        heroSprite = ResourceManager::getInstance().getHeroIdleImage(hero_style);
+void Hero::render(QPainter *painter)
+{
+    if (!painter || !is_alive)
+    {
+        return;
     }
-    
-    if (!heroSprite.isNull()) {
-        // 绘制英雄精灵
-        painter->drawPixmap(screen_x - heroSprite.width()/2, screen_y - heroSprite.height()/2, heroSprite);
-    } else {
-        // 绘制后备显示（简单的彩色矩形）
-        painter->setBrush(QColor(0, 200, 0));
-        painter->drawEllipse(QPointF(screen_x, screen_y), 16, 16);
+
+    // 根据角色类型和状态选择适当的精灵
+    QString spritePath;
+
+    // 角色类型名称
+    QStringList characterTypes = {"warrior", "mage", "archer", "rogue"};
+    QString typeName = characterTypes[qBound(0, hero_style, 3)];
+
+    // 根据动画状态选择精灵
+    if (is_attacking)
+    {
+        spritePath = QString(":/resources/heroes/%1/%1_attack_%2.png")
+                         .arg(typeName)
+                         .arg(animation_frame % 3); // 攻击动画有3帧
+    }
+    else if (is_moving)
+    {
+        spritePath = QString(":/resources/heroes/%1/%1_walk_%2.png")
+                         .arg(typeName)
+                         .arg(animation_frame % 4); // 行走动画有4帧
+    }
+    else
+    {
+        spritePath = QString(":/resources/heroes/%1/%1_idle.png").arg(typeName);
+    }
+
+    // 加载并绘制精灵
+    QPixmap sprite(spritePath);
+    if (!sprite.isNull())
+    {
+        int spriteWidth = 64;
+        int spriteHeight = 64;
+
+        // 在屏幕中央绘制玩家，周围的世界相对移动
+        int drawX = painter->device()->width() / 2 - spriteWidth / 2;
+        int drawY = painter->device()->height() / 2 - spriteHeight / 2;
+
+        painter->drawPixmap(drawX, drawY, spriteWidth, spriteHeight, sprite);
     }
 }
 
-// 更新角色动画
-void Hero::updateAnimation() {
-    // 更新动画计时器
+void Hero::updateAnimation()
+{
     animation_time++;
-    
-    // 每10帧更新一次动画帧
-    if (animation_time >= 10) {
-        animation_time = 0;
-        animation_frame++;
-        
-        // 如果是攻击动画且完成了周期，则结束攻击状态
-        if (is_attacking && animation_frame % 3 == 0) {
-            is_attacking = false;
+
+    // 更新攻击状态
+    if (is_attacking && animation_time % 10 == 0)
+    { // 每10帧更新一次
+        animation_frame = (animation_frame + 1) % 3;
+        if (animation_frame == 0)
+        {
+            is_attacking = false; // 攻击动画结束
         }
     }
-}
 
-// 设置攻击状态
-void Hero::setAttacking(bool attacking) {
-    is_attacking = attacking;
-    if (attacking) {
-        // 重置动画帧以便从头开始攻击动画
-        animation_frame = 0;
-        animation_time = 0;
+    // 更新移动动画
+    if (is_moving && animation_time % 15 == 0)
+    { // 每15帧更新一次
+        animation_frame = (animation_frame + 1) % 4;
     }
 }
 
-// 设置移动状态
-void Hero::setMoving(bool moving) {
+void Hero::setAttacking(bool attacking)
+{
+    is_attacking = attacking;
+    if (attacking)
+    {
+        animation_frame = 0; // 重置动画帧
+    }
+}
+
+void Hero::setMoving(bool moving)
+{
     is_moving = moving;
+    if (!moving)
+    {
+        animation_frame = 0; // 重置动画帧
+    }
+}
+
+void Hero::generateUpgradeOptions()
+{
+    // 清理旧的升级选项
+    for (auto option : available_upgrades)
+    {
+        delete option;
+    }
+    available_upgrades.clear();
+
+    // 升级选项数量
+    const int NUM_OPTIONS = 3;
+
+    // 可能的升级选项列表
+    std::vector<UpgradeOption *> possibleUpgrades;
+
+    // 添加健康选项
+    possibleUpgrades.push_back(new UpgradeOption(
+        UpgradeType::HEALTH,
+        10 + level * 2,
+        QString("增加最大生命值: +%1").arg(10 + level * 2)));
+
+    // 添加攻击选项
+    possibleUpgrades.push_back(new UpgradeOption(
+        UpgradeType::ATTACK,
+        2 + level,
+        QString("增加攻击力: +%1").arg(2 + level)));
+
+    // 添加速度选项
+    possibleUpgrades.push_back(new UpgradeOption(
+        UpgradeType::SPEED,
+        5,
+        QString("增加移动速度: +%1%").arg(5)));
+
+    // 添加拾取范围选项
+    possibleUpgrades.push_back(new UpgradeOption(
+        UpgradeType::PICKUP_RANGE,
+        20,
+        QString("增加拾取范围: +%1").arg(20)));
+
+    // 添加武器等级选项
+    possibleUpgrades.push_back(new UpgradeOption(
+        UpgradeType::WEAPON_LEVEL,
+        1,
+        QString("提升武器等级: +%1").arg(1)));
+
+    // 随机选择NUM_OPTIONS个选项
+    while (available_upgrades.size() < NUM_OPTIONS && !possibleUpgrades.empty())
+    {
+        int index = QRandomGenerator::global()->bounded(possibleUpgrades.size());
+        available_upgrades.push_back(possibleUpgrades[index]);
+        possibleUpgrades.erase(possibleUpgrades.begin() + index);
+    }
+}
+
+// 生命值恢复方法
+void Hero::heal(int amount)
+{
+    if (!is_alive)
+        return;
+
+    my_HP += amount;
+    if (my_HP > HP_MAX)
+    {
+        my_HP = HP_MAX;
+    }
+
+    // 更新UI
+    if (HP_bar)
+    {
+        HP_bar->setValue(my_HP);
+    }
+
+    if (HP_label)
+    {
+        HP_label->setText(QString("%1/%2").arg(my_HP).arg(HP_MAX));
+    }
+}
+
+// 添加经验值方法
+void Hero::addExperience(int amount)
+{
+    if (!is_alive)
+        return;
+
+    my_EXP += amount;
+
+    // 更新UI
+    if (EXP_bar)
+    {
+        EXP_bar->setValue(my_EXP);
+    }
+
+    if (EXP_label)
+    {
+        EXP_label->setText(QString("%1/%2").arg(my_EXP).arg(EXP_MAX));
+    }
+
+    // 检查是否升级
+    if (my_EXP >= EXP_MAX)
+    {
+        my_EXP -= EXP_MAX;
+        levelUp();
+    }
+}
+
+// 临时能力提升方法
+void Hero::applyPowerUp(int amount)
+{
+    if (!is_alive)
+        return;
+
+    // 临时提升攻击力（持续10秒）
+    addAttack(amount);
+
+    // 创建一个定时器在10秒后恢复原始攻击力
+    QTimer *powerupTimer = new QTimer(this);
+    powerupTimer->setSingleShot(true);
+    connect(powerupTimer, &QTimer::timeout, [this, amount]()
+            {
+                addAttack(-amount); // 减去之前增加的攻击力
+            });
+    powerupTimer->start(10000); // 10秒后结束
 }
