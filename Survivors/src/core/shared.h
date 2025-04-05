@@ -1,16 +1,12 @@
 #pragma once
-#include "gameData.h"
-#include "../rendering/render_interface.h"
-
-// Forward declarations if needed
-struct GameState;
-struct Input;
-struct RenderData;
+#include "../game/gameData.h"
+#include "../graphics/render_interface.h"
+#include "../input/input.h"
 
 extern "C"
 {
-    __declspec(dllexport) void init_game(GameState *gameStateIn, Input *inputIn,
-                                         RenderData *renderDataIn);
-    __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
-                                           RenderData *renderDataIn, float dt);
+  __declspec(dllexport) void init_game(GameState* gameStateIn, Input* inputIn,
+                                       RenderData* renderDataIn);
+  __declspec(dllexport) void update_game(GameState* gameStateIn, Input* inputIn, 
+                                         RenderData* renderDataIn, float dt);
 }
