@@ -1,34 +1,28 @@
 #include "assets.h"
 #include "common.h"
-#include "../utils/colors.h"
-#include "../utils/easing_functions.h"
+#include "colors.h"
+#include "easing_functions.h"
 #include "gameData.h"
 #include "input.h"
 #include "shared.h"
-#include "../ui/texts.h"
-#include "../utils/my_math.h"
-#include "../utils/sound.h"
-#include "input.h"
+#include "texts.h"
+#include "my_math.h"
+#include "sound.h"
 
-#include "game.h"
-
-#include "../entities/entity.h"
-#include "../entities/player.h"
-#include "../weapons/weapon.h"
-#include "../entities/enemy.h"
-#include "../entities/pickup.h"
-#include "../entities/obstacle.h"
-
+// Needed for Fucking rand() function, CRINGE
 #include <cstdLib>
 
+// #############################################################
+//                   Internal Functions
+// #############################################################
 global_variable GameState *gameState = 0;
-#include "../rendering/render_interface.h"
+#include "render_interface.h"
 global_variable RenderData *renderData = 0;
-#include "../rendering/render_interface.cpp"
+#include "render_interface.cpp"
 
 internal Vec2 get_screen_pos(Vec2 pos)
 {
-    Vec2 screenMiddle = vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f;
+    Vec2 screenMiddle = vec_2(SCREEN_SIZE) / 2.0f;
     Vec2 screenPos = screenMiddle + pos - gameState->player.pos;
 
     return screenPos;
@@ -139,6 +133,7 @@ internal void player_add_weapon(WeaponID ID, int level = 1)
     w.ID = ID;
     w.level = level;
 
+    // TODO: We can't add inifite atcive weapons, some HAVE to be passive effects
     gameState->player.weapons.add(w);
 }
 
@@ -169,6 +164,7 @@ internal Vec2 get_chunk_offset(Vec2 pos)
     float chunkOffsetX = fmodf(pos.x, chunkWidth);
     float chunkOffsetY = fmodf(pos.y, chunkWidth);
 
+    // Loop inside the Chunk
     {
         if (chunkOffsetX < 0.0f)
         {
@@ -228,6 +224,7 @@ internal void inflict_damage(Entity *e, int dmg)
 
     if (e->hp <= 0)
     {
+        // Drop EXP Gem
         {
             Pickup pickup = {};
             pickup.type = PICKUP_TYPE_EXP_BLUE;
@@ -251,16 +248,21 @@ internal void add_damaging_area(WeaponID weaponID, SpriteID spriteID, Vec2 pos,
     gameState->damagingAreas.add(da);
 }
 
+// #############################################################
+//                   Define funcions
+// #############################################################
 internal void draw_exp_bar()
 {
+    // Exp Bar
     {
         draw_sprite(SPRITE_EXP_BAR_LEFT, {4.0f, 16.0f}, {8.0f, 32.0f});
-        draw_sprite(SPRITE_EXP_BAR_MIDDLE, {vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f}, {vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) - Vec2{16.0f, 32.0f}}, {});
-        draw_sprite(SPRITE_EXP_BAR_RIGHT, {vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) - Vec2{4.0f, 16.0f}}, {8.0f, 32.0f}, {});
+        draw_sprite(SPRITE_EXP_BAR_MIDDLE, {input->screenSize.x / 2.0f, 16.0f},
+                    {input->screenSize.x - 16.0f, 32.0f});
+        draw_sprite(SPRITE_EXP_BAR_RIGHT, {input->screenSize.x - 4.0f, 16.0f}, {8.0f, 32.0f});
 
         int level = min(gameState->player.level, ArraySize(expTable) - 1);
         float expNeeded = (float)expTable[level];
-        float barSizeX = (vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) - Vec2{15.0f, 0.0f}) * (float)gameState->player.exp / expNeeded;
+        float barSizeX = (input->screenSize.x - 15.0f) * (float)gameState->player.exp / expNeeded;
         draw_sprite(SPRITE_WHITE, {barSizeX / 2.0f + 6.0f, 15.0f}, {barSizeX, 18.0f}, {.color = COLOR_BLUE});
     }
 }
@@ -283,6 +285,7 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
     local_persist bool slowdown = false;
     local_persist bool pause = false;
 
+    // Make sure we use the correct memory
     {
         if (gameState != gameStateIn ||
             input != inputIn ||
@@ -314,14 +317,18 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
         dt *= 0.25f;
     }
 
+    // Draw Background
     {
+        // Position inside the chunk
         Vec2 tileSize = Vec2{64.0f, 64.0f} * UNIT_SCALE;
         float chunkWidth = (float)MAP_CHUNK_TILE_COUNT * tileSize.x;
         Vec2 playerPos = gameState->player.pos;
 
+        // Which Tile to use
         float playerChunkOffsetX = fmodf(playerPos.x, chunkWidth);
         float playerChunkOffsetY = fmodf(playerPos.y, chunkWidth);
 
+        // Loop inside the Chunk
         {
             if (playerChunkOffsetX < 0.0f)
             {
@@ -347,11 +354,13 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
             chunkCol = -chunkCol;
         }
 
-        Vec2 screenMiddle = vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f;
+        Vec2 screenMiddle = vec_2(SCREEN_SIZE) / 2.0f;
 
+        // Tile Offset Player
         float playerTileOffsetX = fmodf(playerPos.x, tileSize.x);
         float playerTileOffsetY = fmodf(playerPos.y, tileSize.y);
 
+        // Loop inside the Tile
         {
             if (playerTileOffsetX < 0.0f)
             {
@@ -405,6 +414,7 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
             }
         }
 
+        // Obstacles inside the Cunk
         {
             gameState->obstacles.count = 0;
             gameState->obstacles.add({SPRITE_OBSTACLE_LOG_32, {100.0f, 100.0f, 32.0f, 32.0f}});
@@ -414,17 +424,20 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
             gameState->obstacles.add({SPRITE_OBSTACLE_TREE_STUMP_48_32, {600.0f, 200.0f, 48.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_TREE_STUMP_48_32, {840.0f, 600.0f, 48.0f, 32.0f}});
 
+            // Top
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {800.0f, 700.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {864.0f, 700.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {928.0f, 700.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {992.0f, 700.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {1056.0f, 700.0f, 32.0f, 32.0f}});
 
+            // Left
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {800.0f, 764.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {800.0f, 828.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {800.0f, 892.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {800.0f, 956.0f, 32.0f, 32.0f}});
 
+            // Right
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {1056.0f, 764.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {1056.0f, 828.0f, 32.0f, 32.0f}});
             gameState->obstacles.add({SPRITE_OBSTACLE_PILLAR_BOTTOM_32, {1056.0f, 892.0f, 32.0f, 32.0f}});
@@ -438,35 +451,44 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
                 obstaclePos.x = obstacle.collider.pos.x - playerChunkOffsetX + screenMiddle.x;
                 obstaclePos.y = obstacle.collider.pos.y - playerChunkOffsetY + screenMiddle.y;
 
+                // Draw in current chunk
                 draw_sprite(obstacle.spriteID, obstaclePos, obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in left chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{-chunkWidth}, obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in right chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{chunkWidth}, obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in top chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{0.0f, -chunkWidth},
                             obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in bottom chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{0.0f, chunkWidth},
                             obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in top left chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{-chunkWidth, -chunkWidth},
                             obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in top right chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{chunkWidth, -chunkWidth},
                             obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in bottom left chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{-chunkWidth, chunkWidth},
                             obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
 
+                // Draw in bottom right chunk
                 draw_sprite(obstacle.spriteID, obstaclePos + Vec2{chunkWidth, chunkWidth},
                             obstacle.collider.size * 2.0f,
                             {.renderOptions = RENDER_OPTION_TOP_LEFT});
@@ -478,12 +500,12 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
     {
     case GAME_STATE_MAIN_MENU:
     {
-        Vec2 screenSizeVec = vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y);
-        draw_sprite(SPRITE_MAIN_MENU_BACKGROUND, vec_2(input->screenSize.x, input->screenSize.y) / 2.0f, screenSizeVec);
+        draw_sprite(SPRITE_MAIN_MENU_BACKGROUND, vec_2(input->screenSize) / 2.0f, vec_2(SCREEN_SIZE));
 
-        Vec2 buttonsPos = {vec_2(input->screenSize.x, input->screenSize.y) / 2.0f, 400.0f};
+        Vec2 buttonsPos = {input->screenSize.x / 2.0f, 400.0f};
         Vec2 buttonsSize = {200.0f, 70.0f};
 
+        // Play Button
         {
             SpriteID buttonSprite = SPRITE_SLICED_MENU_02;
 
@@ -498,10 +520,11 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
             }
 
             draw_sliced_sprite(buttonSprite, buttonsPos, buttonsSize);
-            draw_text("Start", buttonsPos + Vec2{-50.0f}, COLOR_WHITE, {});
+            draw_text("Start", buttonsPos + Vec2{-50.0f});
             buttonsPos.y += 100.0f;
         }
 
+        // Quit Button
         {
             SpriteID buttonSprite = SPRITE_SLICED_MENU_02;
 
@@ -516,7 +539,7 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
             }
 
             draw_sliced_sprite(buttonSprite, buttonsPos, buttonsSize);
-            draw_text("Quit", buttonsPos + Vec2{-40.0f}, COLOR_WHITE, {});
+            draw_text("Quit", buttonsPos + Vec2{-40.0f});
             buttonsPos.y += 100.0f;
         }
 
@@ -525,21 +548,22 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
 
     case GAME_STATE_SELECT_HERO:
     {
-        memset(gameState, 0, sizeof(GameState));
-        gameState->initialized = false;
-        gameState->quitApp = false;
-
+        // TODO Inefficient, find a better way
+        *gameState = {};
         bool madeChoice = false;
+
+        // Add Obsacles
 
         Vec4 boxColor = COLOR_WHITE;
         Vec2 levelUpMenuSize = {1200.0f, 600.0f};
-        Vec2 levelUpMenuPos = vec_2(input->screenSize.x, input->screenSize.y) / 2.0f;
+        Vec2 levelUpMenuPos = vec_2(input->screenSize) / 2.0f;
         Vec2 rectSize = vec_2(120.0f) * 3.0f;
         Vec2 rectPos = levelUpMenuPos - Vec2{560.0f, 200.0f};
         Vec2 heroSize = vec_2(96.0f) * 3.0f;
-        draw_text("Choose Hero", levelUpMenuPos + Vec2{-85.0f, -250.0f}, COLOR_WHITE, {});
+        draw_text("Choose Hero", levelUpMenuPos + Vec2{-85.0f, -250.0f});
         draw_sliced_sprite(SPRITE_SLICED_MENU_01, levelUpMenuPos, levelUpMenuSize);
 
+        // Belmot
         {
             if (point_in_rect(input->mousePosScreen, {rectPos, rectSize}))
             {
@@ -555,11 +579,12 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
                                rectSize, {.color = boxColor});
             draw_sprite(SPRITE_PLAYER_BELMOT, rectPos + rectSize / 2.0f, heroSize);
 
-            draw_text("Belmot", rectPos + Vec2{rectSize.x / 3.0f, rectSize.y + 20.0f}, COLOR_WHITE, {});
+            draw_text("Belmot", rectPos + Vec2{rectSize.x / 3.0f, rectSize.y + 20.0f});
 
             rectPos.x += rectSize.x + 20.0f;
         }
 
+        // Gandalf
         {
             boxColor = COLOR_WHITE;
             if (point_in_rect(input->mousePosScreen, {rectPos, rectSize}))
@@ -576,11 +601,12 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
                                rectSize, {.color = boxColor});
             draw_sprite(SPRITE_PLAYER_GANDALF, rectPos + rectSize / 2.0f, heroSize);
 
-            draw_text("Gandalf", rectPos + Vec2{rectSize.x / 4.0f, rectSize.y + 20.0f}, COLOR_WHITE, {});
+            draw_text("Gandalf", rectPos + Vec2{rectSize.x / 4.0f, rectSize.y + 20.0f});
 
             rectPos.x += rectSize.x + 20.0f;
         }
 
+        // Whoswho
         {
             boxColor = COLOR_WHITE;
             if (point_in_rect(input->mousePosScreen, {rectPos, rectSize}))
@@ -597,7 +623,7 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
                                rectSize, {.color = boxColor});
             draw_sprite(SPRITE_PLAYER_WHOSWHO, rectPos + rectSize / 2.0f, heroSize);
 
-            draw_text("Whoswho", rectPos + Vec2{rectSize.x / 4.0f, rectSize.y + 20.0f}, COLOR_WHITE, {});
+            draw_text("Whoswho", rectPos + Vec2{rectSize.x / 4.0f, rectSize.y + 20.0f});
 
             rectPos.x += rectSize.x + 20.0f;
         }
@@ -622,18 +648,21 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
 
             case PLAYER_TYPE_WHOSWHO:
             {
+                // TODO: Whoswho is gonna get a different starting weapon
                 gameState->player.spriteID = SPRITE_PLAYER_WHOSWHO;
                 player_add_weapon(WEAPON_MAGMA_RING);
                 break;
             }
             }
 
+            // One Tile is 64x64
             int chunkWidth = MAP_CHUNK_TILE_COUNT * 64;
             int mapWidth = MAP_CHUNK_COUNT * chunkWidth;
 
+            // Place the Player in the middle of the Map, meaning
+            // in the middle of a 15x15 chunk Grid,
             gameState->player.pos = vec_2(mapWidth / 2);
-            Vec2 screenSizeVec = vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y);
-            gameState->playerScreenEdgeDist = length(screenSizeVec - screenSizeVec / 2.0f) + 50.0f;
+            gameState->playerScreenEdgeDist = length(vec_2(SCREEN_SIZE - SCREEN_SIZE / 2)) + 50.0f;
 
             gameState->state = GAME_STATE_RUNNING_LEVEL;
         }
@@ -642,6 +671,7 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
 
     case GAME_STATE_LEVEL_UP:
     {
+        // Draw Enemies
         {
             for (int enemyIdx = 0; enemyIdx < gameState->enemies.count; enemyIdx++)
             {
@@ -659,13 +689,14 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
 
         Vec4 boxColor = COLOR_WHITE;
         Vec2 levelUpMenuSize = {800.0f, 600.0f};
-        Vec2 levelUpMenuPos = vec_2(input->screenSize.x, input->screenSize.y) / 2.0f;
-        draw_text((char*)"Level Up", levelUpMenuPos + Vec2{-85.0f, -250.0f}, COLOR_WHITE, {});
+        Vec2 levelUpMenuPos = vec_2(input->screenSize) / 2.0f;
+        draw_text("Level Up", levelUpMenuPos + Vec2{-85.0f, -250.0f});
         draw_sliced_sprite(SPRITE_SLICED_MENU_01, levelUpMenuPos, levelUpMenuSize);
 
         Vec2 contentPos = levelUpMenuPos + Vec2{-280.0f, -150.0f};
         Vec2 iconSize = vec_2(64.0f);
 
+        // Whip
         Rect whipRect = {levelUpMenuPos.x - 350.0f, contentPos.y - 45.0f, 700.0f, 90.0f};
         if (point_in_rect(input->mousePosScreen, whipRect))
         {
@@ -681,9 +712,10 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
         {
             idx = min<int>(ArraySize(WHIP_LEVEL_DESCRIPTIONS) - 1, whip->level);
         }
-        draw_text(WHIP_LEVEL_DESCRIPTIONS[idx], contentPos + Vec2{90.0f}, COLOR_WHITE, {});
+        draw_text(WHIP_LEVEL_DESCRIPTIONS[idx], contentPos + Vec2{90.0f});
         contentPos.y += 110.0f;
 
+        // AOE
         boxColor = COLOR_WHITE;
         Rect aoeRect = {levelUpMenuPos.x - 350.0f, contentPos.y - 45.0f, 700.0f, 90.0f};
         if (point_in_rect(input->mousePosScreen, aoeRect))
@@ -700,9 +732,10 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
         {
             idx = min<int>(ArraySize(GARLIC_LEVEL_DESCRIPTIONS) - 1, garlic->level);
         }
-        draw_text(GARLIC_LEVEL_DESCRIPTIONS[idx], contentPos + Vec2{90.0f}, COLOR_WHITE, {});
+        draw_text(GARLIC_LEVEL_DESCRIPTIONS[idx], contentPos + Vec2{90.0f});
         contentPos.y += 110.0f;
 
+        // Magma Ring
         boxColor = COLOR_WHITE;
         Rect magmaRingRect = {levelUpMenuPos.x - 350.0f, contentPos.y - 45.0f, 700.0f, 90.0f};
         if (point_in_rect(input->mousePosScreen, magmaRingRect))
@@ -719,7 +752,7 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
         {
             idx = min<int>(ArraySize(MAGMA_RING_LEVEL_DESCRIPTIONS) - 1, magmaRing->level);
         }
-        draw_text(MAGMA_RING_LEVEL_DESCRIPTIONS[idx], contentPos + Vec2{90.0f}, COLOR_WHITE, {});
+        draw_text(MAGMA_RING_LEVEL_DESCRIPTIONS[idx], contentPos + Vec2{90.0f});
         contentPos.y += 110.0f;
 
         if (is_key_pressed(KEY_LEFT_MOUSE))
@@ -778,15 +811,20 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
     case GAME_STATE_WON:
     {
         draw_sprite(SPRITE_MAIN_MENU_BACKGROUND,
-                    vec_2(input->screenSize.x, input->screenSize.y) / 2.0f,
-                    vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y));
+                    vec_2(input->screenSize) / 2.0f,
+                    vec_2(SCREEN_SIZE));
 
-        draw_text((char*)"Thanks for playing! You won!", {vec_2(input->screenSize.x, input->screenSize.y) / 2.0f - Vec2{321.0f, 201.0f}}, COLOR_BLACK, {});
-        draw_text((char*)"Thanks for playing! You won!", {vec_2(input->screenSize.x, input->screenSize.y) / 2.0f - Vec2{320.0f, 200.0f}}, COLOR_RED, {});
+        draw_text("Thanks for playing! You won!",
+                  {input->screenSize.x / 2.0f - 321.0f, 201.0f},
+                  COLOR_BLACK);
+        draw_text("Thanks for playing! You won!",
+                  {input->screenSize.x / 2.0f - 320.0f, 200.0f},
+                  COLOR_RED);
 
-        Vec2 buttonsPos = {vec_2(input->screenSize.x, input->screenSize.y) / 2.0f, 400.0f};
+        Vec2 buttonsPos = {input->screenSize.x / 2.0f, 400.0f};
         Vec2 buttonsSize = {240.0f, 70.0f};
 
+        // Main Menu Button
         {
             SpriteID buttonSprite = SPRITE_SLICED_MENU_02;
 
@@ -802,7 +840,7 @@ __declspec(dllexport) void update_game(GameState *gameStateIn, Input *inputIn,
             }
 
             draw_sliced_sprite(buttonSprite, buttonsPos, buttonsSize);
-            draw_text("Main Menu", buttonsPos + Vec2{-102.0f}, COLOR_WHITE, {});
+            draw_text("Main Menu", buttonsPos + Vec2{-102.0f});
             buttonsPos.y += 100.0f;
         }
 
@@ -816,6 +854,7 @@ internal void update_level(float dt)
     gameState->totalTime += dt;
     gameState->spawnTimer += dt / 1.0f;
 
+    // Win condition, kill all bosses
     bool bossPresent = false;
 
     struct BossSpawn
@@ -830,11 +869,13 @@ internal void update_level(float dt)
         {120.0f, ENEMY_TYPE_HORNET_BOSS},
     };
 
+    // Check if we need to spawn a Boss
     if (gameState->bossSpawnIdx < ArraySize(bossSpawns) && bossSpawns[gameState->bossSpawnIdx].time < gameState->totalTime)
     {
         spawn_enemy(bossSpawns[gameState->bossSpawnIdx++].enemyType, true);
     }
 
+    // Spawning System
     {
         struct SpawnData
         {
@@ -851,6 +892,7 @@ internal void update_level(float dt)
                 {50.0f, 0.1f, ENEMY_TYPE_MARIO_PLANT},
                 {90.0f, 0.05f, ENEMY_TYPE_HORNET}};
 
+        // Get spawnRate
         {
             assert(gameState->spawnRateIdx < ArraySize(spawnRates));
 
@@ -872,10 +914,16 @@ internal void update_level(float dt)
 
                 gameState->spawnTimer -= spawnRate;
             }
+            else
+            {
+                // CAKEZ_ASSERT(0, "Reached maximum amount of Enemies");
+            }
         }
     }
 
+    // Partition The enemies into Chunks
     {
+        // Clear all the chunks
         for (int chunkColIdx = 0; chunkColIdx < WORLD_GRID_SIZE.x; chunkColIdx++)
         {
             for (int chunkRowIdx = 0; chunkRowIdx < WORLD_GRID_SIZE.y; chunkRowIdx++)
@@ -896,26 +944,27 @@ internal void update_level(float dt)
 
             float chunkSize = 100.0f;
 
+            // The grid goes from (-200, -200) to (1800, 1100)
             Vec2 relativePos = enemy->pos - gameState->player.pos + Vec2{1000.0f, 650.0f};
 
-            if (relativePos.x < 0.0f)
+            if (relativePos.x < 0.0f) // We are too far to the left side of the player
             {
-                enemy->pos.x = gameState->player.pos.x + vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f;
+                enemy->pos.x = gameState->player.pos.x + SCREEN_SIZE.x / 2.0f;
             }
 
-            if (relativePos.x >= 2000.0f)
+            if (relativePos.x >= 2000.0f) // We are too far to the right side of the player
             {
-                enemy->pos.x = gameState->player.pos.x - vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f;
+                enemy->pos.x = gameState->player.pos.x - SCREEN_SIZE.x / 2.0f;
             }
 
-            if (relativePos.y < 0.0f)
+            if (relativePos.y < 0.0f) // We are too far to the left side of the player
             {
-                enemy->pos.y = gameState->player.pos.y + vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f;
+                enemy->pos.y = gameState->player.pos.y + SCREEN_SIZE.y / 2.0f;
             }
 
-            if (relativePos.y >= 1300.0f)
+            if (relativePos.y >= 1300.0f) // We are too far to the right side of the player
             {
-                enemy->pos.y = gameState->player.pos.y - vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f;
+                enemy->pos.y = gameState->player.pos.y - SCREEN_SIZE.y / 2.0f;
             }
 
             relativePos = enemy->pos - gameState->player.pos + Vec2{1000.0f, 650.0f};
@@ -933,6 +982,7 @@ internal void update_level(float dt)
         }
     }
 
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		UPDATE DAMAGE NUMBERS START	vvvvvvvvvvvvvvvvvvvvvvvvv
     {
         for (int damageNumberIdx = 0;
              damageNumberIdx < gameState->damageNumbers.count;
@@ -943,7 +993,7 @@ internal void update_level(float dt)
             char numberText[16] = {};
             sprintf(numberText, "%d", dn->value);
 
-            draw_text(numberText, get_screen_pos(dn->pos), COLOR_WHITE, {});
+            draw_text(numberText, get_screen_pos(dn->pos));
 
             dn->timer += dt;
             dn->pos.y -= 20.0f * dt;
@@ -955,7 +1005,9 @@ internal void update_level(float dt)
             }
         }
     }
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		UPDATE DAMAGE NUMBERS END		^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		UPDATE PICKUPS START		vvvvvvvvvvvvvvvvvvvvvvvvv
     {
         Circle playerPickupCollider = get_pickup_collider(gameState->player);
         Circle playerPickupTriggerCollider = get_pickup_trigger_collider(gameState->player);
@@ -1033,6 +1085,7 @@ internal void update_level(float dt)
                 {
                     p->triggered = true;
 
+                    // @Note(tkap, 29/11/2022): Start by going away from the player, same effect as VS
                     p->vel = normalize(p->pos - gameState->player.pos) * 60;
                 }
 
@@ -1045,6 +1098,7 @@ internal void update_level(float dt)
                     float t = min(p->time / duration, 1.0f);
                     p->vel = oppositeDir * (1.0f - t) + dir * t;
 
+                    // Speed
                     p->pos += p->vel * dt * 500.0f;
 
                     p->time += dt;
@@ -1060,7 +1114,8 @@ internal void update_level(float dt)
             }
 
             Sprite s = get_sprite(spriteID);
-            draw_sprite(spriteID, get_screen_pos(p->pos), vec_2(s.subSize) * 2.0f);
+            draw_sprite(spriteID, get_screen_pos(p->pos), vec_2(s.subSize) * 2.0f); // pixel drawing with texelFetch can't use size * 1.5f here (if you want to support that, you need to switch to using texture() in shader instead)
+
             if (point_in_circle(p->pos, playerPickupCollider))
             {
 
@@ -1085,7 +1140,9 @@ internal void update_level(float dt)
             }
         }
     }
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		UPDATE PICKUPS END		^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		HANDLE DAMAGING AREAS START		vvvvvvvvvvvvvvvvvvv
     {
         for (int daIdx = 0; daIdx < gameState->damagingAreas.count; daIdx++)
         {
@@ -1104,6 +1161,9 @@ internal void update_level(float dt)
 
                 Rect daCollider = {da->pos - size / 2.0, size};
 
+                // TODO: Only the first one is blue!
+                // draw_quad(daCollider.pos, daCollider.size, COLOR_BLUE);
+
                 for (int enemyIdx = 0; enemyIdx < gameState->enemies.count; enemyIdx++)
                 {
                     Entity *enemy = &gameState->enemies[enemyIdx];
@@ -1116,6 +1176,7 @@ internal void update_level(float dt)
 
                     if (rect_circle_collision(daCollider, enemyCollider, 0))
                     {
+                        // Damage
                         inflict_damage(enemy, da->damage);
 
                         if (enemy->hp <= 0)
@@ -1123,10 +1184,12 @@ internal void update_level(float dt)
                             continue;
                         }
 
+                        // Push away
                         enemy->pushTime = 1.0f;
                         Vec2 pushDir = normalize(enemy->pos - da->pos);
                         enemy->pushDirection = pushDir * 10.0f;
 
+                        // Add to hit targets
                         da->hitEnemyIDs.add(enemy->ID);
                     }
                 }
@@ -1166,8 +1229,11 @@ internal void update_level(float dt)
             }
         }
     }
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		HANDLE DAMAGING AREAS END		^^^^^^^^^^^^^^^^^^^^^^
 
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		UPDATE ENEMIES START		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     {
+        // New Partition Update Loop
         {
             for (int chunkColIdx = 0; chunkColIdx < WORLD_GRID_SIZE.x; chunkColIdx++)
             {
@@ -1196,6 +1262,7 @@ internal void update_level(float dt)
                         enemy->garlicHitTimer = max(enemy->garlicHitTimer - dt, 0.0f);
                         enemy->magmaPuddleHitTimer = max(enemy->magmaPuddleHitTimer - dt, 0.0f);
 
+                        // Check if colliding with player
                         {
                             Circle playerCollider = get_collider(gameState->player);
                             Circle enemyCollider = get_collider(*enemy);
@@ -1226,9 +1293,12 @@ internal void update_level(float dt)
                         Vec2 direction = normalize(gameState->player.pos - enemy->pos);
                         enemy->desiredDirection = direction * movementDistance;
 
+                        // Resolve Collisions
                         {
+                            // Reset seperation Force
                             enemy->seperationForce = {};
 
+                            // Look at surrounding chunks 3x3
                             for (int chunkColOffset = -1; chunkColOffset < 2; chunkColOffset++)
                             {
                                 for (int chunkRowOffset = -1; chunkRowOffset < 2; chunkRowOffset++)
@@ -1242,6 +1312,7 @@ internal void update_level(float dt)
                                     {
                                         int neighbourIdx = subChunk.enemyIndices[subEnemyIdx];
 
+                                        // Skip yourself
                                         if (neighbourIdx == enemyIdx)
                                         {
                                             continue;
@@ -1252,6 +1323,7 @@ internal void update_level(float dt)
                                         Vec2 neighbourDir = enemy->pos - neighbour.pos;
                                         float neighbourDist = length(neighbourDir);
 
+                                        // Are the two colliding?
                                         float range = neighbour.collider.radius + neighbour.collider.radius;
                                         if (neighbourDist < range)
                                         {
@@ -1261,8 +1333,8 @@ internal void update_level(float dt)
                                             {
                                                 Vec2 randomDirections[] =
                                                     {
-                                                        {1.0f, 0.0f},
-                                                        {-1.0f, 0.0f},
+                                                        {1.0f, 0.0f},  // To the right
+                                                        {-1.0f, 0.0f}, // To the Left
                                                     };
                                                 neighbourDist = EPSILON;
                                                 seperationDir = randomDirections[neighbourIdx > enemyIdx];
@@ -1280,6 +1352,7 @@ internal void update_level(float dt)
                             }
                         }
 
+                        // Move the Enemy
                         {
                             float pushForce = ease_in_quad(enemy->pushTime);
                             enemy->pos += (enemy->pushDirection * pushForce * 50.0f +
@@ -1288,6 +1361,7 @@ internal void update_level(float dt)
                                           dt;
                         }
 
+                        // Resolve Collisions with Obstacles
                         {
                             for (int obstacleIdx = 0; obstacleIdx < gameState->obstacles.count; obstacleIdx++)
                             {
@@ -1297,11 +1371,14 @@ internal void update_level(float dt)
 
                                 Circle enemyCollider = get_collider(*enemy);
 
+                                // Make the Collider bigger against Obstacles
                                 enemyCollider.radius += 6.0f;
 
+                                // Get Chunk Offset
                                 {
                                     float chunkWidth = (float)MAP_CHUNK_TILE_COUNT * 64.0f * UNIT_SCALE;
 
+                                    // Which Tile to use
                                     enemyCollider.pos.x = fmodf(enemy->pos.x, chunkWidth);
                                     enemyCollider.pos.y = fmodf(enemy->pos.y, chunkWidth);
                                 }
@@ -1314,6 +1391,7 @@ internal void update_level(float dt)
                             }
                         }
 
+                        // Draw
                         {
                             Sprite s = get_sprite(enemy->spriteID);
                             draw_sprite(enemy->spriteID, get_screen_pos(enemy->pos),
@@ -1326,10 +1404,13 @@ internal void update_level(float dt)
             }
         }
     }
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		UPDATE ENEMIES END		^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		UPDATE PLAYER START		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     {
         Player *p = &gameState->player;
 
+        // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		PLAYER MOVEMENT START		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
         {
             Vec2 dir = {};
             if (is_key_down(KEY_W))
@@ -1388,11 +1469,14 @@ internal void update_level(float dt)
 
                     Circle playerCollider = get_collider(*p);
 
+                    // Make the Collider bigger against Obstacles
                     playerCollider.radius += 6.0f;
 
+                    // Get Chunk Offset
                     {
                         float chunkWidth = (float)MAP_CHUNK_TILE_COUNT * 64.0f * UNIT_SCALE;
 
+                        // Which Tile to use
                         playerCollider.pos.x = fmodf(p->pos.x, chunkWidth);
                         playerCollider.pos.y = fmodf(p->pos.y, chunkWidth);
                     }
@@ -1407,7 +1491,9 @@ internal void update_level(float dt)
                 }
             }
         }
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		PLAYER MOVEMENT END		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+        // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		PLAYER SKILLS START		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
         {
             for (int weaponIdx = 0; weaponIdx < gameState->player.weapons.count; weaponIdx++)
             {
@@ -1424,6 +1510,7 @@ internal void update_level(float dt)
                 {
                     skillCooldown = 1.0f;
 
+                    // Fill in data for Active Attack
                     aa.damage = 10;
                     if (w->level >= 2)
                     {
@@ -1434,7 +1521,7 @@ internal void update_level(float dt)
                         aa.damage += 10;
                     }
 
-                    aa.pos = gameState->player.pos;
+                    aa.pos = gameState->player.pos; // TODO: Needed???
                     aa.whip.maxSlashCount = w->level < 2 ? 3 : w->level < 5 ? 4
                                                                             : 5;
 
@@ -1451,7 +1538,7 @@ internal void update_level(float dt)
                                                                  : 1.45f;
 
                     Circle garlicCollider = {gameState->player.pos, radius};
-                    draw_sprite(SPRITE_EFFECT_GARLIC, vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f, vec_2(radius * 2.0f));
+                    draw_sprite(SPRITE_EFFECT_GARLIC, vec_2(input->screenSize) / 2.0f, vec_2(radius * 2.0f));
 
                     for (int enemyIdx = 0; enemyIdx < gameState->enemies.count; enemyIdx++)
                     {
@@ -1472,6 +1559,7 @@ internal void update_level(float dt)
 
                                 if (w->level >= 6)
                                 {
+                                    // do knockback
                                     e->pushTime = 1.0f;
                                     Vec2 pushDir = normalize(e->pos - gameState->player.pos);
                                     e->pushDirection = pushDir * 5.0f;
@@ -1505,6 +1593,7 @@ internal void update_level(float dt)
                                 aa.targetPos = gameState->player.pos + Vec2{randomX, randomY};
                                 aa.pos = aa.targetPos - Vec2{0.0f, 1500.0f};
 
+                                // Add active weapon
                                 gameState->activeAttacks.add(aa);
                             }
                         }
@@ -1522,28 +1611,36 @@ internal void update_level(float dt)
                 {
                     w->timePassed -= skillCooldown;
 
+                    // Add active weapon
                     gameState->activeAttacks.add(aa);
                 }
             }
         }
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		PLAYER SKILLS END		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+        // Draw Player
         {
             float playerScale = UNIT_SCALE + sinf2(gameState->totalTime * 10.0f) * 0.125f;
             Sprite s = get_sprite(p->spriteID);
-            draw_sprite(p->spriteID, vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f, vec_2(s.subSize) * playerScale,
+            draw_sprite(p->spriteID, vec_2(input->screenSize) / 2.0f, vec_2(s.subSize) * playerScale,
                         {.renderOptions = p->flipX ? RENDER_OPTION_FLIP_X : 0});
+            // Hp Bar
             {
-                Vec2 barPos = vec_2(SCREEN_SIZE.x, SCREEN_SIZE.y) / 2.0f;
+                Vec2 barPos = vec_2(input->screenSize) / 2.0f;
 
+                // Background
                 draw_quad(barPos + Vec2{0.0f, 50.0f}, {69.0f, 10.0f}, {.color = COLOR_BLACK});
 
+                // Actual HP
                 float hpPercent = (float)p->hp / (float)p->maxHP;
                 draw_quad(barPos + Vec2{-(1.0f - hpPercent) * 69.0f / 2.0f, 50.0f},
                           {69.0f * hpPercent, 10.0f}, {.color = COLOR_RED});
             }
         }
     }
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		UPDATE PLAYER END		^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		ACTIVE ATTACKS START		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
     {
         for (int aaIdx = 0; aaIdx < gameState->activeAttacks.count; aaIdx++)
         {
@@ -1568,6 +1665,7 @@ internal void update_level(float dt)
 
                 while (aa->timePassed >= whip->currentSlashCount * delay)
                 {
+                    // Spawn Whip
                     Sprite s = get_sprite(SPRITE_EFFECT_WHIP);
                     add_damaging_area(WEAPON_WHIP, SPRITE_EFFECT_WHIP,
                                       aa->pos + offsets[whip->currentSlashCount++],
@@ -1606,23 +1704,29 @@ internal void update_level(float dt)
 
                 continue;
             }
+
+                // invalid_default_case;
             }
 
             aa->timePassed += dt;
 
+            // Active Attack ran out
             if (aa->timePassed >= skillDuration)
             {
                 gameState->activeAttacks.remove_idx_and_swap(aaIdx--);
             }
         }
     }
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		ACTIVE ATTACKS END		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+    // Game time
     {
         char buffer[32] = {};
 
         int minutes = (int)(gameState->totalTime / 60.0f);
         int seconds = (int)(fmodf(gameState->totalTime, 60));
 
+        // Yes, I know this is terrible, it is how it is
         if (minutes <= 0)
         {
             if (seconds <= 9)
@@ -1657,9 +1761,10 @@ internal void update_level(float dt)
             }
         }
 
-        draw_text(buffer, {input->screenSize.x / 2.0f - 20.0f, 40.0f}, COLOR_WHITE, {});
+        draw_text(buffer, {input->screenSize.x / 2.0f - 20.0f, 40.0f});
     }
 
+    // Win condition
     if (gameState->bossSpawnIdx >= ArraySize(bossSpawns) &&
         !bossPresent)
     {
@@ -1667,8 +1772,4 @@ internal void update_level(float dt)
     }
 
     draw_exp_bar();
-}
-
-Vec2 correctVec2Conversion(Vec2 vec) {
-    return vec;
 }

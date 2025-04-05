@@ -1,22 +1,22 @@
 #include "defines.h"
-#include "../utils/my_math.h"
+#include "my_math.h"
 #include "input.h"
 #include "platform.h"
-#include "../utils/logger.h"
+#include "logger.h"
 #include "common.h"
 #include "config.h"
 #include "shared.h"
-#include "../utils/sound.h"
+#include "sound.h"
 
-// 资源层
+// Asset Layer
 #include "assets.cpp"
 
-// 渲染层
+// Renderer Layer
 #include <windows.h>
 #include <windowsx.h>
-#include "../rendering/gl_renderer.cpp"
+#include "gl_renderer.cpp"
 
-// 音频
+// Audio
 #include <xaudio2.h>
 #include <tlhelp32.h>
 
@@ -25,12 +25,12 @@ struct XAudioVoice : IXAudio2VoiceCallback
     bool playing;
     IXAudio2SourceVoice *voice;
 
-    // 仅实现必要的回调函数
+    // Unused methods are stubs
     void OnStreamEnd() { playing = false; }
 #pragma warning(disable : 4100)
     void OnBufferStart(void *pBufferContext) { playing = true; }
 
-    // 未使用的回调函数
+    // Unused methods are stubs
     void OnVoiceProcessingPassEnd() {}
     void OnVoiceProcessingPassStart(UINT32 SamplesRequired) {}
     void OnBufferEnd(void *pBufferContext) {}
@@ -43,12 +43,13 @@ struct XAudioState
 {
     IXAudio2 *device;
     IXAudio2MasteringVoice *masteringVoice;
+
     XAudioVoice voices[MAX_PLAYING_SOUNDS];
 };
 
 global_variable XAudioState xAudioState;
 
-// 内存管理
+// Memory
 global_variable int persistentBytesUsed = 0;
 global_variable int transientBytesUsed = 0;
 global_variable char *persistentBuffer = 0;
@@ -57,7 +58,6 @@ global_variable char *transientBuffer = 0;
 global_variable bool running = true;
 global_variable HWND window;
 
-// 窗口回调函数
 LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LRESULT result = 0;
@@ -67,18 +67,20 @@ LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     case WM_CLOSE:
     {
         running = false;
+
         break;
     }
 
     case WM_DESTROY:
     {
         PostQuitMessage(0);
+
         break;
     }
 
     case WM_SIZE:
     {
-        // 设置屏幕尺寸
+        // Set the Screen Size
         RECT r;
         GetClientRect(window, &r);
 
@@ -86,6 +88,7 @@ LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
         input->screenSize.y = (r.bottom - r.top);
 
         renderer_resize();
+
         break;
     }
 
@@ -102,6 +105,7 @@ LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
                 input->keys[wParam].isDown = isDown;
             }
         }
+
         break;
     }
     case WM_LBUTTONDOWN:
@@ -117,6 +121,7 @@ LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 
         input->keys[wParam].isDown = isDown;
         input->keys[wParam].halfTransitionCount++;
+
         break;
     }
 
@@ -124,12 +129,13 @@ LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     {
         input->oldMousePos = input->mousePosScreen;
 
-        // 鼠标位置
+        // Mouse Position
         input->mousePosScreen.x = (float)GET_X_LPARAM(lParam);
         input->mousePosScreen.y = (float)GET_Y_LPARAM(lParam);
 
-        // 相对移动
+        // Relative Movement
         input->relMouseScreen = input->mousePosScreen - input->oldMousePos;
+
         break;
     }
 
@@ -142,18 +148,18 @@ LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
     return result;
 }
 
-// 创建窗口
 internal bool platform_create_window(int width, int height, char *title)
 {
     HINSTANCE instance = GetModuleHandleA(0);
 
-    // 设置并注册窗口类
+    // Setup and register window class
     HICON icon = LoadIcon(instance, IDI_APPLICATION);
     WNDCLASS wc = {};
     wc.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = window_callback;
     wc.hInstance = instance;
     wc.hIcon = icon;
+    // wc.hCursor = LoadCursor(NULL, IDC_ARROW); // NULL; => Manage the cursor manually
     wc.lpszClassName = "cakez_window_class";
 
     if (!RegisterClassA(&wc))
@@ -162,7 +168,7 @@ internal bool platform_create_window(int width, int height, char *title)
         return false;
     }
 
-    // 创建窗口
+    // Create window
     uint32_t client_x = 100;
     uint32_t client_y = 100;
     uint32_t client_width = width;
@@ -181,10 +187,11 @@ internal bool platform_create_window(int width, int height, char *title)
         WS_MINIMIZEBOX |
         WS_MAXIMIZEBOX;
 
+    // topmost | WS_EX_TOPMOST;
     uint32_t window_ex_style = WS_EX_APPWINDOW | WS_EX_TOPMOST;
     window_ex_style = WS_EX_APPWINDOW;
 
-    // 获取边框大小
+    // Obtain the size of the border
     RECT border_rect = {};
     AdjustWindowRectEx(&border_rect,
                        (DWORD)window_style,
@@ -208,13 +215,12 @@ internal bool platform_create_window(int width, int height, char *title)
         return false;
     }
 
-    // 显示窗口
+    // Show the window
     ShowWindow(window, SW_SHOW);
 
     return true;
 }
 
-// 更新窗口
 internal void platform_update_window()
 {
     MSG msg;
@@ -226,61 +232,71 @@ internal void platform_update_window()
     }
 }
 
-// 初始化音频系统
+// #############################################################
+//                   XAudio 2
+// #############################################################
 internal bool init_audio()
 {
-    // 分配内存
+    // Allocate Memory
     soundState->buffer = platform_allocate_persistent(MAX_BYTES_SOUND_BUFFER);
     if (!soundState->buffer)
     {
-        KYC_ASSERT(0, "Failed to allocate Sound Buffer");
+        CAKEZ_ASSERT(0, "Failed to allocate Sound Buffer");
         return false;
     }
 
+    // See: https://learn.microsoft.com/en-us/windows/win32/xaudio2/how-to--initialize-xaudio2
     if (CoInitializeEx(0, COINIT_MULTITHREADED) != 0)
     {
-        KYC_ASSERT(0, "Failed to initialize XAudio2");
+        CAKEZ_ASSERT(0, "Failed to initialize xAudio2");
         return false;
     }
 
     if (XAudio2Create(&xAudioState.device, 0, XAUDIO2_USE_DEFAULT_PROCESSOR) != 0)
     {
-        KYC_ASSERT(0, "Failed to create XAudio2 device");
+        CAKEZ_ASSERT(0, "Failed to Create xAudio2 Device");
         return false;
     }
 
+    // This is like the primary buffer in DirectSound
     if (xAudioState.device->CreateMasteringVoice(&xAudioState.masteringVoice) != 0)
     {
-        KYC_ASSERT(0, "Failed to create XAudio2 mastering voice");
+        CAKEZ_ASSERT(0, "Failed to Create xAudio2 Mastering Voice");
         return false;
     }
 
-    // 设置WAV格式
+    // Adjust these to your specific WAV format used in your game
+    // You can refactor this to be a different format or auto-detect it if you want to support
+    // different exported formats. But I usually stick to just one format for my games.
     WAVEFORMATEX waveFormat = {0};
     waveFormat.wFormatTag = WAVE_FORMAT_PCM;
-    waveFormat.nChannels = 2;          // 立体声
-    waveFormat.wBitsPerSample = 16;    // 16位
-    waveFormat.nSamplesPerSec = 48000; // 48 kHz
+    waveFormat.nChannels = 2;          // Stereo
+    waveFormat.wBitsPerSample = 16;    // 16 bits
+    waveFormat.nSamplesPerSec = 48000; // 48 Khz
     waveFormat.nBlockAlign = (waveFormat.nChannels * waveFormat.wBitsPerSample) / 8;
     waveFormat.nAvgBytesPerSec = waveFormat.nSamplesPerSec * waveFormat.nBlockAlign;
     waveFormat.cbSize = 0;
+
+    // TODO: Submixes can be used to act as "Sound Groups" allowing us to control Volume
+    // only for a certain Type of Sound, skipped here because it's easier without
 
     for (int voiceIdx = 0; voiceIdx < MAX_PLAYING_SOUNDS; voiceIdx++)
     {
         XAudioVoice *xAudioVoice = &xAudioState.voices[voiceIdx];
 
+        // These are like the secondary buffers in DirectSound,
         int result = xAudioState.device->CreateSourceVoice(&xAudioVoice->voice,
                                                            &waveFormat, XAUDIO2_VOICE_NOPITCH,
                                                            XAUDIO2_DEFAULT_FREQ_RATIO,
                                                            (IXAudio2VoiceCallback *)xAudioVoice,
-                                                           0);
+                                                           0 /* Send audio to submix here, 0 = mastering voice */);
 
-        // 调整音量
+        // Reduce the Volume by 95%?????
         xAudioVoice->voice->SetVolume(0.05f);
 
         if (result)
         {
-            KYC_ASSERT(0, "Failed to create XAudio2 voice");
+            CAKEZ_ASSERT(0, "Failed to Create xAudio2 Voice");
             return false;
         }
     }
@@ -293,47 +309,46 @@ typedef void(update_game_type)(GameState *, Input *, RenderData *, float);
 
 int main()
 {
-    // 分配内存
     transientBuffer = (char *)malloc(TRANSIENT_BUFFER_SIZE);
     persistentBuffer = (char *)malloc(PERSISTENT_BUFFER_SIZE);
 
     input = (Input *)platform_allocate_persistent(sizeof(Input));
     if (!input)
     {
-        KYC_FATAL("Failed to allocate Memory for Input!");
+        CAKEZ_FATAL("Failed to allocate Memory for Input!");
         return -1;
     }
 
     soundState = (SoundState *)platform_allocate_persistent(sizeof(SoundState));
     if (!input)
     {
-        KYC_FATAL("Failed to allocate Memory for Sounds!");
+        CAKEZ_FATAL("Failed to allocate Memory for Sounds!");
         return -1;
     }
 
     RenderData *renderData = (RenderData *)platform_allocate_persistent(sizeof(RenderData));
     if (!renderData)
     {
-        KYC_FATAL("Failed to allocate Memory for RenderData!");
+        CAKEZ_FATAL("Failed to allocate Memory for RenderData!");
         return -1;
     }
 
     GameState *gameState = (GameState *)platform_allocate_persistent(sizeof(GameState));
     if (!gameState)
     {
-        KYC_FATAL("Failed to allocate Memory for the GameState!");
+        CAKEZ_FATAL("Failed to allocate Memory for the GameState!");
         return -1;
     }
 
-    // 游戏DLL相关
+    // game dll stuff
     init_game_type *init_game = 0;
     update_game_type *update_game = 0;
 
     long long lastEditDLLTimestamp = 0;
     HMODULE gameDLL = NULL;
 
-    // 时间相关
-    GLOBAL LARGE_INTEGER ticksPerSecond;
+    // Delta Time Stuff
+    global_variable LARGE_INTEGER ticksPerSecond;
     LARGE_INTEGER lastTickCount, currentTickCount;
     QueryPerformanceFrequency(&ticksPerSecond);
     QueryPerformanceCounter(&lastTickCount);
@@ -342,22 +357,23 @@ int main()
     platform_create_window(SCREEN_SIZE.x, SCREEN_SIZE.y, "VSClone");
 
     gl_init(window, renderData);
+    // @Note(tkap, 21/11/2022): To not blow up my pc
     renderer_set_vertical_sync(false);
 
-    // 初始化音频
+    // Audio
     init_audio();
     platform_play_sound(SOUND_BACKGROUND, true);
 
     bool isGameInitialized = false;
 
-    // 随机数种子
+    // Seed for random numbers
     srand((uint32_t)__rdtsc());
 
     while (running)
     {
         running = !gameState->quitApp;
 
-        // DLL热重载
+        // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv		DLL STUFF START		vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
         {
             long long DLLTimestamp = platform_last_edit_timestamp("game.dll");
             if (DLLTimestamp > lastEditDLLTimestamp)
@@ -390,9 +406,9 @@ int main()
                 printf("Loaded DLL\n");
 
                 init_game = (init_game_type *)GetProcAddress(gameDLL, "init_game");
-                KYC_ASSERT(init_game, "Failed to load init_game function from game DLL");
+                CAKEZ_ASSERT(init_game, "Failed to load init_game function from game DLL");
                 update_game = (update_game_type *)GetProcAddress(gameDLL, "update_game");
-                KYC_ASSERT(update_game, "Failed to load update_game function from game DLL");
+                CAKEZ_ASSERT(update_game, "Failed to load update_game function from game DLL");
             }
         }
 
@@ -401,35 +417,67 @@ int main()
             isGameInitialized = true;
             init_game(gameState, input, renderData);
         }
+        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^		DLL STUFF END		^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-        // 重置临时内存
+        // Reset temporary memory
         transientBytesUsed = 0;
 
-        // 计算时间增量
+        // Evaludate Delta Time
         {
             QueryPerformanceCounter(&currentTickCount);
 
             uint64_t elapsedTicks = currentTickCount.QuadPart - lastTickCount.QuadPart;
 
-            // 转换为微秒以保持精度
+            // Convert to Microseconds to not loose precision, by deviding a small numbner by a large one
             uint64_t elapsedTimeInMicroseconds = (elapsedTicks * 1000000) / ticksPerSecond.QuadPart;
 
             lastTickCount = currentTickCount;
 
-            // 毫秒
+            // Time in milliseconds
             dt = (float)elapsedTimeInMicroseconds / 1000.0f;
 
-            // 限制dt最大值为50ms
+            // Lock dt to 50ms
             if (dt > 50.0f)
             {
                 dt = 50.0f;
             }
 
-            // 转换为秒
+            // Time in seconds
             dt /= 1000.0f;
         }
 
         platform_update_window();
+
+        if (is_key_pressed(KEY_K))
+        {
+            if (platform_file_exists("gameState.bin"))
+            {
+                platform_delete_file("gameState.bin");
+            }
+            platform_write_file("gameState.bin", (char *)gameState, sizeof(GameState), true);
+        }
+
+        if (is_key_pressed(KEY_L))
+        {
+            uint32_t fileSize;
+            char *buffer = platform_read_file("gameState.bin", &fileSize);
+
+            if (buffer)
+            {
+                if (fileSize == sizeof(GameState))
+                {
+                    memcpy(gameState, buffer, fileSize);
+                }
+                else
+                {
+                    CAKEZ_ASSERT(0, "GameState Size changed!")
+                }
+            }
+            else
+            {
+                CAKEZ_ASSERT(0, "Failed to read GameState");
+            }
+        }
 
         update_game(gameState, input, renderData, dt);
         for (int key_i = 0; key_i < KEY_COUNT; key_i++)
@@ -443,7 +491,9 @@ int main()
     return 0;
 }
 
-// platform.h实现
+// #############################################################
+//           Implementations from platform.h
+// #############################################################
 void platform_log(char *msg, TextColor color)
 {
     HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -482,7 +532,6 @@ void platform_log(char *msg, TextColor color)
     WriteConsoleA(consoleHandle, msg, (int)strlen(msg), 0, 0);
 }
 
-// 输出错误信息
 void platform_print_error()
 {
     int error_ = GetLastError();
@@ -499,12 +548,11 @@ void platform_print_error()
 
     if (error_text)
     {
-        KYC_ASSERT(0, "%s", error_text);
+        CAKEZ_ASSERT(0, "%s", error_text);
         LocalFree(error_text);
     }
 }
 
-// 读取文件
 char *platform_read_file(char *path, uint32_t *fileSize)
 {
     char *buffer = 0;
@@ -531,40 +579,39 @@ char *platform_read_file(char *path, uint32_t *fileSize)
                     }
                     else
                     {
-                        WARN("读取文件 %s 失败", path);
+                        CAKEZ_WARN("Failed reading file %s", path);
                         buffer = 0;
                     }
                 }
                 else
                 {
-                    KYC_ASSERT(0, "无法分配: %d 字节，用于加载文件 %s",
+                    CAKEZ_ASSERT(0, "Could not allocate: %d bytes, to Load file %s",
                                  *fileSize, path);
-                    WARN("Could not allocate: %d bytes, to Load file %s",
+                    CAKEZ_WARN("Could not allocate: %d bytes, to Load file %s",
                                *fileSize, path);
                 }
             }
             else
             {
-                WARN("获取文件 %s 大小失败", path);
+                CAKEZ_WARN("Failed getting size of file %s", path);
             }
 
             CloseHandle(file);
         }
         else
         {
-            WARN("打开文件 %s 失败", path);
+            CAKEZ_WARN("Failed opening file %s", path);
         }
     }
     else
     {
-        KYC_ASSERT(0, "未提供长度!");
-        WARN("未提供长度!");
+        CAKEZ_ASSERT(0, "No Length supplied!");
+        CAKEZ_WARN("No Length supplied!");
     }
 
     return buffer;
 }
 
-// 写入文件
 unsigned long platform_write_file(char *path,
                                   char *buffer,
                                   uint32_t size,
@@ -583,30 +630,29 @@ unsigned long platform_write_file(char *path,
             DWORD result = SetFilePointer(file, 0, 0, FILE_END);
             if (result == INVALID_SET_FILE_POINTER)
             {
-                WARN("设置文件指针到末尾失败");
+                CAKEZ_WARN("Failed to set file pointer to the end");
             }
         }
 
         BOOL result = WriteFile(file, buffer, size, &bytesWritten, 0);
         if (result && size == bytesWritten)
         {
-            // 成功
+            // Success
         }
         else
         {
-            WARN("写入文件 %s 失败", path);
+            CAKEZ_WARN("Failed writing file %s", path);
         }
         CloseHandle(file);
     }
     else
     {
-        WARN("打开文件 %s 失败", path);
+        CAKEZ_WARN("Failed opening file %s", path);
     }
 
     return bytesWritten;
 }
 
-// 检查文件是否存在
 bool platform_file_exists(char *path)
 {
     DWORD attributes = GetFileAttributes(path);
@@ -615,13 +661,11 @@ bool platform_file_exists(char *path)
             !(attributes & FILE_ATTRIBUTE_DIRECTORY));
 }
 
-// 删除文件
 void platform_delete_file(char *path)
 {
-    KYC_ASSERT(DeleteFileA(path) != 0, "删除文件失败: %s", path);
+    CAKEZ_ASSERT(DeleteFileA(path) != 0, "Failed deleting file: %s", path);
 }
 
-// 获取文件最后修改时间
 long long platform_last_edit_timestamp(char *path)
 {
     long long time = 0;
@@ -639,20 +683,19 @@ long long platform_last_edit_timestamp(char *path)
         }
         else
         {
-            WARN("获取文件 %s 时间失败", path);
+            CAKEZ_WARN("Failed getting file time of file %s ", path);
         }
 
         CloseHandle(file);
     }
     else
     {
-        WARN("打开文件 %s 失败", path);
+        CAKEZ_WARN("Failed opening file %s", path);
     }
 
     return time;
 }
 
-// 播放音效
 void platform_play_sound(SoundID soundID, bool loop)
 {
     Sound *sound = 0;
@@ -674,13 +717,13 @@ void platform_play_sound(SoundID soundID, bool loop)
             sound = &soundState->allocatedSounds[soundState->allocatedSoundsCount++];
         }
 
-        // 从磁盘加载新的音效文件
+        // Load a new file from disk and copy that into the sound state
         uint32_t fileSize = 0;
         char *soundFile = platform_read_file(SoundFiles[soundID], &fileSize);
 
         if (soundFile)
         {
-            // 找到WAV文件的数据部分
+            // Find the Data of the WAV file
             WaveDataChunk *dataChunk = (WaveDataChunk *)(soundFile + sizeof(WaveFileHeader));
             while (*(uint32_t *)&dataChunk->dataChunkId != FOURCC("data"))
             {
@@ -700,16 +743,16 @@ void platform_play_sound(SoundID soundID, bool loop)
             }
             else
             {
-                KYC_ASSERT(0, "声音缓冲区已满");
+                CAKEZ_ASSERT(0, "Exausted Sound Buffer");
             }
         }
         else
         {
-            KYC_ASSERT(0, "加载声音失败");
+            CAKEZ_ASSERT(0, "Failed Loading Sound");
         }
     }
 
-    // 将音效加载到xaudio
+    // Load the sound into xaudio
     {
         for (int voiceIdx = 0; voiceIdx < MAX_PLAYING_SOUNDS; voiceIdx++)
         {
@@ -728,14 +771,13 @@ void platform_play_sound(SoundID soundID, bool loop)
 
             if (int result = xAudioVoice.voice->SubmitSourceBuffer(&stupidBuffer))
             {
-                KYC_ASSERT(0, "播放声音失败: %d", sound->ID);
+                CAKEZ_ASSERT(0, "Failed to play Sound: %d", sound->ID);
             }
             xAudioVoice.voice->Start(0, 0);
         }
     }
 }
 
-// 分配临时内存
 char *platform_allocate_transient(uint32_t sizeInBytes)
 {
     char *buffer = 0;
@@ -748,13 +790,12 @@ char *platform_allocate_transient(uint32_t sizeInBytes)
     }
     else
     {
-        KYC_ASSERT(0, "临时存储已用尽!");
+        CAKEZ_ASSERT(0, "Exausted Transient Storage!");
     }
 
     return buffer;
 }
 
-// 分配持久内存
 char *platform_allocate_persistent(uint32_t sizeInBytes)
 {
     char *buffer = 0;
@@ -767,7 +808,7 @@ char *platform_allocate_persistent(uint32_t sizeInBytes)
     }
     else
     {
-        KYC_ASSERT(0, "持久存储已用尽!");
+        CAKEZ_ASSERT(0, "Exausted Persitent Storage!");
     }
 
     return buffer;

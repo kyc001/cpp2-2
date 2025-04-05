@@ -1,6 +1,8 @@
 #include "render_interface.h"
 #include "shader_header.h"
 #include "custom_gl.h"
+#include "../core/platform.h" // Needed for platform_print_error, etc.
+#include "../utils/logger.h"  // Needed for KYC_ASSERT/FATAL
 
 // #############################################################
 //                   Internal Structures
@@ -30,9 +32,9 @@ struct GLContext
 // #############################################################
 //                   Global Variables
 // #############################################################
-global_variable GLContext glContext;
-global_variable PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = 0;
-global_variable PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
+GLOBAL GLContext glContext;
+GLOBAL PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = 0;
+GLOBAL PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
 
 // #############################################################
 //                   Internal Functions
@@ -44,7 +46,7 @@ internal void APIENTRY gl_debug_callback(GLenum source, GLenum type, GLuint id, 
     if (severity == GL_DEBUG_SEVERITY_MEDIUM ||
         severity == GL_DEBUG_SEVERITY_HIGH)
     {
-        CAKEZ_ASSERT(0, "OpenGL错误: %s", message);
+        KYC_ASSERT(false, "OpenGL Error: %s", message);
     }
 }
 #endif // DEBUG
@@ -113,20 +115,20 @@ internal bool init_font(int fontSize)
 
     if (FT_Init_FreeType(&ft) != 0)
     {
-        CAKEZ_ASSERT(0, "Freetype初始化失败");
+        KYC_ASSERT(false, "Failed to init Freetype");
         return false;
     }
 
     FT_Face face;
     if (FT_New_Face(ft, "assets/fonts/dogica.ttf", 0, &face) != 0)
     {
-        CAKEZ_ASSERT(0, "TTF文件加载失败!");
+        KYC_ASSERT(false, "Failed to load TTF File!");
         return false;
     }
 
     if (FT_Set_Pixel_Sizes(face, 0, fontSize) != 0)
     {
-        CAKEZ_ASSERT(0, "字体大小设置失败!");
+        KYC_ASSERT(false, "Failed to set Font Size!");
         return false;
     }
 
@@ -139,7 +141,7 @@ internal bool init_font(int fontSize)
         int gi = FT_Get_Char_Index(face, c);
         if (gi == 0)
         {
-            CAKEZ_ASSERT(0, "TTF字符加载失败!");
+            KYC_ASSERT(false, "Failed to load character for TTF!");
             return false;
         }
 
@@ -171,7 +173,7 @@ internal bool init_font(int fontSize)
             }
         }
 
-        Glyph *g = &glContext.renderData->glyphs[c];
+        FontGlyph *g = &glContext.renderData->glyphs[c];
         g->textureOffset = {currentColIdx, currentRowIdx};
         g->spriteSize = {width, height};
         g->offset = {xOff, yOff};
@@ -314,10 +316,10 @@ internal bool gl_init(void *window, RenderData *renderData)
 
         if (!wglChoosePixelFormatARB(glContext.dc, pixelAttribs, 0, 1, pixelFormat, &numFormats))
         {
-            CAKEZ_ERROR("Failed to choose Pixel Format for OpenGL!");
+            KYC_ERROR("Failed to choose Pixel Format for OpenGL!");
             return false;
         }
-        CAKEZ_ASSERT(numFormats, "不应该发生的错误?");
+        KYC_ASSERT(numFormats, "不应该发生的错误?");
 
         PIXELFORMATDESCRIPTOR pfd = {0};
         DescribePixelFormat(glContext.dc, pixelFormat[0], sizeof(PIXELFORMATDESCRIPTOR), &pfd);
@@ -388,7 +390,7 @@ internal bool gl_init(void *window, RenderData *renderData)
                 if (!shaderSuccess)
                 {
                     glGetShaderInfoLog(vertexShaderID, 1024, 0, shaderLog);
-                    CAKEZ_ASSERT(0, "编译顶点着色器失败: %s", shaderLog);
+                    KYC_ASSERT(0, "编译顶点着色器失败: %s", shaderLog);
 
                     return false;
                 }
@@ -415,7 +417,7 @@ internal bool gl_init(void *window, RenderData *renderData)
                 if (!shaderSuccess)
                 {
                     glGetShaderInfoLog(fragShaderID, 1024, 0, shaderLog);
-                    CAKEZ_ASSERT(0, "编译片段着色器失败: %s", shaderLog);
+                    KYC_ASSERT(0, "编译片段着色器失败: %s", shaderLog);
 
                     return false;
                 }
@@ -440,7 +442,7 @@ internal bool gl_init(void *window, RenderData *renderData)
             {
                 glGetProgramInfoLog(glContext.programID, 512, 0, programInfoLog);
 
-                CAKEZ_ASSERT(0, "编译着色器程序失败: %s", programInfoLog);
+                KYC_ASSERT(0, "编译着色器程序失败: %s", programInfoLog);
 
                 return 0;
             }
@@ -490,14 +492,14 @@ internal bool gl_init(void *window, RenderData *renderData)
             if (data)
             {
                 glContext.textureAtlas01.lastEditTimestamp = get_last_edit_timestamp(TEXTURE_ATLAS_01);
-                CAKEZ_ASSERT(glContext.textureAtlas01.lastEditTimestamp > 0,
-                             "从纹理ID获取编辑时间戳失败: %d", TEXTURE_ATLAS_01);
+                KYC_ASSERT(glContext.textureAtlas01.lastEditTimestamp > 0,
+                           "从纹理ID获取编辑时间戳失败: %d", TEXTURE_ATLAS_01);
                 // The atlas is sRGB exported
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
             }
             else
             {
-                CAKEZ_ASSERT(0, "无法获取纹理ID的数据: %d", TEXTURE_ATLAS_01);
+                KYC_ASSERT(0, "无法获取纹理ID的数据: %d", TEXTURE_ATLAS_01);
             }
         }
 

@@ -1,67 +1,96 @@
 #pragma once
+// #include "../core/defines.h" // Removed
+// #include <atomic> // Removed
 #include "../utils/my_math.h"
-#include <windows.h>
+// #include <windows.h> // Removed windows include
+
+// // 如果GLOBAL宏未定义，则将它定义为global_variable // Removed GLOBAL macro definition
+// #ifndef GLOBAL
+// #define GLOBAL global_variable
+// #endif
 
 enum KeyID
 {
-    KEY_LEFT,
-    KEY_RIGHT,
-    KEY_UP,
-    KEY_DOWN,
-
-    KEY_A = 'A',
-    KEY_B = 'B',
-    KEY_C = 'C',
-    KEY_D = 'D',
-    KEY_E = 'E',
-    KEY_F = 'F',
-    KEY_G = 'G',
-    KEY_H = 'H',
-    KEY_I = 'I',
-    KEY_J = 'J',
-    KEY_K = 'K',
-    KEY_L = 'L',
-    KEY_M = 'M',
-    KEY_N = 'N',
-    KEY_O = 'O',
-    KEY_P = 'P',
-    KEY_Q = 'Q',
-    KEY_R = 'R',
-    KEY_S = 'S',
-    KEY_T = 'T',
-    KEY_U = 'U',
-    KEY_V = 'V',
-    KEY_W = 'W',
-    KEY_X = 'X',
-    KEY_Y = 'Y',
-    KEY_Z = 'Z',
-    KEY_ENTER = VK_RETURN,
-    KEY_ESC = VK_ESCAPE,
-    KEY_SPACE = VK_SPACE,
-    KEY_SHIFT = VK_SHIFT,
-    KEY_TAB = VK_TAB,
-    KEY_CONTROL = VK_CONTROL,
-    KEY_ALT = VK_MENU,
-    KEY_BACKSPACE = VK_BACK,
-    KEY_DELETE = VK_DELETE,
-    KEY_LEFT_MOUSE = VK_LBUTTON,
-    KEY_RIGHT_MOUSE = VK_RBUTTON,
-    KEY_MIDDLE_MOUSE = VK_MBUTTON,
-    KEY_0 = '0',
-    KEY_1 = '1',
-    KEY_2 = '2',
-    KEY_3 = '3',
-    KEY_4 = '4',
-    KEY_5 = '5',
-    KEY_6 = '6',
-    KEY_7 = '7',
-    KEY_8 = '8',
-    KEY_9 = '9',
-
-    KEY_COUNT = 256,
+    KEY_COUNT = 255,
+  
+    KEY_LEFT_MOUSE = 0x01,
+    KEY_MIDDLE_MOUSE = 0x04,
+    KEY_RIGHT_MOUSE = 0x02,
+    
+    KEY_BACKSPACE = 0x08,
+    KEY_TAB = 0x09,
+    KEY_ENTER = 0x0D,
+    KEY_ALT = 0x12,
+    KEY_ESCAPE = 0x1B, // Changed KEY_ESC
+    KEY_SPACE = 0x20,
+    KEY_END = 0x23,
+    KEY_HOME = 0x24,
+    KEY_LEFT = 0x25,
+    KEY_UP = 0x26,
+    KEY_RIGHT = 0x27,
+    KEY_DOWN = 0x28,
+    KEY_DELETE = 0x2E,
+    
+    KEY_0 = 0x30,
+    KEY_1 = 0x31,
+    KEY_2 = 0x32,
+    KEY_3 = 0x33,
+    KEY_4 = 0x34,
+    KEY_5 = 0x35,
+    KEY_6 = 0x36,
+    KEY_7 = 0x37,
+    KEY_8 = 0x38,
+    KEY_9 = 0x39,
+    KEY_A = 0x41,
+    KEY_B = 0x42,
+    KEY_C = 0x43,
+    KEY_D = 0x44,
+    KEY_E = 0x45,
+    KEY_F = 0x46,
+    KEY_G = 0x47,
+    KEY_H = 0x48,
+    KEY_I = 0x49,
+    KEY_J = 0x4A,
+    KEY_K = 0x4B,
+    KEY_L = 0x4C,
+    KEY_M = 0x4D,
+    KEY_N = 0x4E,
+    KEY_O = 0x4F,
+    KEY_P = 0x50,
+    KEY_Q = 0x51,
+    KEY_R = 0x52,
+    KEY_S = 0x53,
+    KEY_T = 0x54,
+    KEY_U = 0x55,
+    KEY_V = 0x56,
+    KEY_W = 0x57,
+    KEY_X = 0x58,
+    KEY_Y = 0x59,
+    KEY_Z = 0x5A,
+    KEY_ADD = 0x6B, // Added
+    KEY_SUBTRACT = 0x6D, // Added
+    
+    KEY_F1 = 0x70, // Added
+    KEY_F2 = 0x71, // Added
+    KEY_F3 = 0x72, // Added
+    KEY_F4 = 0x73, // Added
+    KEY_F5 = 0x74, // Added
+    KEY_F6 = 0x75, // Added
+    KEY_F7 = 0x76, // Added
+    KEY_F8 = 0x77, // Added
+    KEY_F9 = 0x78, // Added
+    KEY_F10 = 0x79, // Added
+    KEY_F11 = 0x7A, // Added
+    KEY_F12 = 0x7B, // Added
+    
+    KEY_LEFT_SHIFT = 0xA0, // Changed KEY_SHIFT
+    KEY_RIGHT_SHIFT = 0xA1, // Added
+    KEY_LEFT_CONTROL = 0xA2, // Changed KEY_CONTROL
+    KEY_RIGHT_CONTROL = 0xA3, // Added
 };
 
-struct ButtonState
+
+struct KeyState
 {
     int halfTransitionCount;
     bool isDown;
@@ -69,32 +98,37 @@ struct ButtonState
 
 struct Input
 {
-    ButtonState keys[KEY_COUNT];
-    Vec2 mousePosScreen;
+    IVec2 screenSize;
     Vec2 oldMousePos;
+    Vec2 mousePosScreen;
     Vec2 relMouseScreen;
+    KeyState keys[KEY_COUNT];
 
-    Vec2 screenSize;
+    // Vec2 screenSize; // Removed from bottom
 };
 
-GLOBAL Input *input = 0;
+global_variable Input* input = 0;
 
-STATIC bool is_key_down(KeyID key)
+internal bool is_key_down(KeyID key)
 {
-    return input->keys[key].isDown;
+    bool result = input->keys[key].isDown;
+    return result;
 }
 
-STATIC bool is_key_up(KeyID key)
+internal bool is_key_up(KeyID key)
 {
-    return !input->keys[key].isDown;
+    bool result = !input->keys[key].isDown;
+    return result;
 }
 
-STATIC bool is_key_pressed(KeyID key)
+internal bool is_key_pressed(KeyID key)
 {
-    return input->keys[key].halfTransitionCount > 0 && input->keys[key].isDown;
+    bool result = (input->keys[key].isDown && input->keys[key].halfTransitionCount == 1) || input->keys[key].halfTransitionCount > 1;
+    return result;
 }
 
-STATIC bool is_key_released(KeyID key)
+internal bool is_key_released(KeyID key)
 {
-    return input->keys[key].halfTransitionCount > 0 && !input->keys[key].isDown;
+    bool result = (!input->keys[key].isDown && input->keys[key].halfTransitionCount == 1) || input->keys[key].halfTransitionCount > 1;
+    return result;
 }

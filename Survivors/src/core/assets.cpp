@@ -9,8 +9,8 @@
 #endif
 
 // 纹理文件路径
-STATIC char *TEXTURE_PATHS[] = {"assets/textures/TEXTURE_ATLAS_01.png"};
-static_assert(ARRAY_SIZE(TEXTURE_PATHS) == TEXTURE_COUNT);
+internal char *TEXTURE_PATHS[] = {"assets/textures/TEXTURE_ATLAS_01.png"};
+static_assert(ArraySize(TEXTURE_PATHS) == TEXTURE_COUNT);
 
 // 获取资源数据
 char *get_asset(TextureID textureID, int *width, int *height)
@@ -18,15 +18,16 @@ char *get_asset(TextureID textureID, int *width, int *height)
     char *data = 0;
 #ifdef DEBUG
     int nrChannels;
-    char *stbiData = (char *)stbi_load(TEXTURE_PATHS[textureID], width, height, &nrChannels, 4);
-    if (stbiData)
+    char *stbiBullshit = (char *)stbi_load(TEXTURE_PATHS[textureID], width, height, &nrChannels, 4);
+    if (stbiBullshit)
     {
-        data = platform_allocate_transient(4 * *width * *height);
-        memcpy(data, stbiData, 4 * *width * *height);
-        stbi_image_free(stbiData);
+        int textureSizeInBytes = 4 * *width * *height;
+        data = platform_allocate_transient(textureSizeInBytes);
+        memcpy(data, stbiBullshit, textureSizeInBytes);
+        stbi_image_free(stbiBullshit);
     }
 #else
-    ASSERT(0, "需要实现资源包文件");
+    CAKEZ_ASSERT(0, "Implement Assets pack file");
 #endif
     return data;
 }
