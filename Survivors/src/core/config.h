@@ -1,6 +1,7 @@
 #pragma once
-#include "assets.h"
+#include "../assets/assets.h"
 #include "defines.h"
+#include "my_math.h"
 
 //#############################################################
 //                  Memory
