@@ -15,22 +15,48 @@ void _log(char *prefix, TextColor color, char *msg, Args... args)
     platform_log(msgBuffer, color);
 }
 
-#define TRACE(msg, ...) _log("TRACE", TEXT_COLOR_GREEN, msg, __VA_ARGS__)
-#define WARN(msg, ...) _log("WARN", TEXT_COLOR_YELLOW, msg, __VA_ARGS__)
-#define ERROR(msg, ...) _log("ERROR", TEXT_COLOR_RED, msg, __VA_ARGS__)
-#define FATAL(msg, ...) _log("FATAL", TEXT_COLOR_LIGHT_RED, msg, __VA_ARGS__)
+#define TRACE(msg, ...) _log("TRACE", TEXT_COLOR_GREEN, msg, ##__VA_ARGS__)
+#define WARN(msg, ...) _log("WARN", TEXT_COLOR_YELLOW, msg, ##__VA_ARGS__)
+
+// 检查是否已在wingdi.h中定义了ERROR宏
+#if defined(ERROR) && !defined(LOGGER_ERROR_DEFINED)
+#define LOGGER_ERROR_DEFINED
+#undef ERROR // 取消wingdi.h的ERROR定义
+#endif
+
+#define ERROR(msg, ...) _log("ERROR", TEXT_COLOR_RED, msg, ##__VA_ARGS__)
+#define KYC_FATAL(msg, ...) _log("FATAL", TEXT_COLOR_LIGHT_RED, msg, ##__VA_ARGS__)
 
 #ifdef DEBUG
-#define ASSERT(x, msg, ...)          \
+#ifndef KYC_ASSERT
+#define KYC_ASSERT(x, msg, ...)          \
     {                                \
         if (!(x))                    \
         {                            \
-            ERROR(msg, __VA_ARGS__); \
+            ERROR(msg, ##__VA_ARGS__); \
             __debugbreak();          \
         }                            \
     }
 #else
-#define ASSERT(x, msg, ...) \
+// 如果ASSERT已被定义，使用不同名称
+#define LOGGER_ASSERT(x, msg, ...)          \
+    {                                       \
+        if (!(x))                           \
+        {                                   \
+            LOGGER_ERROR(msg, ##__VA_ARGS__); \
+            __debugbreak();                 \
+        }                                   \
+    }
+#endif
+#else
+#ifndef KYC_ASSERT
+#define KYC_ASSERT(x, msg, ...) \
     if (!(x))               \
-        ERROR(msg, __VA_ARGS__);
+        ERROR(msg, ##__VA_ARGS__);
+#else
+// 如果ASSERT已被定义，使用不同名称
+#define LOGGER_ASSERT(x, msg, ...) \
+    if (!(x))                      \
+        LOGGER_ERROR(msg, ##__VA_ARGS__);
+#endif
 #endif

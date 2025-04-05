@@ -46,16 +46,16 @@ struct XAudioState
     XAudioVoice voices[MAX_PLAYING_SOUNDS];
 };
 
-GLOBAL XAudioState xAudioState;
+global_variable XAudioState xAudioState;
 
 // 内存管理
-GLOBAL int persistentBytesUsed = 0;
-GLOBAL int transientBytesUsed = 0;
-GLOBAL char *persistentBuffer = 0;
-GLOBAL char *transientBuffer = 0;
+global_variable int persistentBytesUsed = 0;
+global_variable int transientBytesUsed = 0;
+global_variable char *persistentBuffer = 0;
+global_variable char *transientBuffer = 0;
 
-GLOBAL bool running = true;
-GLOBAL HWND window;
+global_variable bool running = true;
+global_variable HWND window;
 
 // 窗口回调函数
 LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -143,7 +143,7 @@ LRESULT CALLBACK window_callback(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 }
 
 // 创建窗口
-STATIC bool platform_create_window(int width, int height, char *title)
+internal bool platform_create_window(int width, int height, char *title)
 {
     HINSTANCE instance = GetModuleHandleA(0);
 
@@ -154,7 +154,7 @@ STATIC bool platform_create_window(int width, int height, char *title)
     wc.lpfnWndProc = window_callback;
     wc.hInstance = instance;
     wc.hIcon = icon;
-    wc.lpszClassName = "game_window_class";
+    wc.lpszClassName = "cakez_window_class";
 
     if (!RegisterClassA(&wc))
     {
@@ -198,7 +198,7 @@ STATIC bool platform_create_window(int width, int height, char *title)
     window_height += border_rect.bottom - border_rect.top;
 
     window = CreateWindowExA((DWORD)window_ex_style,
-                             "game_window_class", title,
+                             "cakez_window_class", title,
                              (DWORD)window_style, window_x, window_y, window_width, window_height,
                              0, 0, instance, 0);
 
@@ -215,7 +215,7 @@ STATIC bool platform_create_window(int width, int height, char *title)
 }
 
 // 更新窗口
-STATIC void platform_update_window()
+internal void platform_update_window()
 {
     MSG msg;
 
@@ -227,31 +227,31 @@ STATIC void platform_update_window()
 }
 
 // 初始化音频系统
-STATIC bool init_audio()
+internal bool init_audio()
 {
     // 分配内存
     soundState->buffer = platform_allocate_persistent(MAX_BYTES_SOUND_BUFFER);
     if (!soundState->buffer)
     {
-        ASSERT(0, "分配声音缓冲区失败");
+        KYC_ASSERT(0, "Failed to allocate Sound Buffer");
         return false;
     }
 
     if (CoInitializeEx(0, COINIT_MULTITHREADED) != 0)
     {
-        ASSERT(0, "初始化xAudio2失败");
+        KYC_ASSERT(0, "Failed to initialize XAudio2");
         return false;
     }
 
     if (XAudio2Create(&xAudioState.device, 0, XAUDIO2_USE_DEFAULT_PROCESSOR) != 0)
     {
-        ASSERT(0, "创建xAudio2设备失败");
+        KYC_ASSERT(0, "Failed to create XAudio2 device");
         return false;
     }
 
     if (xAudioState.device->CreateMasteringVoice(&xAudioState.masteringVoice) != 0)
     {
-        ASSERT(0, "创建xAudio2主声音失败");
+        KYC_ASSERT(0, "Failed to create XAudio2 mastering voice");
         return false;
     }
 
@@ -280,7 +280,7 @@ STATIC bool init_audio()
 
         if (result)
         {
-            ASSERT(0, "创建xAudio2声音失败");
+            KYC_ASSERT(0, "Failed to create XAudio2 voice");
             return false;
         }
     }
@@ -300,28 +300,28 @@ int main()
     input = (Input *)platform_allocate_persistent(sizeof(Input));
     if (!input)
     {
-        FATAL("Failed to allocate Memory for Input!");
+        KYC_FATAL("Failed to allocate Memory for Input!");
         return -1;
     }
 
     soundState = (SoundState *)platform_allocate_persistent(sizeof(SoundState));
     if (!input)
     {
-        FATAL("Failed to allocate Memory for Sounds!");
+        KYC_FATAL("Failed to allocate Memory for Sounds!");
         return -1;
     }
 
     RenderData *renderData = (RenderData *)platform_allocate_persistent(sizeof(RenderData));
     if (!renderData)
     {
-        FATAL("Failed to allocate Memory for RenderData!");
+        KYC_FATAL("Failed to allocate Memory for RenderData!");
         return -1;
     }
 
     GameState *gameState = (GameState *)platform_allocate_persistent(sizeof(GameState));
     if (!gameState)
     {
-        FATAL("Failed to allocate Memory for the GameState!");
+        KYC_FATAL("Failed to allocate Memory for the GameState!");
         return -1;
     }
 
@@ -363,21 +363,21 @@ int main()
             if (DLLTimestamp > lastEditDLLTimestamp)
             {
                 lastEditDLLTimestamp = DLLTimestamp;
-                printf("新DLL已找到\n");
+                printf("New DLL found\n");
 
                 if (gameDLL)
                 {
                     BOOL freeResult = FreeLibrary(gameDLL);
                     assert(freeResult);
                     gameDLL = NULL;
-                    printf("释放库\n");
+                    printf("Freed library\n");
                 }
 
                 while (!CopyFile("game.dll", "game_load.dll", false))
                 {
                     Sleep(10);
                 }
-                printf("复制DLL\n");
+                printf("Copied DLL\n");
                 while (true)
                 {
                     gameDLL = LoadLibrary("game_load.dll");
@@ -387,12 +387,12 @@ int main()
                     }
                     Sleep(10);
                 }
-                printf("加载DLL\n");
+                printf("Loaded DLL\n");
 
                 init_game = (init_game_type *)GetProcAddress(gameDLL, "init_game");
-                ASSERT(init_game, "从游戏DLL加载init_game函数失败");
+                KYC_ASSERT(init_game, "Failed to load init_game function from game DLL");
                 update_game = (update_game_type *)GetProcAddress(gameDLL, "update_game");
-                ASSERT(update_game, "从游戏DLL加载update_game函数失败");
+                KYC_ASSERT(update_game, "Failed to load update_game function from game DLL");
             }
         }
 
@@ -430,39 +430,6 @@ int main()
         }
 
         platform_update_window();
-
-        // 保存游戏状态
-        if (is_key_pressed(KEY_K))
-        {
-            if (platform_file_exists("gameState.bin"))
-            {
-                platform_delete_file("gameState.bin");
-            }
-            platform_write_file("gameState.bin", (char *)gameState, sizeof(GameState), true);
-        }
-
-        // 加载游戏状态
-        if (is_key_pressed(KEY_L))
-        {
-            uint32_t fileSize;
-            char *buffer = platform_read_file("gameState.bin", &fileSize);
-
-            if (buffer)
-            {
-                if (fileSize == sizeof(GameState))
-                {
-                    memcpy(gameState, buffer, fileSize);
-                }
-                else
-                {
-                    ASSERT(0, "游戏状态大小已改变!");
-                }
-            }
-            else
-            {
-                ASSERT(0, "读取游戏状态失败");
-            }
-        }
 
         update_game(gameState, input, renderData, dt);
         for (int key_i = 0; key_i < KEY_COUNT; key_i++)
@@ -532,7 +499,7 @@ void platform_print_error()
 
     if (error_text)
     {
-        ASSERT(0, "%s", error_text);
+        KYC_ASSERT(0, "%s", error_text);
         LocalFree(error_text);
     }
 }
@@ -570,7 +537,7 @@ char *platform_read_file(char *path, uint32_t *fileSize)
                 }
                 else
                 {
-                    ASSERT(0, "无法分配: %d 字节，用于加载文件 %s",
+                    KYC_ASSERT(0, "无法分配: %d 字节，用于加载文件 %s",
                                  *fileSize, path);
                     WARN("Could not allocate: %d bytes, to Load file %s",
                                *fileSize, path);
@@ -590,7 +557,7 @@ char *platform_read_file(char *path, uint32_t *fileSize)
     }
     else
     {
-        ASSERT(0, "未提供长度!");
+        KYC_ASSERT(0, "未提供长度!");
         WARN("未提供长度!");
     }
 
@@ -651,7 +618,7 @@ bool platform_file_exists(char *path)
 // 删除文件
 void platform_delete_file(char *path)
 {
-    ASSERT(DeleteFileA(path) != 0, "删除文件失败: %s", path);
+    KYC_ASSERT(DeleteFileA(path) != 0, "删除文件失败: %s", path);
 }
 
 // 获取文件最后修改时间
@@ -733,12 +700,12 @@ void platform_play_sound(SoundID soundID, bool loop)
             }
             else
             {
-                ASSERT(0, "声音缓冲区已满");
+                KYC_ASSERT(0, "声音缓冲区已满");
             }
         }
         else
         {
-            ASSERT(0, "加载声音失败");
+            KYC_ASSERT(0, "加载声音失败");
         }
     }
 
@@ -761,7 +728,7 @@ void platform_play_sound(SoundID soundID, bool loop)
 
             if (int result = xAudioVoice.voice->SubmitSourceBuffer(&stupidBuffer))
             {
-                ASSERT(0, "播放声音失败: %d", sound->ID);
+                KYC_ASSERT(0, "播放声音失败: %d", sound->ID);
             }
             xAudioVoice.voice->Start(0, 0);
         }
@@ -781,7 +748,7 @@ char *platform_allocate_transient(uint32_t sizeInBytes)
     }
     else
     {
-        ASSERT(0, "临时存储已用尽!");
+        KYC_ASSERT(0, "临时存储已用尽!");
     }
 
     return buffer;
@@ -800,7 +767,7 @@ char *platform_allocate_persistent(uint32_t sizeInBytes)
     }
     else
     {
-        ASSERT(0, "持久存储已用尽!");
+        KYC_ASSERT(0, "持久存储已用尽!");
     }
 
     return buffer;

@@ -40,7 +40,7 @@ constexpr int MAX_DAMAGE_NUMBERS = 200;
 constexpr int CRYSTAL_MERGE_COUNT = 50;
 constexpr int MAX_OBSTACLES = 50;
 
-STATIC SpriteID ChunkTiles [MAP_CHUNK_TILE_COUNT][MAP_CHUNK_TILE_COUNT] = 
+internal SpriteID ChunkTiles [MAP_CHUNK_TILE_COUNT][MAP_CHUNK_TILE_COUNT] = 
 {
   {TILE_02, TILE_02, TILE_02, TILE_02, TILE_02, TILE_02, TILE_01, TILE_02, TILE_02, TILE_02, TILE_02, TILE_02, TILE_02, TILE_02, TILE_02},
   {TILE_02, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_01, TILE_02},
@@ -61,7 +61,7 @@ STATIC SpriteID ChunkTiles [MAP_CHUNK_TILE_COUNT][MAP_CHUNK_TILE_COUNT] =
 
 
 // EXP Table, needed by Pickups and EXP Bar
-STATIC int expTable [] = 
+internal int expTable [] = 
 {
   0,
   20,

@@ -9,7 +9,7 @@ typedef int RenderOptions;
 
 #else // Inside Shader
 
-#define BIT(i) 1 << i
+// #define BIT(i) 1 << i // Commented out redundant BIT macro
 
 #endif
 
@@ -33,3 +33,8 @@ struct Material
 {
     vec4 color;
 };
+
+#define MAX_MATERIALS 100
+#define LIGHT_COUNT 5
+
+struct Light

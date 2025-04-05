@@ -2,6 +2,8 @@
 #include "../core/config.h"
 #include "../core/platform.h"
 #include "../core/defines.h"
+#include "../utils/kyc_macros.h"
+#include "../core/gameData.h"
 
 // WAV File Data
 struct WaveFileHeader
@@ -25,20 +27,18 @@ struct WaveDataChunk
     uint32_t dataSize;
 };
 
-GLOBAL char *SoundFiles[] =
-    {
-        "assets/sounds/Copper Green Intent.wav", // SOUND_BACKGROUND,
-        "assets/sounds/schlitz.wav",             // SOUND_SCHLITZ,
-};
-
-static_assert(ARRAY_SIZE(SoundFiles) == SOUND_COUNT);
-
 struct Sound
 {
     SoundID ID;
     int sizeInBytes;
     char *data;
 };
+
+// 为SoundID添加==运算符
+inline bool operator==(SoundID lhs, SoundID rhs)
+{
+    return static_cast<int>(lhs) == static_cast<int>(rhs);
+}
 
 struct QueuedSound
 {

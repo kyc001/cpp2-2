@@ -3,9 +3,11 @@
 #include <math.h>
 #include "../core/defines.h"
 
-// #############################################################
-//                   Structures
-// #############################################################
+// 修改STATIC宏为internal，与示例保持一致
+#ifndef STATIC
+#define STATIC internal
+#endif
+
 struct Vec2
 {
     float x;
@@ -38,9 +40,6 @@ struct Circle
     float radius;
 };
 
-// #############################################################
-//                   Operators
-// #############################################################
 STATIC Vec2 operator+(Vec2 a, Vec2 other)
 {
     Vec2 result;
@@ -181,9 +180,6 @@ STATIC Vec4 &operator*=(Vec4 &a, float scalar)
     return a;
 }
 
-// #############################################################
-//                   Functions
-// #############################################################
 STATIC float clamp(float value, float min, float max)
 {
     if (value > max)

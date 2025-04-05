@@ -1,5 +1,14 @@
 #pragma once
-#include "assets.h"
+#include <cstdint>
+#include "defines.h"
+
+// 避免与 wingdi.h 中的 ERROR 宏冲突
+// #ifdef ERROR
+// #undef ERROR
+// #endif
+
+// #include "assets.h"
+// #include "../utils/sound.h" // 改为使用utils/sound.h
 
 enum TextColor
 {
@@ -9,6 +18,14 @@ enum TextColor
     TEXT_COLOR_RED,
     TEXT_COLOR_LIGHT_RED,
 };
+
+// SoundID moved to gameData.h
+// enum SoundID
+// {
+//     SOUND_BACKGROUND,
+//     SOUND_SCHLITZ,
+//     SOUND_COUNT
+// };
 
 void platform_log(char *msg, TextColor color);
 void platform_print_error();

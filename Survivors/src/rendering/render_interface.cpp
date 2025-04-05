@@ -1,7 +1,7 @@
 #include "render_interface.h"
 
 // This assumes a global variable "RenderData* renderData" to exist
-GLOBAL RenderData* renderData = 0;
+// global_variable RenderData *renderData = 0;
 
 internal void add_transform(Transform t = {})
 {

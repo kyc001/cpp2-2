@@ -1,6 +1,7 @@
 #pragma once
 #include "defines.h"
 #include "../utils/my_math.h"
+#include "../utils/logger.h"
 
 enum TextureID
 {
@@ -67,7 +68,7 @@ struct Sprite
     uint32_t framecount = 1;
 };
 
-STATIC Sprite get_sprite(SpriteID spriteID)
+internal Sprite get_sprite(SpriteID spriteID)
 {
     Sprite s = {};
     switch (spriteID)
@@ -268,6 +269,7 @@ STATIC Sprite get_sprite(SpriteID spriteID)
         s.subSize = {48, 64};
         break;
     default:
+        KYC_ASSERT(false, "Invalid Sprite ID");
         break;
     }
     return s;

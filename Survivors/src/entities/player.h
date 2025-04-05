@@ -1,19 +1,13 @@
 #pragma once
+#include "../core/gameData.h" // Include gameData.h for PlayerType and Player
 #include "../core/assets.h"
-#include "../core/config.h"
-#include "../weapons/weapon.h"
-#include "../core/common.h" // 添加common.h以确保Vec2和Circle类型可用
+#include "../core/input.h"
+#include "../core/common.h"
+#include "../weapons/weapon.h" // Added include for Weapon type used in Player struct (via gameData.h)
 
 // #############################################################
 //                      Player Definitions
 // #############################################################
-enum PlayerType
-{
-    PLAYER_TYPE_BELMOT,
-    PLAYER_TYPE_GANDALF,
-    PLAYER_TYPE_WHOSWHO,
-};
-
 struct Player
 {
     PlayerType type;
