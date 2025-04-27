@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GameMain</class>
+ <widget class="QWidget" name="GameMain">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1000</width>
+    <height>800</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Survivors</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">QWidget {
+    font-family: 'Microsoft YaHei', Arial, sans-serif;
+}
+
+QPushButton {
+    background-color: rgba(45, 45, 45, 180);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 100);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 14px;
+}
+
+QPushButton:hover {
+    background-color: rgba(60, 60, 60, 200);
+    border: 2px solid rgba(255, 255, 255, 150);
+}
+
+QPushButton:pressed {
+    background-color: rgba(30, 30, 30, 200);
+}
+
+QLabel {
+    color: white;
+}
+
+QProgressBar {
+    border: 1px solid rgba(255, 255, 255, 150);
+    border-radius: 5px;
+    background-color: rgba(30, 30, 30, 150);
+    text-align: center;
+    color: white;
+}
+
+QProgressBar::chunk {
+    background-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgba(170, 120, 20, 180), stop:1 rgba(255, 200, 50, 220));
+    border-radius: 5px;
+}</string>
+  </property>
+  <widget class="QWidget" name="controlPanel" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1000</width>
+     <height>50</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: rgba(0, 0, 0, 150);</string>
+   </property>
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="leftMargin">
+     <number>10</number>
+    </property>
+    <property name="topMargin">
+     <number>5</number>
+    </property>
+    <property name="rightMargin">
+     <number>10</number>
+    </property>
+    <property name="bottomMargin">
+     <number>5</number>
+    </property>
+    <item>
+     <widget class="QPushButton" name="pause_button">
+      <property name="minimumSize">
+       <size>
+        <width>100</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>100</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>暂停</string>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>:/image/Assets/pause.png</normaloff>:/image/Assets/pause.png</iconset>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="back_button">
+      <property name="minimumSize">
+       <size>
+        <width>100</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>100</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>返回</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="end_button">
+      <property name="minimumSize">
+       <size>
+        <width>100</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>100</width>
+        <height>30</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>结算</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>50</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
+     <widget class="QLabel" name="enemy_cnt_label">
+      <property name="styleSheet">
+       <string notr="true">font-size: 14px;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 180);</string>
+      </property>
+      <property name="text">
+       <string>已清除敌人数量：0</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <spacer name="horizontalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>40</width>
+        <height>20</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
+     <widget class="QLabel" name="level_label">
+      <property name="styleSheet">
+       <string notr="true">font-size: 14px;
+text-shadow: 1px 1px 2px rgba(0, 0, 0, 180);</string>
+      </property>
+      <property name="text">
+       <string>当前等级：1</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
