@@ -100,7 +100,11 @@ GameState::~GameState() {
 void GameState::tick() {
     std::cout << "掉落物数量" << exp_cnt << std::endl;
     player->tick();
-    enemy_control->tick();
+    
+    // 确保enemy_control不为空
+    if (enemy_control) {
+        enemy_control->tick();
+    }
     
     // 更新悬浮球
     for(auto& orb : floating_orbs) {
@@ -110,6 +114,7 @@ void GameState::tick() {
     // 检查悬浮球与敌人的碰撞
     checkOrbEnemyCollisions();
     
+    // 安全遍历enemies数组
     for(auto& lst : enemies){
         for(auto& each : lst){
             if(each && each->isEnabled())
@@ -134,13 +139,20 @@ void GameState::tick() {
 void GameState::checkOrbEnemyCollisions() {
     // 遍历所有悬浮球
     for (auto& orb : floating_orbs) {
+        if (!orb) continue; // 安全检查
+        
         // 遍历所有敌人类型
         for (auto& enemyList : enemies) {
             // 遍历每种类型的所有敌人
             for (auto& enemy : enemyList) {
                 if (enemy && enemy->isEnabled()) {
-                    // 检查碰撞
-                    orb->checkCollision(enemy);
+                    try {
+                        // 检查碰撞
+                        orb->checkCollision(enemy);
+                    } catch (std::exception& e) {
+                        // 捕获可能的异常
+                        std::cout << "碰撞检测异常: " << e.what() << std::endl;
+                    }
                 }
             }
         }
@@ -156,14 +168,41 @@ void GameState::keyReleaseTick(QKeyEvent *event) {
 }
 
 void GameState::initEnemy(int stage) {
+    // 先清空现有enemies
+    enemies.clear();
+    
+    // 初始化enemies数组，根据配置创建足够的容器
+    const StageInfo& stageInfo = STAGE_INFOS[stage - 1];
+    for (int i = 0; i < stageInfo.type_num; i++) {
+        enemies.push_back(std::vector<Enemy*>(stageInfo.type_info[i].max_nums, nullptr));
+    }
+    
+    // 创建敌人控制器
     enemy_control = new EnemyController(this, stage);
 }
 
 void GameState::judgeDamageEnemies() {
-    for(auto & type : enemies){
-        for(auto & each : type){
-            player->judgeDamage(each);
+    if (!player) return; // 安全检查
+    
+    try {
+        for(auto & type : enemies){
+            for(auto & each : type){
+                if (each && each->isEnabled()) {
+                    try {
+                        player->judgeDamage(each);
+                    } catch (std::exception& e) {
+                        // 捕获可能的异常
+                        std::cout << "判断伤害异常: " << e.what() << std::endl;
+                    }
+                }
+            }
         }
+    } catch (std::exception& e) {
+        // 捕获外层可能的异常
+        std::cout << "判断伤害外层异常: " << e.what() << std::endl;
+    } catch (...) {
+        // 捕获所有其他异常
+        std::cout << "判断伤害未知异常!" << std::endl;
     }
 }
 

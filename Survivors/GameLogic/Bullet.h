@@ -2,7 +2,7 @@
 #define SURVIVORS_BULLET_H
 // #include "GameMap.h"  // 使用前向声明
 #include <utility>
-#include <QPixmap>
+#include <QtGui/QPixmap>
 #include <exception>
 #include "PaintInfo.h"
 #include "config.h"  // 添加config.h的包含

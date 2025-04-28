@@ -1,5 +1,5 @@
-#ifndef SURVIVORS_WEAPON_H
-#define SURVIVORS_WEAPON_H
+#ifndef WEAPON_H
+#define WEAPON_H
 // #include "Bullet.h"  // 移除，使用前向声明
 #include <vector>
 #include "PaintInfo.h"
@@ -21,13 +21,14 @@ protected:
     std::vector<Bullet *> bullet_buffer;
     int damage;
 public:
+    Weapon() = delete;
     Weapon(unsigned bullet_style, int damage, Hero * user, GameMap * map_p);
     virtual void tick() = 0;
     bool judgeDamage(Enemy *);
     virtual void upgrade();
     virtual int getDamage() { return damage; }
     virtual int getCD() { return 0; }
-    std::vector<PaintInfo> paint();
+    virtual std::vector<PaintInfo> paint();
     [[nodiscard]] Hero * getUser() const { return user; }
 };
 
@@ -81,6 +82,9 @@ public:
     void tick() override;
 
     void upgrade() override {};
+
+    std::vector<PaintInfo> paint() override;
+
 private:
     void addBullet();
     void enableNullSpace(Bullet * &space);

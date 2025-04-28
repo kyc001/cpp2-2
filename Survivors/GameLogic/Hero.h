@@ -1,11 +1,11 @@
 #ifndef SURVIVORS_HERO_H
 #define SURVIVORS_HERO_H
 #include <utility>
-#include <QWidget>
-#include <QProgressBar>
-#include <QRect>
-#include <QKeyEvent>
-#include <QMouseEvent>
+#include <QtWidgets/QWidget>
+#include <QtWidgets/QProgressBar>
+#include <QtCore/QRect>
+#include <QtGui/QKeyEvent>
+#include <QtGui/QMouseEvent>
 #include <list>
 #include "PaintInfo.h"
 #include "config.h"

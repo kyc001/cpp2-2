@@ -16,13 +16,13 @@ UpgradeDialog::UpgradeDialog(GameMain * game_widget, QWidget *parent) :
     connect(choice2, &QPushButton::clicked, [&](){ choose2();});
     connect(choice3, &QPushButton::clicked, [&](){ choose3();});
 
-    // 设置按钮图标
-    choice1->setIcon(QIcon(QPixmap(":/image/Assets/bt5.PNG").scaled(191,361)));
-    choice1->setIconSize(QSize(191,361));
-    choice2->setIcon(QIcon(QPixmap(":/image/Assets/bt4.PNG").scaled(191,361)));
-    choice2->setIconSize(QSize(191,361));
-    choice3->setIcon(QIcon(QPixmap(":/image/Assets/bt3.PNG").scaled(191,361)));
-    choice3->setIconSize(QSize(191,361));
+    // 设置按钮文本
+    choice1->setText("更多血量");
+    choice1->setToolTip("提高最大生命值");
+    choice2->setText("更快速度");
+    choice2->setToolTip("提高移动速度");
+    choice3->setText("更强武器");
+    choice3->setToolTip("提高武器伤害");
 }
 
 void UpgradeDialog::setupUi() {

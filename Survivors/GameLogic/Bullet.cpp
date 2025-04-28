@@ -30,6 +30,21 @@ bullet_style(bullet_style), damage(damage), map_parent(map_p){
 }
 
 PaintInfo Bullet::paint() {
+    // 创建静态备用QPixmap
+    static QPixmap defaultBulletPixmap(20, 20);
+    static bool initialized = false;
+    
+    if (!initialized) {
+        defaultBulletPixmap.fill(Qt::yellow);
+        initialized = true;
+    }
+    
+    // 检查子弹图像是否有效
+    if (_image.isNull()) {
+        std::cout << "警告：子弹图像为空，使用默认图像" << std::endl;
+        return {defaultBulletPixmap, absolute_pos.first, absolute_pos.second};
+    }
+    
     return {_image, absolute_pos.first, absolute_pos.second};
 }
 

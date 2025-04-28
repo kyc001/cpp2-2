@@ -138,10 +138,25 @@ void GameMain::playGame() {
 void GameMain::paintEvent(QPaintEvent * event) {
     QPainter painter(this);
 
-    std::vector<PaintInfo> buffer = game->paint();
+    try {
+        std::vector<PaintInfo> buffer = game->paint();
 
-    for(auto & item: buffer){
-        painter.drawPixmap(item.getMX(), item.getMY(), item.getTarget());
+        for(auto & item: buffer){
+            try {
+                // 确保QPixmap有效
+                if (!item.getTarget().isNull()) {
+                    painter.drawPixmap(item.getMX(), item.getMY(), item.getTarget());
+                } else {
+                    std::cout << "警告：试图绘制空QPixmap，位置：" << item.getMX() << "," << item.getMY() << std::endl;
+                }
+            } catch (const std::exception& e) {
+                std::cout << "绘制单个项目时出错: " << e.what() << std::endl;
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cout << "绘制过程中出错: " << e.what() << std::endl;
+    } catch (...) {
+        std::cout << "绘制过程中发生未知错误" << std::endl;
     }
 }
 
