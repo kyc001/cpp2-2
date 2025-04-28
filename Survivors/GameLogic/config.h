@@ -42,8 +42,8 @@ extern int GAME_VOLUME;
 /*------地图设置信息------*/
 #define NUM_OF_MAPS 1
 #define MAP_1_NAME "Grass"
-#define MAP_1_PATH ":/image/Assets/map1_bg.png"
-#define MAP_1_BR ":/image/Assets/map1_br.png"
+#define MAP_1_PATH ":/Assets/map1_bg.png"
+#define MAP_1_BR ":/Assets/map1_br.png"
 #define MAP_1_CONFIG "MapConfigs/map1_br.txt"
 #define MAP_1_HEIGHT 3000
 #define MAP_1_LATTICE_X 30
@@ -52,7 +52,7 @@ extern int GAME_VOLUME;
 /*------玩家角色设置信息--*/
 #define NUM_OF_HEROS 2
 #define HERO_1_NAME "Link"
-#define HERO_1_PATH ":/image/Assets/hero1.png"
+#define HERO_1_PATH ":/Assets/hero1.png"
 #define HERO_1_HEALTH (50 + 40 * LIVE + 10 * POWER)
 #define HERO_INIT_EXP 20
 #define HERO_1_SPEED (4 + 4 * SPEED + LIVE)
@@ -70,14 +70,14 @@ extern int GAME_VOLUME;
 /*------子弹相关设置信息--*/
 #define NUM_OF_BULLETS 2
 #define DYNAMIC_BULLETS_MAX 30
-#define AOE_BULLET_1_PATH ":/image/Assets/aoebullet1.png"
+#define AOE_BULLET_1_PATH ":/Assets/aoebullet1.png"
 #define AOE_BULLET_1_CD (32 - 2 * SPEED - INTELLIGENCE)
 
-#define BULLET_2_PATH ":/image/Assets/bullet2.svg"
+#define BULLET_2_PATH ":/Assets/bullet2.svg"
 #define BULLET_2_SPEED 10
 #define BULLET_2_SIZE 20
 
-#define BULLET_3_PATH ":/image/Assets/enemybullet.png"
+#define BULLET_3_PATH ":/Assets/enemybullet.png"
 #define BULLET_3_SPEED 8
 #define BULLET_3_SIZE 15
 
@@ -105,7 +105,7 @@ extern int GAME_VOLUME;
 #define ENEMY_1_HEALTH 20
 #define ENEMY_1_SPEED 6
 #define ENEMY_1_CD 60
-#define ENEMY_1_PATH ":/image/Assets/pic3.gif"
+#define ENEMY_1_PATH ":/Assets/pic3.gif"
 
 #define ENEMY_2_NAME "青蛙"
 #define ENEMY_2_TYPE NoWeaponEnemyGround
@@ -113,16 +113,16 @@ extern int GAME_VOLUME;
 #define ENEMY_2_HEALTH 30
 #define ENEMY_2_SPEED 3
 #define ENEMY_2_CD 60
-#define ENEMY_2_PATH ":/image/Assets/pic1.gif"
+#define ENEMY_2_PATH ":/Assets/pic1.gif"
 
 #define ENEMY_3_NAME "飞行炮塔"
 #define ENEMY_3_TYPE WeaponEnemy
 #define ENEMY_3_HEALTH 20
 #define ENEMY_3_SPEED 5
-#define ENEMY_3_PATH ":/image/Assets/pic2.gif"
+#define ENEMY_3_PATH ":/Assets/pic2.gif"
 
 
-#define EBALL_PATH ":/image/Assets/expball.png"
+#define EBALL_PATH ":/Assets/expball.png"
 #define EBALL_SIZE 9
 #define EBALL_CD 1200
 #define EBALL_MAX 300
@@ -144,9 +144,9 @@ struct StageInfo{
 };
 
 const StageInfo STAGE_INFOS[NUM_OF_STAGES] = {
-        {3, {{1,300,120,20,100},
-                                    {2,100,120,20,100},
-                                    {3,5,300,120,100},
+        {3, {{1,100,30,10,100},     // 蝙蝠 - 更多数量，更快生成
+                                    {2,50,30,10,100},      // 青蛙 - 更多数量，更快生成
+                                    {3,20,60,30,100},      // 飞行炮塔 - 增加数量，稍微降低生成速度
         }},
 };
 

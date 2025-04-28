@@ -18,7 +18,7 @@ Menu::Menu(QWidget *parent) : QWidget(parent) {
     setupUi();
     
     // 设置背景图片
-    background->setPixmap(QPixmap(":/image/Assets/bg.jpg").scaled(1000, 800));
+    background->setPixmap(QPixmap(":/Assets/bg.jpg").scaled(1000, 800));
 
     // 设置按钮文本
     pushButton->setText("开始游戏");
@@ -37,23 +37,15 @@ void Menu::setupUi() {
     // 设置窗口大小
     this->resize(1000, 800);
     
-    // 创建布局
-    QVBoxLayout *mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(0, 0, 0, 0);
-    mainLayout->setSpacing(0);
-    
     // 创建背景标签
     background = new QLabel(this);
-    mainLayout->addWidget(background);
+    background->setGeometry(0, 0, 1000, 800); // 设置固定大小
+    background->lower(); // 确保背景在底层
     
-    // 创建按钮布局
-    QVBoxLayout *buttonLayout = new QVBoxLayout();
-    buttonLayout->setSpacing(12);
-    buttonLayout->setContentsMargins(350, 0, 350, 80);
-    
-    // 创建按钮
+    // 创建按钮并设置位置
     pushButton = new QPushButton(this);
     pushButton->setMinimumHeight(50);
+    pushButton->setGeometry(350, 600, 300, 50); // 调整位置和大小
     QFont font;
     font.setPointSize(14);
     font.setBold(true);
@@ -61,21 +53,24 @@ void Menu::setupUi() {
     
     pushButton_2 = new QPushButton(this);
     pushButton_2->setMinimumHeight(50);
+    pushButton_2->setGeometry(350, 660, 300, 50); // 调整位置和大小
     pushButton_2->setFont(font);
     
     pushButton_3 = new QPushButton(this);
     pushButton_3->setMinimumHeight(50);
+    pushButton_3->setGeometry(350, 720, 300, 50); // 调整位置和大小
     pushButton_3->setFont(font);
     
-    // 添加按钮到布局
-    buttonLayout->addWidget(pushButton);
-    buttonLayout->addWidget(pushButton_2);
-    buttonLayout->addWidget(pushButton_3);
+    // 确保按钮在前景
+    pushButton->raise();
+    pushButton_2->raise();
+    pushButton_3->raise();
     
-    // 添加按钮布局到主布局
-    mainLayout->addLayout(buttonLayout);
-    
-    setLayout(mainLayout);
+    // 设置按钮样式，使其半透明以便显示在背景图片上
+    QString buttonStyle = "QPushButton { background-color: rgba(45, 45, 45, 180); color: white; border: 2px solid rgba(255, 255, 255, 100); border-radius: 6px; padding: 5px 10px; }";
+    pushButton->setStyleSheet(buttonStyle);
+    pushButton_2->setStyleSheet(buttonStyle);
+    pushButton_3->setStyleSheet(buttonStyle);
 }
 
 Menu::~Menu() {

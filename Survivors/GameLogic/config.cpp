@@ -21,5 +21,5 @@ double HERO_X = 0;
 double HERO_Y = 0;
 
 // 添加控制模式和音量设置的全局变量
-int CONTROL_MODE = 0; // 默认键盘WASD控制
+int CONTROL_MODE = 1; // 使用鼠标跟随控制
 int GAME_VOLUME = 80; // 默认音量80%

@@ -247,3 +247,13 @@ void EnemyDynamicWeapon::tick() {
         }
     }
 }
+
+std::vector<PaintInfo> EnemyDynamicWeapon::paint() {
+    std::vector<PaintInfo> buffer;
+    for(auto item : bullet_buffer){
+        if(item && item->isEnabled()){
+            buffer.push_back(item->paint());
+        }
+    }
+    return buffer;
+}

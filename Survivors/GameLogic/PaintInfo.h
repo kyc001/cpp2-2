@@ -1,6 +1,6 @@
 #ifndef SURVIVORS_PAINTINFO_H
 #define SURVIVORS_PAINTINFO_H
-#include <QPixmap>
+#include <QtGui/QPixmap>
 
 
 class PaintInfo {

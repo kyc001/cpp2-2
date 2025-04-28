@@ -5,9 +5,9 @@
 #include "PaintInfo.h"
 #include "EnemyController.h"
 #include "GameMap.h"
-#include <QWidget>
+#include <QtWidgets/QWidget>
 #include <vector>
-#include <QKeyEvent>
+#include <QtGui/QKeyEvent>
 #include <utility>
 #include "ExpBall.h"
 #include "FloatingOrb.h"

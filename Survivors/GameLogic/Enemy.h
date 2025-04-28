@@ -1,10 +1,10 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
-#include <QProgressBar>
-#include <QImage>
-#include <QWidget>
-#include <QRect>
+#include <QtWidgets/QProgressBar>
+#include <QtGui/QImage>
+#include <QtWidgets/QWidget>
+#include <QtCore/QRect>
 #include <utility>
 #include <vector>
 
@@ -75,6 +75,7 @@ public:
     
 protected:
     bool attemptMove(double x_bias, double y_bias);
+    bool init_interact = true;
 };
 
 class WeaponEnemy : public NoWeaponEnemy {

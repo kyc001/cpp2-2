@@ -4,27 +4,57 @@
 #include <cstdlib>
 #include "Weapon.h"
 #include "Hero.h"
+#include <iostream>
+#include <QtCore/QDir>
 
 Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, GameMap *m_parent, Hero *target, double real_X, double real_Y) {
     QSize pix_size;
     enemy_type = enemy_style;
+    
+    // 输出当前目录信息，帮助调试
+    std::cout << "当前目录: " << QDir::currentPath().toStdString() << std::endl;
+    
     switch(enemy_style) {
         case 1:
-            _image.load(ENEMY_1_PATH);
+            std::cout << "尝试加载敌人1图片: " << ENEMY_1_PATH << std::endl;
+            if (!_image.load(ENEMY_1_PATH)) {
+                std::cout << "无法加载敌人1图片: " << ENEMY_1_PATH << std::endl;
+                // 创建一个红色方块作为替代
+                _image = QImage(40, 40, QImage::Format_RGBA8888);
+                _image.fill(Qt::red);
+            } else {
+                std::cout << "成功加载敌人1图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
+            }
             HP_MAX = ENEMY_1_HEALTH;
             speed = ENEMY_1_SPEED;
             pix_size.setWidth(40);
             pix_size.setHeight(40);
             break;
         case 2:
-            _image.load(ENEMY_2_PATH);
+            std::cout << "尝试加载敌人2图片: " << ENEMY_2_PATH << std::endl;
+            if (!_image.load(ENEMY_2_PATH)) {
+                std::cout << "无法加载敌人2图片: " << ENEMY_2_PATH << std::endl;
+                // 创建一个绿色方块作为替代
+                _image = QImage(40, 40, QImage::Format_RGBA8888);
+                _image.fill(Qt::green);
+            } else {
+                std::cout << "成功加载敌人2图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
+            }
             HP_MAX = ENEMY_2_HEALTH;
             speed = ENEMY_2_SPEED;
             pix_size.setWidth(40);
             pix_size.setHeight(40);
             break;
         case 3:
-            _image.load(ENEMY_3_PATH);
+            std::cout << "尝试加载敌人3图片: " << ENEMY_3_PATH << std::endl;
+            if (!_image.load(ENEMY_3_PATH)) {
+                std::cout << "无法加载敌人3图片: " << ENEMY_3_PATH << std::endl;
+                // 创建一个蓝色方块作为替代
+                _image = QImage(40, 40, QImage::Format_RGBA8888);
+                _image.fill(Qt::blue);
+            } else {
+                std::cout << "成功加载敌人3图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
+            }
             HP_MAX = ENEMY_3_HEALTH;
             speed = ENEMY_3_SPEED;
             pix_size.setWidth(40);
@@ -64,10 +94,35 @@ Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, Ga
 }
 
 std::vector<PaintInfo> Enemy::paint() {
-    QPixmap pixmap = QPixmap::fromImage(_image);
-    PaintInfo _this(pixmap, absolute_pos.first, absolute_pos.second);
     std::vector<PaintInfo> temp;
-    temp.push_back(_this);
+    
+    // 创建一个永久存在的静态QPixmap对象作为备用
+    static QPixmap defaultPixmapRed(40, 40);
+    static QPixmap defaultPixmapGreen(40, 40);
+    static bool initialized = false;
+    
+    if (!initialized) {
+        defaultPixmapRed.fill(Qt::red);
+        defaultPixmapGreen.fill(Qt::green);
+        initialized = true;
+    }
+    
+    if (_image.isNull()) {
+        std::cout << "警告：敌人" << enemy_type << "的图像为空" << std::endl;
+        // 使用静态备用QPixmap
+        temp.push_back(PaintInfo(defaultPixmapRed, absolute_pos.first, absolute_pos.second));
+    } else {
+        // 创建一个新的持久存在的QPixmap
+        static QPixmap pixmap;
+        pixmap = QPixmap::fromImage(_image);
+        
+        if (pixmap.isNull()) {
+            std::cout << "警告：无法从敌人图像创建QPixmap" << std::endl;
+            temp.push_back(PaintInfo(defaultPixmapGreen, absolute_pos.first, absolute_pos.second));
+        } else {
+            temp.push_back(PaintInfo(pixmap, absolute_pos.first, absolute_pos.second));
+        }
+    }
     return temp;
 }
 
@@ -150,11 +205,28 @@ bool NoWeaponEnemy::judgeDamage() {
     } else {
         cdn = CD;
     }
-    if(real_rect.intersects(target->real_rect)) {
-        target->damage(power);
-        disable();
-        return true;
-    } else {
+    
+    // 添加安全检查
+    if(!target || target->isGameStop()) {
+        return false;
+    }
+    
+    // 增加日志输出，便于调试
+    std::cout << "敌人位置: (" << real_pos.first << "," << real_pos.second 
+              << "), 玩家位置: (" << target->getRealX() << "," << target->getRealY() << ")" << std::endl;
+    
+    try {
+        if(real_rect.intersects(target->real_rect)) {
+            std::cout << "敌人" << enemy_type << "与玩家发生碰撞!" << std::endl;
+            target->damage(power);
+            // 不再立即禁用敌人，而是给它一个冷却时间
+            // disable();
+            return true;
+        } else {
+            return false;
+        }
+    } catch (const std::exception& e) {
+        std::cout << "碰撞检测出现异常: " << e.what() << std::endl;
         return false;
     }
 }
@@ -209,9 +281,10 @@ bool NoWeaponEnemyGround::attemptMove(double x_bias, double y_bias) {
     QRect test(real_rect);
     test.moveTo(int(real_pos.first + x_bias), int(real_pos.second + y_bias));
     if(map_parent->checkPosition(test)) {
+        init_interact = false;
         return true;
     } else {
-        return false;
+        return init_interact;
     }
 }
 

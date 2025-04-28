@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/image">
+    <qresource prefix="/">
         <file>../Assets/map1_bg.png</file>
         <file>../Assets/hero1.png</file>
         <file>../Assets/pic1.gif</file>

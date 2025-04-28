@@ -11,11 +11,6 @@ EnemyController::EnemyController(GameState *g, int stage) : game(g), game_stage(
     StageInfo this_stage = STAGE_INFOS[stage - 1];
     type_num = this_stage.type_num;
 
-    for(auto & each : g->enemies){
-        each.clear();
-    }
-    g->enemies.clear();
-
     int vector_pos = 0;
     for(auto& each : this_stage.type_info){
         TypeController temp = {};
@@ -29,8 +24,6 @@ EnemyController::EnemyController(GameState *g, int stage) : game(g), game_stage(
         temp.reduce_counters = each.reduce_rate;
         temp.vector_pos = vector_pos;
         types.push_back(temp);
-        std::vector<Enemy *> t(each.max_nums);
-        g->enemies.push_back(t);
         vector_pos ++;
     }
 
@@ -68,21 +61,26 @@ void EnemyController::reportDeath(int type) {
 
 void EnemyController::enableNullSpace(int enemy_type, Enemy *&space) {
     std::pair<double, double> real_pos = generatePosition();
+    std::cout << "正在创建类型: " << enemy_type << " 的敌人, 坐标: " << real_pos.first << "," << real_pos.second << std::endl;
     switch(enemy_type){
         case 1:
             space = new ENEMY_1_TYPE(1, game->parent, this, game->_map,
                                      game->player, real_pos.first, real_pos.second);
+            std::cout << "蝙蝠敌人创建完成，图片状态: " << (space->_image.isNull() ? "空" : "有效") << std::endl;
             break;
         case 2:
             space = new ENEMY_2_TYPE(2, game->parent, this, game->_map,
                                      game->player, real_pos.first, real_pos.second);
+            std::cout << "青蛙敌人创建完成，图片状态: " << (space->_image.isNull() ? "空" : "有效") << std::endl;
             break;
         case 3:
             space = new ENEMY_3_TYPE(3, game->parent, this, game->_map,
                                      game->player, real_pos.first, real_pos.second);
+            std::cout << "飞行炮塔敌人创建完成，图片状态: " << (space->_image.isNull() ? "空" : "有效") << std::endl;
             break;
     }
     space->enable();
+    std::cout << "敌人已启用: enemy_type=" << enemy_type << ", enabled=" << space->isEnabled() << ", alive=" << space->alive << std::endl;
 }
 
 void EnemyController::enableUsedSpace(int enemy_type, Enemy *&space) {
@@ -147,9 +145,15 @@ void EnemyController::tick() {
     //再处理敌人生成
     for(auto & each : types){
         if(each.cds <= 0 && each.num_counters < each.max_nums){
-            addEnemy(each.enemy_type, game->enemies[each.vector_pos]);
-            each.num_counters ++;
-            each.cds = each.max_cds;
+            // 检查enemies数组的索引是否有效
+            if(each.vector_pos >= 0 && each.vector_pos < game->enemies.size()) {
+                addEnemy(each.enemy_type, game->enemies[each.vector_pos]);
+                each.num_counters ++;
+                each.cds = each.max_cds;
+            } else {
+                std::cout << "警告: 无效的enemies数组索引: " << each.vector_pos 
+                          << ", 总大小: " << game->enemies.size() << std::endl;
+            }
         } else if(each.num_counters < each.max_nums){
             each.cds --;
         }
