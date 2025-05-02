@@ -19,7 +19,7 @@ Hero::Hero() {
     widget_parent = nullptr;
     hp_bar = new QProgressBar();
     exp_bar = new QProgressBar();
-    QSize pix_size(60,60);
+    QSize pix_size(80, 80);
     _image.scaled(pix_size);
     absolute_pos.first = GAME_WIDTH * 0.5 - _image.width()*0.5;
     absolute_pos.second = GAME_HEIGHT * 0.5 - _image.height()*0.5;
@@ -104,7 +104,7 @@ Hero::Hero(int hero_style, QWidget *w_parent, GameMap *m_parent) {
     exp_bar->setParent(widget_parent);
     exp_bar->show();
 
-    QSize pix_size(60,60);
+    QSize pix_size(80, 80);
 
     if (!load_success) {
         std::cerr << "[错误] Hero: 无法加载英雄图像: " << hero_path.toStdString() << "，创建备用图像" << std::endl;

@@ -42,7 +42,7 @@ Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, Ga
             speed = ENEMY_3_SPEED;
             break;
     }
-    pix_size = QSize(150,150);
+    pix_size = QSize(100, 100);
     
     // 加载敌人图像 - 优化加载逻辑
     loadEnemyImage(enemy_style, pix_size); // 添加敌人类型参数
@@ -76,10 +76,10 @@ void Enemy::createHpBar() {
             hp_bar = new QProgressBar(widget_parent);
             hp_bar->setRange(0, HP_MAX);
             hp_bar->setValue(hp);
-            hp_bar->setGeometry(absolute_pos.first, absolute_pos.second - 20, absolute_rect.width(), 10);
-            hp_bar->setTextVisible(false); // 不显示文本，减少渲染负担
-            hp_bar->setStyleSheet("QProgressBar {background-color: transparent; border: 1px solid white;}"
-                                 "QProgressBar::chunk {background-color: red;}");
+            hp_bar->setGeometry(absolute_pos.first + (absolute_rect.width() - 80) / 2, absolute_pos.second - 15, 80, 8);
+            hp_bar->setTextVisible(false);
+            hp_bar->setStyleSheet("QProgressBar { background-color: transparent; border: none; }" 
+                                 "QProgressBar::chunk { background-color: red; }");
             healthChange();
             if (!enabled) {
                 hp_bar->hide();
@@ -186,36 +186,35 @@ void Enemy::loadEnemyImage(int enemy_style, const QSize& size) {
 std::vector<PaintInfo> Enemy::paint() {
     std::vector<PaintInfo> temp;
     
-    // 绘制敌人图像
-    QPixmap enemyPixmap = QPixmap::fromImage(_image);
-    if (enemyPixmap.isNull()) {
-        std::cout << "[错误] Enemy::paint - 无法从_image创建QPixmap，创建备用图像" << std::endl;
-        
-        // 如果从_image创建QPixmap失败，直接创建一个新的QPixmap
-        QPixmap backupPixmap(150, 150);
-        backupPixmap.fill(Qt::transparent);
+    // 检查 _image (QImage) 是否有效
+    if (!_image.isNull()) {
+        // 从 QImage 创建 QPixmap
+        QPixmap enemyPixmap = QPixmap::fromImage(_image);
+        if (enemyPixmap.isNull()) {
+             std::cerr << "[错误] Enemy::paint - 无法从 _image (QImage) 创建 QPixmap! 创建备用图像" << std::endl;
+             // 创建备用 QPixmap
+             QPixmap backupPixmap(100, 100);
+             backupPixmap.fill(Qt::darkGray);
+             QPainter p(&backupPixmap);
+             p.setPen(QPen(Qt::black, 3));
+             p.drawEllipse(5, 5, 90, 90);
+             p.end();
+             temp.push_back(PaintInfo(backupPixmap, absolute_pos.first, absolute_pos.second));
+        } else {
+            // 使用成功创建的 QPixmap
+            temp.push_back(PaintInfo(enemyPixmap, absolute_pos.first, absolute_pos.second));
+        }
+    } else {
+        std::cout << "[错误] Enemy::paint - _image (QImage) 为空，创建备用图像" << std::endl;
+        // 创建备用 QPixmap
+        QPixmap backupPixmap(100, 100); // 使用更新后的敌人尺寸
+        backupPixmap.fill(Qt::darkGray); // 使用深灰色
         QPainter p(&backupPixmap);
         p.setPen(QPen(Qt::black, 3));
-        p.setBrush(Qt::gray);
-        p.drawEllipse(10, 10, 130, 130);
+        p.drawEllipse(5, 5, 90, 90); // 适应新尺寸
         p.end();
-        
         temp.push_back(PaintInfo(backupPixmap, absolute_pos.first, absolute_pos.second));
-    } else {
-        temp.push_back(PaintInfo(enemyPixmap, absolute_pos.first, absolute_pos.second));
     }
-    
-    // 绘制血条（直接使用QPixmap，不依赖于_image）
-    int barWidth = 100; // 使用一个固定宽度替代hp_width
-    QPixmap hpBarPixmap(barWidth + 20, 30);
-    hpBarPixmap.fill(Qt::transparent);
-    
-    QPainter painter(&hpBarPixmap);
-    painter.setPen(QPen(Qt::black, 3));
-    painter.drawRect(0, 0, barWidth + 20, 20);
-    painter.fillRect(10, 10, 1.0 * hp / HP_MAX * barWidth, 10, Qt::red); // 使用HP_MAX代替hp_max
-    
-    temp.push_back(PaintInfo(hpBarPixmap, absolute_pos.first - 10, absolute_pos.second - 30));
     
     return temp;
 }
@@ -291,7 +290,7 @@ void Enemy::healthChange() {
 
 void Enemy::setHpBarPosition() {
     if (hp_bar) {
-        hp_bar->setGeometry(absolute_pos.first, absolute_pos.second - 20, absolute_rect.width(), 40);
+        hp_bar->setGeometry(absolute_pos.first + (absolute_rect.width() - 80) / 2, absolute_pos.second - 15, 80, 8);
     }
 }
 

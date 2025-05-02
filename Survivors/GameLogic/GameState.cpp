@@ -21,40 +21,40 @@ void GameState::initHero(unsigned int hero_style) {
 
 std::vector<PaintInfo> GameState::paint() {
     std::vector<PaintInfo> buffer;
-
     std::vector<PaintInfo> temp;
-    //地图的信息
+
+    // 1. 地图的信息
     temp = _map->paint();
-    buffer.reserve(temp.size());
-    for(auto& item: temp){
-        buffer.push_back(item);
-    }
+    buffer.insert(buffer.end(), temp.begin(), temp.end()); // 使用 insert 提高效率
 
-    temp = player->paint();
-    for(auto& item: temp){
-        buffer.push_back(item);
-    }
-    
-    // 绘制悬浮球
-    for(auto& orb : floating_orbs) {
-        buffer.push_back(orb->paint());
-    }
-
-    for(auto& lst : enemies){
-        for(auto& each : lst){
-            if(each && each->isEnabled()) {
-                std::vector<PaintInfo> temp_each = each->paint();
-                for(auto& item : temp_each){
-                    buffer.push_back(item);
-                }
-            }
-        }
-    }
-
+    // 2. 绘制经验球 (通常在最底层)
     for(auto& each : exp_balls){
         if(each && each->isEnabled()){
             buffer.push_back(each->paint());
         }
+    }
+
+    // 3. 绘制敌人
+    for(auto& lst : enemies){
+        for(auto& each : lst){
+            if(each && each->isEnabled()) {
+                temp = each->paint(); // 获取敌人的绘制信息
+                buffer.insert(buffer.end(), temp.begin(), temp.end());
+            }
+        }
+    }
+
+    // 4. 绘制悬浮球 (可以在敌人之后，玩家之前或之后)
+    for(auto& orb : floating_orbs) {
+        if (orb) { // 安全检查
+            buffer.push_back(orb->paint());
+        }
+    }
+
+    // 5. 最后绘制玩家 (确保在最上层)
+    if (player) { // 安全检查
+        temp = player->paint();
+        buffer.insert(buffer.end(), temp.begin(), temp.end());
     }
 
     return buffer;
