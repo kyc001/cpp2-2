@@ -328,7 +328,7 @@ build Survivors_autogen/timestamp Survivors_autogen/mocs_compilation.cpp | ${cma
 #############################################
 # Custom command for Survivors_autogen\UVLADIE3JM\qrc_gameres.cpp
 
-build Survivors_autogen/UVLADIE3JM/qrc_gameres.cpp | ${cmake_ninja_workdir}Survivors_autogen/UVLADIE3JM/qrc_gameres.cpp: CUSTOM_COMMAND D$:/Survivors/Survivors/src/gameres.qrc CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Info.json D$:/Survivors/Survivors/Assets/enemybullet.png D$:/Survivors/Survivors/Assets/pic3.gif D$:/Survivors/Survivors/Assets/expball.png D$:/Survivors/Survivors/Assets/pic2.gif D$:/Survivors/Survivors/Assets/pic1.gif D$:/Survivors/Survivors/Assets/pic4.gif D$:/Survivors/Survivors/Assets/bullet2.svg D$:/Survivors/Survivors/Assets/map1_br.png D$:/Survivors/Survivors/Assets/map1_bg.png D$:/Survivors/Survivors/Assets/aoebullet1.png D$:/Survivors/Survivors/Assets/bg.jpg D$:/Survivors/Survivors/Assets/hero1.png D$:/Qt20250127/6.8.1/mingw_64/bin/rcc.exe || Survivors_autogen Survivors_autogen_timestamp_deps
+build Survivors_autogen/UVLADIE3JM/qrc_gameres.cpp | ${cmake_ninja_workdir}Survivors_autogen/UVLADIE3JM/qrc_gameres.cpp: CUSTOM_COMMAND D$:/Survivors/Survivors/src/gameres.qrc CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Info.json D$:/Survivors/Survivors/Assets/enemybullet.png D$:/Survivors/Survivors/Assets/expball.png D$:/Survivors/Survivors/Assets/laocai.png D$:/Survivors/Survivors/Assets/bullet2.svg D$:/Survivors/Survivors/Assets/map1_bg.png D$:/Survivors/Survivors/Assets/aoebullet1.png D$:/Survivors/Survivors/Assets/bg.jpg D$:/Survivors/Survivors/Assets/maodie.gif D$:/Qt20250127/6.8.1/mingw_64/bin/rcc.exe || Survivors_autogen Survivors_autogen_timestamp_deps
   COMMAND = cmd.exe /C "cd /D D:\Survivors\Survivors\build && D:\CMAKE\bin\cmake.exe -E cmake_autorcc D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Info.json Debug"
   DESC = Automatic RCC for src/gameres.qrc
   restat = 1
@@ -337,7 +337,7 @@ build Survivors_autogen/UVLADIE3JM/qrc_gameres.cpp | ${cmake_ninja_workdir}Survi
 #############################################
 # Phony custom command for CMakeFiles\Survivors_autogen_timestamp_deps
 
-build CMakeFiles/Survivors_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/Survivors_autogen_timestamp_deps: phony D$:/Qt20250127/6.8.1/mingw_64/lib/libQt6Gui.a D$:/Qt20250127/6.8.1/mingw_64/bin/moc.exe D$:/Qt20250127/6.8.1/mingw_64/lib/libQt6Core.a D$:/Qt20250127/6.8.1/mingw_64/lib/libQt6Widgets.a D$:/Qt20250127/6.8.1/mingw_64/bin/uic.exe
+build CMakeFiles/Survivors_autogen_timestamp_deps | ${cmake_ninja_workdir}CMakeFiles/Survivors_autogen_timestamp_deps: phony D$:/Qt20250127/6.8.1/mingw_64/lib/libQt6Gui.a D$:/Qt20250127/6.8.1/mingw_64/bin/moc.exe D$:/Qt20250127/6.8.1/mingw_64/lib/libQt6Core.a D$:/Qt20250127/6.8.1/mingw_64/bin/uic.exe D$:/Qt20250127/6.8.1/mingw_64/lib/libQt6Widgets.a
 
 
 #############################################

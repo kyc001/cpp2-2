@@ -71,6 +71,13 @@ void GameMain::setupUi() {
     enemy_cnt_label = new QLabel("已清除敌人数量：0", this);
     level_label = new QLabel("当前等级：1", this);
     
+    // 设置字体大小
+    QFont labelFont;
+    labelFont.setPointSize(14);  // 增大字体大小
+    labelFont.setBold(true);     // 设置为粗体
+    enemy_cnt_label->setFont(labelFont);
+    level_label->setFont(labelFont);
+    
     // 添加组件到控制布局
     controlsLayout->addWidget(pause_button);
     controlsLayout->addWidget(back_button);

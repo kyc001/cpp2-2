@@ -145,11 +145,17 @@ void Hero::expChange() {
 }
 
 void Hero::setExpBarPosition() {
-    exp_bar->setGeometry(150,0,GAME_WIDTH-150,40);
+    exp_bar->setGeometry(150,0,GAME_WIDTH-150,60);
+    // 设置经验条样式
+    exp_bar->setStyleSheet("QProgressBar { border: 2px solid gray; border-radius: 5px; text-align: center; }"
+                          "QProgressBar::chunk { background-color: #5DA5DA; width: 10px; }");
 }
 
 void Hero::setHpBarPosition() {
-    hp_bar->setGeometry(absolute_pos.first, absolute_pos.second - 20, absolute_rect.width(), 40);
+    hp_bar->setGeometry(absolute_pos.first - 10, absolute_pos.second - 30, absolute_rect.width() + 20, 30);
+    // 设置血条样式
+    hp_bar->setStyleSheet("QProgressBar { border: 2px solid gray; border-radius: 5px; text-align: center; }"
+                         "QProgressBar::chunk { background-color: #C44E52; width: 10px; }");
 }
 
 void Hero::tick() {

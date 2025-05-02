@@ -1,9 +1,5 @@
-//
-// Created by 金文泽 on 2023/4/18.
-//
-
-#ifndef VSCPROJECT_CONFIG_H
-#define VSCPROJECT_CONFIG_H
+#ifndef CONFIG_H
+#define CONFIG_H
 #include <vector>
 /*------游戏设置信息------*/
 #define GAME_WIDTH 1000
@@ -52,7 +48,7 @@ extern int GAME_VOLUME;
 /*------玩家角色设置信息--*/
 #define NUM_OF_HEROS 2
 #define HERO_1_NAME "Link"
-#define HERO_1_PATH ":/Assets/hero1.png"
+#define HERO_1_PATH ":/Assets/maodie.gif"
 #define HERO_1_HEALTH (50 + 40 * LIVE + 10 * POWER)
 #define HERO_INIT_EXP 20
 #define HERO_1_SPEED (4 + 4 * SPEED + LIVE)
@@ -97,33 +93,18 @@ extern int GAME_VOLUME;
 #define E_WEAPON_CD 60
 
 /*------怪物相关设置信息--*/
-#define NUM_OF_ENEMIES 1
+#define NUM_OF_ENEMIES 3
 
-#define ENEMY_1_NAME "蝙蝠"
+#define ENEMY_1_NAME "老菜"
 #define ENEMY_1_TYPE NoWeaponEnemy
 #define ENEMY_1_POWER 5
-#define ENEMY_1_HEALTH 20
-#define ENEMY_1_SPEED 6
+#define ENEMY_1_HEALTH 30
+#define ENEMY_1_SPEED 5
 #define ENEMY_1_CD 60
-#define ENEMY_1_PATH ":/Assets/pic3.gif"
-
-#define ENEMY_2_NAME "青蛙"
-#define ENEMY_2_TYPE NoWeaponEnemyGround
-#define ENEMY_2_POWER 10
-#define ENEMY_2_HEALTH 30
-#define ENEMY_2_SPEED 3
-#define ENEMY_2_CD 60
-#define ENEMY_2_PATH ":/Assets/pic1.gif"
-
-#define ENEMY_3_NAME "飞行炮塔"
-#define ENEMY_3_TYPE WeaponEnemy
-#define ENEMY_3_HEALTH 20
-#define ENEMY_3_SPEED 5
-#define ENEMY_3_PATH ":/Assets/pic2.gif"
-
+#define ENEMY_1_PATH ":/Assets/laocai.png"
 
 #define EBALL_PATH ":/Assets/expball.png"
-#define EBALL_SIZE 9
+#define EBALL_SIZE 20
 #define EBALL_CD 1200
 #define EBALL_MAX 300
 
@@ -144,12 +125,10 @@ struct StageInfo{
 };
 
 const StageInfo STAGE_INFOS[NUM_OF_STAGES] = {
-        {3, {{1,100,30,10,100},     // 蝙蝠 - 更多数量，更快生成
-                                    {2,50,30,10,100},      // 青蛙 - 更多数量，更快生成
-                                    {3,20,60,30,100},      // 飞行炮塔 - 增加数量，稍微降低生成速度
+        {3, {{1,10,30,10,100},     // 敌人1 - 减少数量，防止生成过多
+                                    {2,5,50,30,100},      // 敌人2 - 减少数量，延长生成时间
+                                    {3,3,80,50,100},      // 敌人3 - 减少数量，延长生成时间
         }},
 };
-
-
 
 #endif //VSCPROJECT_CONFIG_H

@@ -43,7 +43,7 @@ FloatingOrb::FloatingOrb(Hero* hero, GameState* gameState, int index, double rad
     
     // 设置攻击力和击退力
     _damage = 3 + index * 2;  // 根据索引设置不同的攻击力
-    _knockbackForce = 20 + index * 5; // 击退力度也随索引增加
+    _knockbackForce = 40 + index * 10; // 击退力度也随索引增加
 }
 
 void FloatingOrb::tick() {

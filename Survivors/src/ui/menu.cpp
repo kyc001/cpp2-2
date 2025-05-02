@@ -13,12 +13,23 @@
 #include <QMessageBox>
 #include <QApplication>
 #include <QHBoxLayout>
+#include <iostream>
 
 Menu::Menu(QWidget *parent) : QWidget(parent) {
+    std::cout << "[Log] Menu 构造函数开始" << std::endl;
     setupUi();
     
     // 设置背景图片
-    background->setPixmap(QPixmap(":/Assets/bg.jpg").scaled(1000, 800));
+    std::cout << "[Log] Menu: 尝试加载背景图片 :/Assets/bg.jpg" << std::endl;
+    QPixmap bgPixmap(":/Assets/bg.jpg");
+    if (bgPixmap.isNull()) {
+        std::cerr << "错误：无法加载背景图片 :/Assets/bg.jpg！请检查资源文件。" << std::endl;
+        // 可以选择设置一个纯色背景作为备用
+        background->setStyleSheet("background-color: black;");
+    } else {
+        std::cout << "[Log] Menu: 背景图片加载成功" << std::endl;
+        background->setPixmap(bgPixmap.scaled(1000, 800));
+    }
 
     // 设置按钮文本
     pushButton->setText("开始游戏");

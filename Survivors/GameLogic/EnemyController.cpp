@@ -8,11 +8,13 @@
 #include <iostream>
 
 EnemyController::EnemyController(GameState *g, int stage) : game(g), game_stage(stage){
+    std::cout << "[Log] EnemyController 构造函数开始, stage: " << stage << std::endl;
     StageInfo this_stage = STAGE_INFOS[stage - 1];
     type_num = this_stage.type_num;
 
     int vector_pos = 0;
     for(auto& each : this_stage.type_info){
+        std::cout << "[Log] EnemyController 处理敌人类型: " << each.enemy_type << std::endl;
         TypeController temp = {};
         temp.max_cds = each.cd_max;
         temp.enemy_type = each.enemy_type;
@@ -30,63 +32,101 @@ EnemyController::EnemyController(GameState *g, int stage) : game(g), game_stage(
     enemy_death_cnt = 0;
 
     srand(time(nullptr));
+    std::cout << "[Log] EnemyController 构造函数结束" << std::endl;
 }
 
 void EnemyController::addEnemy(int enemy_type, std::vector<Enemy *> &buffer) {
+    std::cout << "[Log] EnemyController::addEnemy 开始, 类型: " << enemy_type << std::endl;
     for(auto & space : buffer){
         if(space == nullptr){
             enableNullSpace(enemy_type, space);
+            std::cout << "[Log] EnemyController::addEnemy 结束 (空槽)" << std::endl;
             return;
         } else if(!space->isEnabled()){
             enableUsedSpace(enemy_type, space);
+            std::cout << "[Log] EnemyController::addEnemy 结束 (重用)" << std::endl;
             return;
         }
     }
+    std::cout << "[Log] EnemyController::addEnemy 结束 (无可用槽)" << std::endl;
 }
 
 void EnemyController::reportDeath(int type) {
+    bool found = false;
     for(auto & each : types){
         if(each.enemy_type == type) {
-            each.num_counters --;
-            assert(each.num_counters >= 0);
+            // 添加安全检查，确保计数器不会变为负数
+            if(each.num_counters > 0) {
+                each.num_counters--;
+                found = true;
+            } else {
+                std::cout << "警告: 敌人类型 " << type << " 的计数器已经为0，无法再减少" << std::endl;
+            }
             break;
         }
     }
 
-    switch(type){
-        case 1:
-            enemy_death_cnt ++;
+    // 只有在成功减少计数器时才增加死亡计数
+    if (found) {
+        switch(type){
+            case 1:
+                enemy_death_cnt++;
+                break;
+            case 2:
+                enemy_death_cnt++;
+                break;
+            case 3:
+                enemy_death_cnt += 2;
+                break;
+            default:
+                std::cout << "警告: 未知的敌人类型 " << type << std::endl;
+                break;
+        }
     }
 }
 
 void EnemyController::enableNullSpace(int enemy_type, Enemy *&space) {
+    std::cout << "[Log] EnemyController::enableNullSpace 开始, 类型: " << enemy_type << std::endl;
     std::pair<double, double> real_pos = generatePosition();
     std::cout << "正在创建类型: " << enemy_type << " 的敌人, 坐标: " << real_pos.first << "," << real_pos.second << std::endl;
-    switch(enemy_type){
+    switch(enemy_type) {
         case 1:
-            space = new ENEMY_1_TYPE(1, game->parent, this, game->_map,
+            space = new ENEMY_1_TYPE(enemy_type, game->parent, this, game->_map,
                                      game->player, real_pos.first, real_pos.second);
-            std::cout << "蝙蝠敌人创建完成，图片状态: " << (space->_image.isNull() ? "空" : "有效") << std::endl;
             break;
-        case 2:
-            space = new ENEMY_2_TYPE(2, game->parent, this, game->_map,
+        // 添加对其他敌人类型的处理（如果它们的类不同）
+        // case 2:
+        //     space = new ENEMY_2_TYPE(enemy_type, game->parent, this, game->_map,
+        //                              game->player, real_pos.first, real_pos.second);
+        //     break;
+        // case 3:
+        //     space = new ENEMY_3_TYPE(enemy_type, game->parent, this, game->_map,
+        //                              game->player, real_pos.first, real_pos.second);
+        //     break;
+        default:
+             // 默认创建类型1，或者可以抛出错误/记录日志
+             std::cout << "警告：尝试创建未处理的敌人类型 " << enemy_type << "，将创建类型 1 代替。" << std::endl;
+             space = new ENEMY_1_TYPE(1, game->parent, this, game->_map,
                                      game->player, real_pos.first, real_pos.second);
-            std::cout << "青蛙敌人创建完成，图片状态: " << (space->_image.isNull() ? "空" : "有效") << std::endl;
-            break;
-        case 3:
-            space = new ENEMY_3_TYPE(3, game->parent, this, game->_map,
-                                     game->player, real_pos.first, real_pos.second);
-            std::cout << "飞行炮塔敌人创建完成，图片状态: " << (space->_image.isNull() ? "空" : "有效") << std::endl;
             break;
     }
-    space->enable();
-    std::cout << "敌人已启用: enemy_type=" << enemy_type << ", enabled=" << space->isEnabled() << ", alive=" << space->alive << std::endl;
+
+    if (space) {
+        std::cout << "敌人" << enemy_type << "创建完成，图片状态: " << (space->_image.isNull() ? "空" : "有效") << std::endl;
+        space->enable();
+        std::cout << "敌人已启用: enemy_type=" << enemy_type << ", enabled=" << space->isEnabled() << ", alive=" << space->alive << std::endl;
+    } else {
+        std::cout << "错误：创建敌人类型 " << enemy_type << " 失败！" << std::endl;
+    }
+    std::cout << "[Log] EnemyController::enableNullSpace 结束" << std::endl;
 }
 
 void EnemyController::enableUsedSpace(int enemy_type, Enemy *&space) {
+    std::cout << "[Log] EnemyController::enableUsedSpace 开始, 类型: " << enemy_type << std::endl;
     std::pair<double, double> real_pos = generatePosition();
     space->setRealPosition(real_pos.first, real_pos.second);
     space->enable();
+    std::cout << "[Log] EnemyController::enableUsedSpace 结束" << std::endl;
 }
 
 std::pair<double, double> EnemyController::generatePosition() {
@@ -161,29 +201,40 @@ void EnemyController::tick() {
 }
 
 void EnemyController::reportDeath(int type, double rx, double ry) {
+    bool found = false;
     for(auto & each : types){
         if(each.enemy_type == type) {
-            each.num_counters --;
-            assert(each.num_counters >= 0);
+            // 添加安全检查，确保计数器不会变为负数
+            if(each.num_counters > 0) {
+                each.num_counters--;
+                found = true;
+            } else {
+                std::cout << "警告: 敌人类型 " << type << " 的计数器已经为0，无法再减少" << std::endl;
+            }
             break;
         }
     }
 
+    // 只有在找到对应类型且成功减少计数器时才添加经验球
+    if(found) {
     int value;
     switch(type){
         case 1:
-            enemy_death_cnt ++;
+                enemy_death_cnt++;
             value = 10;
             break;
         case 2:
-            enemy_death_cnt ++;
+                enemy_death_cnt++;
             value = 10;
             break;
         case 3:
             enemy_death_cnt += 2;
             value = 20;
             break;
+            default:
+                value = 5; // 默认经验值
+                break;
+        }
+        game->addExpBall(rx, ry, value);
     }
-
-    game->addExpBall(rx,ry, value);
 }

@@ -61,10 +61,11 @@ public:
     int getCD() override { return CD; }
 
     void upgrade() override {
-        CD = (int)((double)CD / WEAPON_INC_RATE);
-        if(CD <= 20){
-            CD = 20;
+        CD = (int)((double)CD / (WEAPON_INC_RATE + 0.2));
+        if(CD <= 15){
+            CD = 15;
         }
+        range = (int)(range * 1.2);
     }
 private:
     void update_pos();
