@@ -14,6 +14,9 @@
 #include <QHBoxLayout>
 #include <QMediaPlayer>
 #include <QAudioOutput>
+#include <QMovie>
+#include <QShortcut>
+#include <QMouseEvent>
 #include "GameLogic/GameState.h"
 #include "GameLogic/config.h"
 
@@ -36,12 +39,20 @@ public:
 
     // 恢复游戏
     void resumeGame();
+    
+    // 显示猫蝶GIF动画
+    void showMaodieAnimation(int x, int y, int size = 100);
 
+private slots:
+    // 快捷键触发显示猫蝶动画
+    void onShowMaodieTriggered();
+    
 protected:
     void paintEvent(QPaintEvent *event) override;
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 private:
     // UI组件
@@ -53,6 +64,9 @@ private:
     QLabel *level_label;
     QMediaPlayer *bgmPlayer;
     QAudioOutput *audioOutput;
+    QMovie *maodieMovie;      // 猫蝶GIF动画
+    QLabel *maodieLabel;      // 显示猫蝶动画的标签
+    QShortcut *maodieShortcut; // 显示猫蝶的快捷键
     
     Menu * widget_parent;  // 父窗口指针
     QTimer m_Timer;        // 游戏计时器
@@ -69,6 +83,8 @@ private:
     void initAndPlayBGM();
     // 尝试使用 Windows API 播放背景音乐
     void playBackgroundMusicWithWinAPI();
+    // 初始化猫蝶动画
+    void initMaodieAnimation();
 
     // 暂停按钮点击处理
     void pauseButtonClicked();
