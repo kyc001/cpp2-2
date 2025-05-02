@@ -103,6 +103,22 @@ extern int GAME_VOLUME;
 #define ENEMY_1_CD 60
 #define ENEMY_1_PATH ":/Assets/laocai.png"
 
+#define ENEMY_2_NAME "绿块"
+#define ENEMY_2_TYPE NoWeaponEnemy
+#define ENEMY_2_POWER 4
+#define ENEMY_2_HEALTH 35
+#define ENEMY_2_SPEED 4
+#define ENEMY_2_CD 70
+#define ENEMY_2_PATH ":/Assets/enemy2.png"
+
+#define ENEMY_3_NAME "蓝三角"
+#define ENEMY_3_TYPE NoWeaponEnemy
+#define ENEMY_3_POWER 7
+#define ENEMY_3_HEALTH 45
+#define ENEMY_3_SPEED 5.5
+#define ENEMY_3_CD 80
+#define ENEMY_3_PATH ":/Assets/enemy3.png"
+
 #define EBALL_PATH ":/Assets/expball.png"
 #define EBALL_SIZE 20
 #define EBALL_CD 1200
@@ -125,10 +141,15 @@ struct StageInfo{
 };
 
 const StageInfo STAGE_INFOS[NUM_OF_STAGES] = {
-        {3, {{1,10,30,10,100},     // 敌人1 - 减少数量，防止生成过多
-                                    {2,5,50,30,100},      // 敌人2 - 减少数量，延长生成时间
-                                    {3,3,80,50,100},      // 敌人3 - 减少数量，延长生成时间
-        }},
+        {NUM_OF_ENEMIES,  // 显式设置为NUM_OF_ENEMIES，确保一致性
+            {   // 类型1敌人：红色圆形
+                {1, 5, 200, 100, 30},     // 最大数量5，CD 3-1.5秒，每30帧减少CD
+                // 类型2敌人：绿色方块
+                {2, 3, 300, 200, 40},     // 最大数量3，CD 5-3秒，每40帧减少CD
+                // 类型3敌人：蓝色三角
+                {3, 2, 400, 300, 50},    // 最大数量2，CD 6.5-5秒，每50帧减少CD
+            }
+        },
 };
 
 #endif //VSCPROJECT_CONFIG_H

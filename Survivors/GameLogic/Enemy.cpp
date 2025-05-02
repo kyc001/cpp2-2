@@ -6,143 +6,49 @@
 #include "Hero.h"
 #include <iostream>
 #include <QtCore/QDir>
-#include <QPainter>
-#include <QPainterPath>
-#include <QPen>
-#include <QFile>
-#include <QStringList>
+#include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
+#include <QtGui/QPen>
+#include <QtCore/QFile>
+#include <QtCore/QStringList>
+#include <QtCore/QResource>
 
 Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, GameMap *m_parent, Hero *target, double real_X, double real_Y) {
     std::cout << "[Log] Enemy 构造函数开始, 类型: " << enemy_style << std::endl;
     QSize pix_size;
-    enemy_type = enemy_style;
     
-    // 输出当前目录信息，帮助调试
-    std::cout << "当前目录: " << QDir::currentPath().toStdString() << std::endl;
-    
-    // 提前声明文件检查变量
-    QString imagePath;
-    
-    switch(enemy_style) {
-        case 1:
-            imagePath = ENEMY_1_PATH;
-            std::cout << "尝试加载敌人1图片: " << imagePath.toStdString() << std::endl;
-            
-            // 检查文件是否存在
-            if (QFile::exists(imagePath)) {
-                std::cout << "图片文件存在，尝试加载..." << std::endl;
-            } else {
-                std::cout << "图片文件不存在!尝试使用其他路径加载..." << std::endl;
-                // 尝试其他路径
-                QStringList paths;
-                paths << ":/Assets/laocai.png"
-                      << "D:/Survivors/Survivors/Assets/laocai.png"
-                      << "../Assets/laocai.png"
-                      << "../laocai.png"
-                      << "./Assets/laocai.png"
-                      << "./laocai.png"
-                      << "laocai.png";
-                
-                for (const QString& path : paths) {
-                    std::cout << "尝试路径: " << path.toStdString() << std::endl;
-                    if (QFile::exists(path)) {
-                        std::cout << "找到文件!" << std::endl;
-                        imagePath = path;
-                        break;
-                    }
-                }
-            }
-            
-            // 尝试加载图片
-            if (!_image.load(imagePath)) {
-                std::cout << "无法加载敌人1图片: " << imagePath.toStdString() << std::endl;
-                
-                // 尝试直接加载根目录的laocai.jpg，因为之前看到项目根目录有这个文件
-                if (QFile::exists("laocai.jpg") && _image.load("laocai.jpg")) {
-                    std::cout << "成功从根目录加载laocai.jpg" << std::endl;
-                } else {
-                    // 创建一个红色圆形作为替代
-                    _image = QImage(150, 150, QImage::Format_RGBA8888);
-                    _image.fill(Qt::transparent);
-                    
-                    // 直接绘制自定义图形
-                    QPainter painter(&_image);
-                    painter.setRenderHint(QPainter::Antialiasing);
-                    
-                    // 绘制一个红色圆形
-                    painter.setPen(QPen(Qt::black, 3));
-                    painter.setBrush(QColor(200, 0, 0));
-                    painter.drawEllipse(20, 20, 110, 110);
-                    
-                    // 添加一些细节
-                    painter.setBrush(QColor(255, 150, 150));
-                    painter.drawEllipse(40, 40, 35, 35);
-                    painter.drawEllipse(75, 40, 35, 35);
-                    
-                    std::cout << "已创建替代图形" << std::endl;
-                }
-            } else {
-                std::cout << "成功加载敌人1图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
-            }
-            HP_MAX = ENEMY_1_HEALTH;
-            speed = ENEMY_1_SPEED;
-            pix_size.setWidth(150);
-            pix_size.setHeight(150);
-            break;
-        case 2:
-            imagePath = ENEMY_1_PATH;  // 使用敌人1的图片
-            std::cout << "尝试加载敌人2图片: " << imagePath.toStdString() << std::endl;
-            if (!_image.load(imagePath)) {
-                std::cout << "无法加载敌人2图片: " << imagePath.toStdString() << std::endl;
-                // 创建一个绿色方块作为替代
-                _image = QImage(150, 150, QImage::Format_RGBA8888);
-                _image.fill(Qt::green);
-            } else {
-                std::cout << "成功加载敌人2图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
-            }
-            HP_MAX = ENEMY_1_HEALTH;  // 使用敌人1的生命值
-            speed = ENEMY_1_SPEED;    // 使用敌人1的速度
-            pix_size.setWidth(150);
-            pix_size.setHeight(150);
-            break;
-        case 3:
-            imagePath = ENEMY_1_PATH;  // 使用敌人1的图片
-            std::cout << "尝试加载敌人3图片: " << imagePath.toStdString() << std::endl;
-            if (!_image.load(imagePath)) {
-                std::cout << "无法加载敌人3图片: " << imagePath.toStdString() << std::endl;
-                // 创建一个蓝色方块作为替代
-                _image = QImage(150, 150, QImage::Format_RGBA8888);
-                _image.fill(Qt::blue);
-            } else {
-                std::cout << "成功加载敌人3图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
-            }
-            HP_MAX = ENEMY_1_HEALTH;  // 使用敌人1的生命值
-            speed = ENEMY_1_SPEED;    // 使用敌人1的速度
-            pix_size.setWidth(150);
-            pix_size.setHeight(150);
-            break;
-    }
+    // 初始化基本属性
     enabled = false;
     alive = false;
-
-    hp = HP_MAX;
     widget_parent = w_parent;
     hp_bar = nullptr;
-    if (widget_parent) {
-        std::cout << "[Log] Enemy 构造函数: 尝试创建 hp_bar" << std::endl;
-        hp_bar = new QProgressBar();
-        hp_bar->setParent(widget_parent);
-        hp_bar->hide();
-        std::cout << "[Log] Enemy 构造函数: hp_bar 创建成功" << std::endl;
-    } else {
-        std::cout << "警告: Enemy 创建时 widget_parent 为空，无法创建 hp_bar" << std::endl;
-    }
-
-    _image = _image.scaled(pix_size);
-
     map_parent = m_parent;
     this->target = target;
-
+    this->controller = controller;
+    enemy_type = enemy_style; // 保存敌人类型，die()函数需要使用
+    
+    // 根据敌人类型设置差异化参数
+    switch(enemy_style) {
+        case 1:
+            HP_MAX = ENEMY_1_HEALTH;
+            speed = ENEMY_1_SPEED;
+            break;
+        case 2:
+            HP_MAX = ENEMY_2_HEALTH;
+            speed = ENEMY_2_SPEED;
+            break;
+        case 3:
+            HP_MAX = ENEMY_3_HEALTH;
+            speed = ENEMY_3_SPEED;
+            break;
+    }
+    pix_size = QSize(150,150);
+    
+    // 加载敌人图像 - 优化加载逻辑
+    loadEnemyImage(enemy_style, pix_size); // 添加敌人类型参数
+    
+    // 初始化位置和碰撞盒
+    hp = HP_MAX;
     real_pos.first = real_X;
     real_pos.second = real_Y;
     real_rect.setWidth(_image.width());
@@ -155,74 +61,161 @@ Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, Ga
     absolute_rect.setHeight(_image.height());
     absolute_rect.moveTo(absolute_pos.first, absolute_pos.second);
 
-    healthChange();
-    setHpBarPosition();
-
-    this->controller = controller;
+    // 仅当父窗口有效时创建血条 (直接调用，不使用QMetaObject::invokeMethod)
+    if (widget_parent) {
+        createHpBar();
+    }
+    
     std::cout << "[Log] Enemy 构造函数结束" << std::endl;
+}
+
+// 新增的辅助方法用于创建HP血条
+void Enemy::createHpBar() {
+    try {
+        if (widget_parent && !hp_bar) {
+            hp_bar = new QProgressBar(widget_parent);
+            hp_bar->setRange(0, HP_MAX);
+            hp_bar->setValue(hp);
+            hp_bar->setGeometry(absolute_pos.first, absolute_pos.second - 20, absolute_rect.width(), 10);
+            hp_bar->setTextVisible(false); // 不显示文本，减少渲染负担
+            hp_bar->setStyleSheet("QProgressBar {background-color: transparent; border: 1px solid white;}"
+                                 "QProgressBar::chunk {background-color: red;}");
+            healthChange();
+            if (!enabled) {
+                hp_bar->hide();
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cout << "创建敌人血条时发生异常: " << e.what() << std::endl;
+    }
+}
+
+// 新增的辅助方法用于加载敌人图像
+void Enemy::loadEnemyImage(int enemy_style, const QSize& size) {
+    std::cout << "[Log] 开始加载敌人图像，类型: " << enemy_style << std::endl;
+    
+    // 1. 先尝试从resource加载
+    QString resourcePath;
+    QString filePath; // 用于尝试从文件系统加载
+    
+    switch(enemy_style) {
+        case 1:
+            resourcePath = ENEMY_1_PATH; // 从config.h获取资源路径
+            filePath = "Assets/laocai.png"; // 尝试直接从文件系统加载
+            break;
+        case 2:
+            resourcePath = ENEMY_2_PATH;
+            filePath = "Assets/enemy2.png";
+            break;
+        case 3:
+            resourcePath = ENEMY_3_PATH;
+            filePath = "Assets/enemy3.png";
+            break;
+        default:
+            resourcePath = ENEMY_1_PATH;
+            filePath = "Assets/laocai.png";
+            break;
+    }
+    
+    std::cout << "[Log] 尝试加载敌人图像(资源): " << resourcePath.toStdString() << std::endl;
+    
+    // 检查资源是否可用
+    bool resourceExists = QFile::exists(resourcePath);
+    std::cout << "[Log] 资源存在检查: " << (resourceExists ? "存在" : "不存在") << std::endl;
+    
+    // 尝试从资源加载
+    bool imageLoaded = _image.load(resourcePath);
+    
+    // 如果从资源加载失败，尝试从文件系统加载
+    if (!imageLoaded) {
+        std::cout << "[警告] 从资源加载失败，尝试从文件系统加载: " << filePath.toStdString() << std::endl;
+        
+        // 检查文件是否存在
+        bool fileExists = QFile::exists(filePath);
+        std::cout << "[Log] 文件存在检查: " << (fileExists ? "存在" : "不存在") << std::endl;
+        
+        if (fileExists) {
+            imageLoaded = _image.load(filePath);
+        }
+    }
+    
+    // 如果所有加载尝试都失败，创建备用图像
+    if (!imageLoaded) {
+        std::cout << "[错误] 无法加载敌人图像，创建备用图像" << std::endl;
+        // 创建备用图像 - 简单的灰色矩形
+        _image = QImage(size.width(), size.height(), QImage::Format_ARGB32_Premultiplied);
+        _image.fill(Qt::transparent);
+        
+        QPainter painter(&_image);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(Qt::black, 3));
+        painter.setBrush(Qt::gray);
+        
+        // 根据不同类型创建不同形状，便于区分
+        switch(enemy_style) {
+            case 1:
+                painter.drawEllipse(10, 10, size.width()-20, size.height()-20); // 圆形
+                break;
+            case 2:
+                painter.drawRect(10, 10, size.width()-20, size.height()-20); // 方形
+                break;
+            case 3: {
+                QPolygon triangle;
+                triangle << QPoint(size.width()/2, 10) 
+                        << QPoint(10, size.height()-10) 
+                        << QPoint(size.width()-10, size.height()-10);
+                painter.drawPolygon(triangle); // 三角形
+                break;
+            }
+            default:
+                painter.drawEllipse(10, 10, size.width()-20, size.height()-20);
+                break;
+        }
+        
+        std::cout << "[Log] 已创建备用几何图形" << std::endl;
+    } else {
+        std::cout << "[Log] 敌人图像加载成功!" << std::endl;
+        // 成功加载后调整大小
+        _image = _image.scaled(size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+    
+    std::cout << "[Log] 敌人图像准备完成, 尺寸: " << _image.width() << "x" << _image.height() 
+              << ", isNull: " << (_image.isNull() ? "是" : "否") << std::endl;
 }
 
 std::vector<PaintInfo> Enemy::paint() {
     std::vector<PaintInfo> temp;
     
-    // 使用敌人自身的QImage创建QPixmap
-    QPixmap pixmap = QPixmap::fromImage(_image);
-    
-    if (pixmap.isNull()) {
-        std::cout << "警告：敌人" << enemy_type << "的图像创建失败" << std::endl;
-        // 根据敌人类型创建不同颜色的备用图像
-        QPixmap defaultPixmap(150, 150);
-        switch(enemy_type) {
-            case 1: 
-                defaultPixmap.fill(Qt::transparent);
-                {
-                    QPainter painter(&defaultPixmap);
-                    painter.setRenderHint(QPainter::Antialiasing);
-                    // 绘制红色圆形
-                    painter.setPen(QPen(Qt::black, 3));
-                    painter.setBrush(QColor(200, 0, 0));
-                    painter.drawEllipse(20, 20, 110, 110);
-                }
-                break;
-            case 2: 
-                defaultPixmap.fill(Qt::transparent);
-                {
-                    QPainter painter(&defaultPixmap);
-                    painter.setRenderHint(QPainter::Antialiasing);
-                    // 绘制绿色圆形
-                    painter.setPen(QPen(Qt::black, 3));
-                    painter.setBrush(QColor(0, 200, 0));
-                    painter.drawEllipse(20, 20, 110, 110);
-                }
-                break;
-            case 3: 
-                defaultPixmap.fill(Qt::transparent);
-                {
-                    QPainter painter(&defaultPixmap);
-                    painter.setRenderHint(QPainter::Antialiasing);
-                    // 绘制蓝色圆形
-                    painter.setPen(QPen(Qt::black, 3));
-                    painter.setBrush(QColor(0, 0, 200));
-                    painter.drawEllipse(20, 20, 110, 110);
-                }
-                break;
-            default: 
-                defaultPixmap.fill(Qt::transparent);
-                {
-                    QPainter painter(&defaultPixmap);
-                    painter.setRenderHint(QPainter::Antialiasing);
-                    // 绘制灰色圆形
-                    painter.setPen(QPen(Qt::black, 3));
-                    painter.setBrush(Qt::gray);
-                    painter.drawEllipse(20, 20, 110, 110);
-                }
-                break;
-        }
-        temp.push_back(PaintInfo(defaultPixmap, absolute_pos.first, absolute_pos.second));
-        std::cout << "绘制了备用敌人图像，尺寸: 150x150" << std::endl;
+    // 绘制敌人图像
+    QPixmap enemyPixmap = QPixmap::fromImage(_image);
+    if (enemyPixmap.isNull()) {
+        std::cout << "[错误] Enemy::paint - 无法从_image创建QPixmap，创建备用图像" << std::endl;
+        
+        // 如果从_image创建QPixmap失败，直接创建一个新的QPixmap
+        QPixmap backupPixmap(150, 150);
+        backupPixmap.fill(Qt::transparent);
+        QPainter p(&backupPixmap);
+        p.setPen(QPen(Qt::black, 3));
+        p.setBrush(Qt::gray);
+        p.drawEllipse(10, 10, 130, 130);
+        p.end();
+        
+        temp.push_back(PaintInfo(backupPixmap, absolute_pos.first, absolute_pos.second));
     } else {
-        temp.push_back(PaintInfo(pixmap, absolute_pos.first, absolute_pos.second));
+        temp.push_back(PaintInfo(enemyPixmap, absolute_pos.first, absolute_pos.second));
     }
+    
+    // 绘制血条（直接使用QPixmap，不依赖于_image）
+    int barWidth = 100; // 使用一个固定宽度替代hp_width
+    QPixmap hpBarPixmap(barWidth + 20, 30);
+    hpBarPixmap.fill(Qt::transparent);
+    
+    QPainter painter(&hpBarPixmap);
+    painter.setPen(QPen(Qt::black, 3));
+    painter.drawRect(0, 0, barWidth + 20, 20);
+    painter.fillRect(10, 10, 1.0 * hp / HP_MAX * barWidth, 10, Qt::red); // 使用HP_MAX代替hp_max
+    
+    temp.push_back(PaintInfo(hpBarPixmap, absolute_pos.first - 10, absolute_pos.second - 30));
     
     return temp;
 }
@@ -254,21 +247,32 @@ void Enemy::die() {
     alive = false;
     disable();
     if(controller)
-        controller->reportDeath(enemy_type, real_pos.first, real_pos.second);
+        controller->reportDeath(enemy_type, real_pos.first, real_pos.second); // 使用 enemy_type
 }
 
 void Enemy::enable() {
-    std::cout << "[Log] Enemy::enable 开始, 类型: " << enemy_type << std::endl;
+    std::cout << "[Log] Enemy::enable 开始" << std::endl;
     alive = true;
     enabled = true;
     hp = HP_MAX;
+    
+    // 输出图像信息，以便调试
+    std::cout << "[Log] 敌人图像状态: " 
+              << (_image.isNull() ? "空" : "有效") 
+              << ", 尺寸: " << _image.width() << "x" << _image.height() 
+              << ", 位置: (" << real_pos.first << "," << real_pos.second << ")" 
+              << std::endl;
+              
     if (hp_bar) {
         hp_bar->show();
         setHpBarPosition();
         healthChange();
-        hp_bar->hide();
+    } else {
+        std::cout << "[Log] 警告: hp_bar为空" << std::endl;
+        // 如果血条为空，尝试重新创建
+        createHpBar();
     }
-    std::cout << "[Log] Enemy::enable 结束" << std::endl;
+    std::cout << "[Log] Enemy::enable 结束, enabled=" << enabled << ", alive=" << alive << std::endl;
 }
 
 void Enemy::disable() {
@@ -294,20 +298,8 @@ void Enemy::setHpBarPosition() {
 NoWeaponEnemy::NoWeaponEnemy(int enemy_style, QWidget *w_parent, EnemyController *controller, GameMap *m_parent, Hero *target,
                              double real_X, double real_Y) :
                              Enemy(enemy_style, w_parent, controller, m_parent, target, real_X, real_Y) {
-    switch(enemy_style) {
-        case 1:
-            power = ENEMY_1_POWER;
-            CD = ENEMY_1_CD;
-            break;
-        case 2:
-            power = ENEMY_1_POWER;  // 使用敌人1的伤害值
-            CD = ENEMY_1_CD;       // 使用敌人1的冷却时间
-            break;
-        case 3:
-            power = 0;
-            CD = 100;
-            break;
-    }
+    power = ENEMY_1_POWER;
+    CD = ENEMY_1_CD;
     cdn = CD;
 }
 
@@ -330,7 +322,7 @@ bool NoWeaponEnemy::judgeDamage() {
     
     try {
         if(real_rect.intersects(target->real_rect)) {
-            std::cout << "敌人" << enemy_type << "与玩家发生碰撞!" << std::endl;
+            std::cout << "敌人与玩家发生碰撞!" << std::endl;
             target->damage(power);
             // 不再立即禁用敌人，而是给它一个冷却时间
             // disable();
@@ -417,6 +409,10 @@ WeaponEnemy::WeaponEnemy(int enemy_style, QWidget *w_parent, EnemyController *co
     }
 }
 
+WeaponEnemy::~WeaponEnemy() {
+    delete _weapon; // 析构函数实现
+}
+
 void WeaponEnemy::tick() {
     if(direction) {
         setRealPosition(real_pos.first + speed, real_pos.second);
@@ -441,9 +437,12 @@ std::vector<PaintInfo> WeaponEnemy::paint() {
     for(auto &item : temp) {
         buffer.push_back(item);
     }
+    // 现在可以安全地访问_weapon了
+    if (_weapon) { 
     temp = _weapon->paint();
     for(auto &item : temp) {
         buffer.push_back(item);
+        }
     }
     return buffer;
 }

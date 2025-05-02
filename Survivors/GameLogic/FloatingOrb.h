@@ -1,7 +1,7 @@
 #ifndef SURVIVORS_FLOATINGORB_H
 #define SURVIVORS_FLOATINGORB_H
 
-#include <QPixmap>
+#include <QtGui/QPixmap>
 #include <utility>
 #include <cmath>
 #include "PaintInfo.h"

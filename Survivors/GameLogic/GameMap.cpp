@@ -2,23 +2,47 @@
 #include <QString>
 #include <fstream>
 #include <string>
+#include <iostream>
 
 GameMap::GameMap(unsigned int map_style) : map_style(map_style){
     int target_height = 0;
+    bool load_success = false;
     if(map_style == 1){
-        map_bg.load(MAP_1_PATH);
+        load_success = map_bg.load(MAP_1_PATH);
+        if (!load_success) {
+            std::cerr << "[错误] GameMap: 无法加载地图背景图片: " << MAP_1_PATH << std::endl;
+        }
         target_height = MAP_1_HEIGHT;
         lattice.first = MAP_1_LATTICE_X;
         lattice.second = MAP_1_LATTICE_Y;
     }
     pos_range.second = target_height;
+
+    if (load_success) {
     map_bg = map_bg.scaledToHeight(pos_range.second);
     pos_range.first = map_bg.width();
+    } else {
+        // 加载失败，创建一个备用纯色背景
+        pos_range.first = GAME_WIDTH; // 使用游戏窗口宽度作为备用宽度
+        map_bg = QPixmap(pos_range.first, pos_range.second);
+        map_bg.fill(Qt::darkGray); // 填充深灰色
+        std::cout << "[警告] GameMap: 使用备用纯色背景" << std::endl;
+    }
+
     absolute_pos.first = 0;
     absolute_pos.second = 0;
 
+    // 防止除零错误
+    if (lattice.first > 0) {
     lattice_scale.first = pos_range.first / lattice.first;
+    } else {
+         lattice_scale.first = 0;
+    }
+    if (lattice.second > 0) {
     lattice_scale.second = pos_range.second / lattice.second;
+    } else {
+         lattice_scale.second = 0;
+    }
 }
 
 std::vector<PaintInfo> GameMap::paint() {

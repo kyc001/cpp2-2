@@ -1,0 +1,77 @@
+项目结构如下：
+
+./
+├── Assets/
+│   ├── enemy.gif
+│   ├── enemy.png
+│   ├── enemy1.png
+│   ├── enemy2.png
+│   ├── enemy3.png
+│   ├── bg.jpg
+│   ├── 生成游戏海报.png
+│   ├── laocai.png
+│   ├── maodie.gif
+│   ├── map1_bg.png
+│   ├── expball.png
+│   ├── enemybullet.png
+│   ├── bullet2.svg
+│   ├── 111.jpg
+│   └── aoebullet1.png
+├── build/（空）
+├── GameLogic/
+│   ├── GameMap.cpp
+│   ├── Enemy.cpp
+│   ├── Hero.cpp
+│   ├── EnemyController.cpp
+│   ├── config.h
+│   ├── GameState.cpp
+│   ├── WeaponEnemy.cpp
+│   ├── Enemy.h
+│   ├── ExpBall.h
+│   ├── EnemyDynamicWeapon.h
+│   ├── FloatingOrb.h
+│   ├── EnemyController.h
+│   ├── PaintInfo.h
+│   ├── ExpBall.cpp
+│   ├── config.cpp
+│   ├── Bullet.h
+│   ├── Weapon.cpp
+│   ├── FloatingOrb.cpp
+│   ├── Weapon.h
+│   ├── PaintInfo.cpp
+│   ├── Option.h
+│   ├── Option.cpp
+│   ├── Hero.h
+│   ├── GameState.h
+│   ├── GameMap.h
+│   ├── EnemyDynamicWeapon.cpp
+│   └── Bullet.cpp
+├── src/
+│   ├── gamemain.cpp
+│   ├── main.cpp
+│   ├── gameres.qrc
+│   ├── gamemain.h
+│   ├── ui/
+│   │   ├── menu.cpp
+│   │   ├── upgradedialog.ui
+│   │   ├── test.ui
+│   │   ├── menu.ui
+│   │   ├── menu.h
+│   │   ├── gameoverdialog.ui
+│   │   ├── gamemain.ui
+│   │   └── aboutdialog.ui
+│   └── dialogs/
+│       ├── gameoverdialog.cpp
+│       ├── upgradedialog.h
+│       ├── upgradedialog.cpp
+│       ├── settingdialog.h
+│       ├── settingdialog.cpp
+│       ├── selectdialog.cpp
+│       ├── gameoverdialog.h
+│       ├── aboutdialog.h
+│       └── aboutdialog.cpp
+├── CMakeLists.txt
+├── build.bat
+├── README
+└── Structure/
+    └── project_structure.txt（本文件） 

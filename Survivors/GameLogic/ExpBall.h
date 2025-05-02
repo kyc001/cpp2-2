@@ -1,9 +1,9 @@
 #ifndef SURVIVORS_EXPBALL_H
 #define SURVIVORS_EXPBALL_H
 #include <utility>
-#include <QRect>
+#include <QtCore/QRect>
 #include "PaintInfo.h"
-#include <QPixmap>
+#include <QtGui/QPixmap>
 #include <exception>
 
 class GameMap;

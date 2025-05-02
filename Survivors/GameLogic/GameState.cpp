@@ -74,15 +74,29 @@ GameState::GameState() {
 }
 
 GameState::GameState(QWidget *parent) :parent(parent){
+    std::cout << "[Log] GameState 构造函数开始" << std::endl;
     _map = nullptr;
     player = nullptr;
     enemy_control = nullptr;
+    std::cout << "[Log] GameState: 指针初始化完毕" << std::endl;
 
-    for(int i = 0; i < EBALL_MAX; i++){
-        exp_balls.push_back(nullptr);
+    // --- 使用 assign 直接初始化 --- 
+    try {
+        std::cout << "[Log] GameState: 尝试使用 assign 初始化 exp_balls 大小为 " << EBALL_MAX << std::endl;
+        exp_balls.assign(EBALL_MAX, nullptr); // 直接创建 EBALL_MAX 个 nullptrs
+        std::cout << "[Log] GameState: exp_balls 使用 assign 初始化完毕" << std::endl;
+    } catch (const std::bad_alloc& e) {
+        std::cerr << "[致命错误] GameState: exp_balls 初始化内存分配失败: " << e.what() << std::endl;
+        // 可以考虑更优雅地处理错误，例如抛出自定义异常或设置错误状态
+        throw; // 重新抛出，表明构造失败
+    } catch (const std::exception& e) {
+        std::cerr << "[错误] GameState: exp_balls 初始化时发生异常: " << e.what() << std::endl;
+        throw; // 重新抛出
     }
+
     exp_cnt = 0;
     exp_max = EBALL_MAX;
+    std::cout << "[Log] GameState 构造函数结束" << std::endl;
 }
 
 GameState::~GameState() {
@@ -98,44 +112,78 @@ GameState::~GameState() {
 }
 
 void GameState::tick() {
-    // std::cout << "掉落物数量" << exp_cnt << std::endl; // 暂时注释掉日志
-    player->tick();
-    
-    // 暂时注释掉敌人控制器更新
-    // if (enemy_control) {
-    //     enemy_control->tick();
-    // }
-    
-    // 更新悬浮球
-    for(auto& orb : floating_orbs) {
-        orb->tick();
-    }
-    
-    // 暂时注释掉悬浮球与敌人的碰撞检测
-    // checkOrbEnemyCollisions();
-    
-    // 暂时注释掉敌人自身的更新循环
-    // for(auto& lst : enemies){
-    //     for(auto& each : lst){
-    //         if(each && each->isEnabled())
-    //             each->tick();
-    //     }
-    // }
-
-    // 经验球更新保留
-    for(auto& each : exp_balls){
-        if(each) {
+    try {
+        // 1. 更新玩家状态
+        if (player) {
+            player->tick();
+        }
+        
+        // 2. 更新敌人控制器
+        if (enemy_control) {
             try {
-                each->tick();
-            }
-            catch (TimeLimitExceeded &) {
-                if (exp_cnt > 0) exp_cnt--; // 安全检查
+                enemy_control->tick();
+            } catch (const std::exception& e) {
+                std::cout << "敌人控制器更新时发生异常: " << e.what() << std::endl;
+            } catch (...) {
+                std::cout << "敌人控制器更新时发生未知异常" << std::endl;
             }
         }
+        
+        // 3. 更新悬浮球
+        for (auto& orb : floating_orbs) {
+            if (orb) {
+                orb->tick();
+            }
+        }
+        
+        // 4. 悬浮球与敌人的碰撞检测
+        try {
+            checkOrbEnemyCollisions();
+        } catch (const std::exception& e) {
+            std::cout << "悬浮球与敌人碰撞检测时发生异常: " << e.what() << std::endl;
+        }
+        
+        // 5. 更新所有敌人
+        for (auto& lst : enemies) {
+            for (auto& each : lst) {
+                if (each && each->isEnabled()) {
+                    try {
+                        each->tick();
+                    } catch (const std::exception& e) {
+                        std::cout << "敌人更新时发生异常: " << e.what() << std::endl;
+                        // 发生异常时禁用该敌人，防止持续异常
+                        each->disable();
+                    }
+                }
+            }
+        }
+        
+        // 6. 判断玩家与敌人的伤害
+        try {
+            judgeDamageEnemies();
+        } catch (const std::exception& e) {
+            std::cout << "判断伤害时发生异常: " << e.what() << std::endl;
+        }
+        
+        // 7. 更新所有经验球
+        for (auto& each : exp_balls) {
+            if (each && each->isEnabled()) {
+                try {
+                    each->tick();
+                } catch (TimeLimitExceeded&) {
+                    if (exp_cnt > 0) exp_cnt--; // 安全检查
+                } catch (const std::exception& e) {
+                    std::cout << "经验球更新时发生异常: " << e.what() << std::endl;
+                    each->disable();
+                    if (exp_cnt > 0) exp_cnt--;
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        std::cout << "游戏逻辑更新时发生异常: " << e.what() << std::endl;
+    } catch (...) {
+        std::cout << "游戏逻辑更新时发生未知异常" << std::endl;
     }
-
-    // 暂时注释掉玩家与敌人的伤害判断
-    // judgeDamageEnemies();
 }
 
 void GameState::checkOrbEnemyCollisions() {
@@ -170,94 +218,90 @@ void GameState::keyReleaseTick(QKeyEvent *event) {
 }
 
 void GameState::initEnemy(int stage) {
-    std::cout << "[Log] GameState::initEnemy 进入函数内部" << std::endl;
-    // 先清空现有enemies
-    std::cout << "[Log] GameState::initEnemy: 清理旧敌人..." << std::endl;
-    int outer_loop_count = 0;
-    for (auto& enemyList : enemies) {
-        std::cout << "[Log] GameState::initEnemy: 外层循环迭代 " << outer_loop_count << std::endl;
-        int inner_loop_count = 0;
-        for (auto& enemy : enemyList) {
-            std::cout << "[Log] GameState::initEnemy:   内层循环迭代 " << inner_loop_count << ", enemy 指针: " << enemy << std::endl;
-            if (enemy) {
-                std::cout << "[Log] GameState::initEnemy:     尝试 delete enemy..." << std::endl;
-                try {
-                  delete enemy;
-                  std::cout << "[Log] GameState::initEnemy:     delete enemy 成功" << std::endl;
-                  enemy = nullptr;
-                } catch (const std::exception& e) {
-                    std::cout << "[Log] GameState::initEnemy:     delete enemy 时捕获异常: " << e.what() << std::endl;
-                    // Consider how to handle this - maybe just set to nullptr and continue?
-                    enemy = nullptr; 
-                } catch (...) {
-                    std::cout << "[Log] GameState::initEnemy:     delete enemy 时捕获未知异常!" << std::endl;
+    std::cout << "[Log] GameState::initEnemy 开始, 阶段: " << stage << std::endl;
+    
+    try {
+        // 1. 首先安全地删除敌人控制器
+        if (enemy_control) {
+            std::cout << "[Log] 删除旧敌人控制器" << std::endl;
+            delete enemy_control;
+            enemy_control = nullptr;
+        }
+        
+        // 2. 清理现有敌人（使用更安全的方式）
+        std::cout << "[Log] 开始清理敌人数组" << std::endl;
+        for (auto& enemyList : enemies) {
+            for (auto& enemy : enemyList) {
+                if (enemy) {
+                    try {
+                        // 首先禁用敌人，避免其继续活动
+                        enemy->disable();
+                        // 使用deleteLater安全释放QObject
+                        if (enemy->hp_bar) {
+                            enemy->hp_bar->hide();
+                            enemy->hp_bar->deleteLater();
+                            enemy->hp_bar = nullptr;
+                        }
+                        delete enemy;
+                    } catch (...) {
+                        std::cout << "[Log] 清理敌人时发生异常" << std::endl;
+                    }
                     enemy = nullptr;
                 }
             }
-            inner_loop_count++;
-        }
-        std::cout << "[Log] GameState::initEnemy:   内层循环结束, 尝试 clear()" << std::endl;
-        try {
             enemyList.clear();
-            std::cout << "[Log] GameState::initEnemy:   clear() 成功" << std::endl;
-        } catch (const std::exception& e) {
-            std::cout << "[Log] GameState::initEnemy:   clear() 时捕获异常: " << e.what() << std::endl;
-        } catch (...) {
-            std::cout << "[Log] GameState::initEnemy:   clear() 时捕获未知异常!" << std::endl;
         }
-        outer_loop_count++;
-    }
-    std::cout << "[Log] GameState::initEnemy: 外层循环结束, 尝试清空主 enemies vector..." << std::endl;
-    enemies.clear();
-    std::cout << "[Log] GameState::initEnemy: 旧敌人清理完毕" << std::endl;
-    
-    // 检查阶段是否有效
-    if (stage <= 0 || stage > NUM_OF_STAGES) {
-        std::cout << "错误：无效的游戏阶段 " << stage << std::endl;
-        return;
-    }
-    
-    // 安全地初始化enemies数组，根据配置创建足够的容器
-    try {
-        std::cout << "[Log] GameState::initEnemy: 初始化敌人容器..." << std::endl;
+        enemies.clear();
+        std::cout << "[Log] 敌人数组清理完成" << std::endl;
+        
+        // 3. 检查阶段有效性
+        if (stage <= 0 || stage > NUM_OF_STAGES) {
+            std::cout << "[Log] 错误：无效的游戏阶段 " << stage << std::endl;
+            return;
+        }
+        
+        // 4. 获取阶段信息
         const StageInfo& stageInfo = STAGE_INFOS[stage - 1];
-        std::cout << "初始化敌人阶段" << stage << "，敌人类型数: " << stageInfo.type_num << std::endl;
+        std::cout << "[Log] 初始化阶段 " << stage << "，敌人类型数: " << stageInfo.type_num << std::endl;
         
-        // 确保敌人类型数量与定义相符
-        if (stageInfo.type_num != NUM_OF_ENEMIES) {
-            std::cout << "警告：NUM_OF_ENEMIES (" << NUM_OF_ENEMIES 
-                      << ") 与 STAGE_INFOS[" << (stage-1) << "].type_num (" 
-                      << stageInfo.type_num << ") 不匹配" << std::endl;
-        }
+        // 5. 准备敌人容器
+        std::cout << "[Log] 开始准备敌人容器" << std::endl;
+        enemies.reserve(stageInfo.type_num); // 预分配空间，减少动态扩展
         
-        // 创建数组
+        // 确保敌人类型和数量的设置是一致的
         for (int i = 0; i < stageInfo.type_num; i++) {
             if (i < stageInfo.type_info.size()) {
-                std::cout << "创建敌人类型 " << stageInfo.type_info[i].enemy_type 
-                          << " 的容器，最大数量: " << stageInfo.type_info[i].max_nums << std::endl;
-                enemies.push_back(std::vector<Enemy*>(stageInfo.type_info[i].max_nums, nullptr));
+                const auto& typeInfo = stageInfo.type_info[i];
+                std::cout << "[Log] 创建类型 " << typeInfo.enemy_type << " 的容器，最大数量: " << typeInfo.max_nums << std::endl;
+                
+                // 使用带初始化的vector创建，避免频繁修改
+                std::vector<Enemy*> enemyList(typeInfo.max_nums, nullptr);
+                enemies.push_back(std::move(enemyList)); // 使用移动语义，避免复制
             } else {
-                std::cout << "错误：敌人类型索引 " << i << " 超出了类型信息的范围" << std::endl;
+                std::cout << "[Log] 警告：缺少敌人类型 " << i+1 << " 的信息" << std::endl;
                 enemies.push_back(std::vector<Enemy*>());
             }
         }
-        std::cout << "[Log] GameState::initEnemy: 敌人容器初始化完毕" << std::endl;
+        std::cout << "[Log] 敌人容器准备完成，类型数量: " << enemies.size() << std::endl;
         
-        // 创建敌人控制器
-        std::cout << "[Log] GameState::initEnemy: 创建 EnemyController..." << std::endl;
-        if (enemy_control) {
-            std::cout << "[Log] GameState::initEnemy: 删除旧 EnemyController..." << std::endl;
-            delete enemy_control;
-        }
-        enemy_control = new EnemyController(this, stage); // 调用 EnemyController 构造函数
-        std::cout << "敌人控制器创建完成" << std::endl;
+        // 6. 创建敌人控制器
+        std::cout << "[Log] 创建敌人控制器" << std::endl;
+        enemy_control = new EnemyController(this, stage);
+        std::cout << "[Log] 敌人控制器创建完成" << std::endl;
     } catch (const std::exception& e) {
-        std::cout << "初始化敌人时出现异常: " << e.what() << std::endl;
+        std::cout << "[Log] 初始化敌人时出现异常: " << e.what() << std::endl;
+        // 确保enemies至少有一个空vector，防止后续访问出错
+        if (enemies.empty()) {
+            enemies.push_back(std::vector<Enemy*>());
+        }
+    } catch (...) {
+        std::cout << "[Log] 初始化敌人时出现未知异常" << std::endl;
         if (enemies.empty()) {
             enemies.push_back(std::vector<Enemy*>());
         }
     }
-    std::cout << "[Log] GameState::initEnemy 结束" << std::endl;
+    
+    std::cout << "[Log] GameState::initEnemy 结束，敌人类型数: " << enemies.size() << std::endl;
 }
 
 void GameState::judgeDamageEnemies() {
