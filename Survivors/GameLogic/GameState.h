@@ -27,6 +27,7 @@ class GameState {
 
     int exp_cnt;
     int exp_max;
+    QWidget *widget_parent; // 父窗口指针，用于 UI 更新
 public:
 
     GameState();
@@ -54,7 +55,7 @@ public:
 
     int countExp(std::pair<double, double> player_pos);
 
-    void upgrade(int type) { player->upgrade(type); }
+    void upgrade(int type);
     double getHPPercent() { return player->get_hp_percent(); }
 
     bool isWaiting() { return player->isWaiting(); };

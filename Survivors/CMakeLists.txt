@@ -16,6 +16,8 @@ find_package(Qt6 COMPONENTS
         Core
         Gui
         Widgets
+        Multimedia
+        MultimediaWidgets
         REQUIRED)
 
 # 定义源文件分组
@@ -81,5 +83,8 @@ target_link_libraries(Survivors
     Qt::Core
     Qt::Gui
     Qt::Widgets
+    Qt::Multimedia
+    Qt::MultimediaWidgets
+    winmm  # 添加Windows多媒体库，用于mciSendStringW函数
 )
 

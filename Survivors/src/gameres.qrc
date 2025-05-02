@@ -10,5 +10,6 @@
         <file alias="Assets/laocai.png">../Assets/laocai.png</file>
         <file alias="Assets/enemy2.png">../Assets/enemy2.png</file>
         <file alias="Assets/enemy3.png">../Assets/enemy3.png</file>
+        <file alias="Assets/bgm.mp3">../Assets/bgm.mp3</file>
     </qresource>
 </RCC>

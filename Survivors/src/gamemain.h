@@ -12,6 +12,8 @@
 #include <QLabel>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QMediaPlayer>
+#include <QAudioOutput>
 #include "GameLogic/GameState.h"
 #include "GameLogic/config.h"
 
@@ -49,6 +51,8 @@ private:
     QPushButton *end_button;
     QLabel *enemy_cnt_label;
     QLabel *level_label;
+    QMediaPlayer *bgmPlayer;
+    QAudioOutput *audioOutput;
     
     Menu * widget_parent;  // 父窗口指针
     QTimer m_Timer;        // 游戏计时器
@@ -61,6 +65,10 @@ private:
     void initScene();
     // 开始游戏
     void playGame();
+    // 初始化并播放背景音乐
+    void initAndPlayBGM();
+    // 尝试使用 Windows API 播放背景音乐
+    void playBackgroundMusicWithWinAPI();
 
     // 暂停按钮点击处理
     void pauseButtonClicked();

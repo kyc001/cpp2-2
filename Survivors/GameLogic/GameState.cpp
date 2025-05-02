@@ -1,6 +1,7 @@
 #include "GameState.h"
 #include <assert.h>
 #include <iostream>
+#include <QDebug>
 
 void GameState::initMap(unsigned int map_style) {
     _map = new GameMap(map_style);
@@ -78,6 +79,7 @@ GameState::GameState(QWidget *parent) :parent(parent){
     _map = nullptr;
     player = nullptr;
     enemy_control = nullptr;
+    widget_parent = parent; // 初始化父窗口指针
     std::cout << "[Log] GameState: 指针初始化完毕" << std::endl;
 
     // --- 使用 assign 直接初始化 --- 
@@ -405,5 +407,31 @@ void GameState::gameHalt() {
     HERO_Y = player->getRealY();
     DAMAGE = player->getDamage();
     HALT_CD = player->getCD();
+}
+
+void GameState::upgrade(int type) {
+    qDebug() << "[GameState] upgrade() 开始执行，类型:" << type;
+    try {
+        if (!player) {
+            qCritical() << "[GameState] upgrade() 失败: player 为空";
+            return;
+        }
+
+        qDebug() << "[GameState] 调用 player->upgrade()";
+        player->upgrade(type);
+        qDebug() << "[GameState] player->upgrade() 调用完成";
+        
+        // 确保更新 UI
+        if (widget_parent) {
+            qDebug() << "[GameState] 请求更新 UI";
+            QMetaObject::invokeMethod(widget_parent, "update", Qt::QueuedConnection);
+        }
+        
+        qDebug() << "[GameState] upgrade() 执行完成";
+    } catch (const std::exception& e) {
+        qCritical() << "[GameState] upgrade() 异常:" << e.what();
+    } catch (...) {
+        qCritical() << "[GameState] upgrade() 未知异常";
+    }
 }
 

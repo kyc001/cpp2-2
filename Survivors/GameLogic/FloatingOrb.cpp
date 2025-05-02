@@ -5,6 +5,7 @@
 #include <cmath>
 #include <QColor>
 #include <QPainter>
+#include <iostream>
 
 // 悬浮球颜色数组
 const QColor ORB_COLORS[] = {
@@ -13,8 +14,8 @@ const QColor ORB_COLORS[] = {
     QColor(100, 100, 255)   // 蓝色
 };
 
-FloatingOrb::FloatingOrb(Hero* hero, GameState* gameState, int index, double radius, double speed)
-    : _hero(hero), _gameState(gameState), _index(index), _radius(radius), _speed(speed) {
+FloatingOrb::FloatingOrb(Hero* hero, GameState* gameState, int index, double radius, double initial_speed)
+    : _hero(hero), _gameState(gameState), _index(index), _radius(radius), rotation_speed(initial_speed) {
     // 每个悬浮球初始位置的角度偏移 (按120度分布)
     _angle = index * 2.0 * M_PI / 3.0;
     
@@ -47,8 +48,8 @@ FloatingOrb::FloatingOrb(Hero* hero, GameState* gameState, int index, double rad
 }
 
 void FloatingOrb::tick() {
-    // 更新角度
-    _angle += _speed;
+    // 更新角度，使用 rotation_speed
+    _angle += rotation_speed;
     if (_angle > 2 * M_PI) {
         _angle -= 2 * M_PI;
     }
@@ -106,4 +107,12 @@ bool FloatingOrb::checkCollision(Enemy* enemy) {
     }
     
     return false;
+}
+
+// 实现 increaseSpeed 方法
+void FloatingOrb::increaseSpeed(double factor) {
+    rotation_speed *= factor;
+    // 可以添加一个速度上限
+    // if (rotation_speed > MAX_ROTATION_SPEED) { rotation_speed = MAX_ROTATION_SPEED; }
+    std::cout << "悬浮球 " << _index << " 转速提升至: " << rotation_speed << std::endl;
 } 

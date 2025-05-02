@@ -6,23 +6,59 @@
 #include "../gamemain.h"
 #include <QIcon>
 #include <QPixmap>
+#include <QDebug>
+#include <QTimer>
 
 UpgradeDialog::UpgradeDialog(GameMain * game_widget, QWidget *parent) :
         QDialog(parent), parent(game_widget) {
-    setupUi();
-
-    // 连接选择按钮
-    connect(choice1, &QPushButton::clicked, [&](){ choose1();});
-    connect(choice2, &QPushButton::clicked, [&](){ choose2();});
-    connect(choice3, &QPushButton::clicked, [&](){ choose3();});
-
-    // 设置按钮文本
-    choice1->setText("更多血量");
-    choice1->setToolTip("提高最大生命值");
-    choice2->setText("更快速度");
-    choice2->setToolTip("提高移动速度");
-    choice3->setText("更强武器");
-    choice3->setToolTip("提高武器伤害");
+    qDebug() << "[Upgrade] 创建升级对话框，父窗口地址:" << game_widget;
+    
+    // 安全检查
+    if(!game_widget) {
+        qWarning() << "[Upgrade] 无效的父窗口指针";
+        QTimer::singleShot(0, this, &QDialog::reject); // 安全关闭无效对话框
+        return;
+    }
+    
+    // 初始化UI
+    try {
+        setupUi();
+        
+        // 设置窗口属性
+        setWindowTitle("升级选择");
+        setWindowModality(Qt::NonModal); // 确保非模态
+        setAttribute(Qt::WA_DeleteOnClose, false); // 不自动删除，我们会手动处理
+        
+        // 连接选择按钮
+        connect(choice1, &QPushButton::clicked, this, [this](){
+            qDebug() << "[Upgrade] 按钮1被点击";
+            choose1();
+        });
+        connect(choice2, &QPushButton::clicked, this, [this](){
+            qDebug() << "[Upgrade] 按钮2被点击";
+            choose2();
+        });
+        connect(choice3, &QPushButton::clicked, this, [this](){
+            qDebug() << "[Upgrade] 按钮3被点击";
+            choose3();
+        });
+        
+        // 设置按钮文本
+        choice1->setText("更多血量");
+        choice1->setToolTip("提高最大生命值");
+        choice2->setText("更快速度");
+        choice2->setToolTip("提高移动速度");
+        choice3->setText("更强武器");
+        choice3->setToolTip("提高武器伤害");
+        
+        qDebug() << "[Upgrade] 对话框初始化完成";
+    } catch (const std::exception& e) {
+        qCritical() << "[Upgrade] 初始化异常:" << e.what();
+        QTimer::singleShot(0, this, &QDialog::reject);
+    } catch (...) {
+        qCritical() << "[Upgrade] 初始化时发生未知异常";
+        QTimer::singleShot(0, this, &QDialog::reject);
+    }
 }
 
 void UpgradeDialog::setupUi() {
@@ -67,29 +103,153 @@ void UpgradeDialog::setupUi() {
 }
 
 UpgradeDialog::~UpgradeDialog() {
+    qDebug() << "[Upgrade] 销毁升级对话框";
     // 不需要显式释放内存，Qt的父子关系会处理
 }
 
 // 选择选项1
 void UpgradeDialog::choose1() {
-    parent->game->upgrade(1);
-    parent->resumeGame();
+    qDebug() << "[Upgrade] 选择升级选项1开始";
+    
+    // 立即禁用所有按钮，防止多次点击
+    choice1->setEnabled(false);
+    choice2->setEnabled(false);
+    choice3->setEnabled(false);
+    
+    // 先隐藏对话框，避免卡顿感
     this->hide();
-    delete this;
+    
+    // 使用安全的延迟方式执行升级和恢复游戏
+    QTimer::singleShot(0, this, [this]() {
+        try {
+            // 执行升级
+            if (parent && parent->game) {
+                qDebug() << "[Upgrade] 调用 upgrade(1)";
+                parent->game->upgrade(1);
+                qDebug() << "[Upgrade] upgrade(1) 调用完成";
+            } else {
+                qWarning() << "[Upgrade] 父窗口或游戏状态为空，跳过升级";
+            }
+            
+            // 恢复游戏（延迟执行）
+            QTimer::singleShot(100, this, [this]() {
+                if (parent) {
+                    qDebug() << "[Upgrade] 调用 resumeGame";
+                    parent->resumeGame();
+                    qDebug() << "[Upgrade] resumeGame 调用完成";
+                }
+                // 最后安全删除对话框
+                qDebug() << "[Upgrade] 对话框准备关闭";
+                this->deleteLater();
+            });
+        } catch (const std::exception& e) {
+            qCritical() << "[Upgrade] 升级过程异常:" << e.what();
+            if (parent) parent->resumeGame();
+            this->deleteLater();
+        } catch (...) {
+            qCritical() << "[Upgrade] 升级过程未知异常";
+            if (parent) parent->resumeGame();
+            this->deleteLater();
+        }
+    });
+    
+    qDebug() << "[Upgrade] 选择升级选项1结束";
 }
 
 // 选择选项2
 void UpgradeDialog::choose2() {
-    parent->game->upgrade(2);
-    parent->resumeGame();
+    qDebug() << "[Upgrade] 选择升级选项2开始";
+    
+    // 立即禁用所有按钮，防止多次点击
+    choice1->setEnabled(false);
+    choice2->setEnabled(false);
+    choice3->setEnabled(false);
+    
+    // 先隐藏对话框，避免卡顿感
     this->hide();
-    delete this;
+    
+    // 使用安全的延迟方式执行升级和恢复游戏
+    QTimer::singleShot(0, this, [this]() {
+        try {
+            // 执行升级
+            if (parent && parent->game) {
+                qDebug() << "[Upgrade] 调用 upgrade(2)";
+                parent->game->upgrade(2);
+                qDebug() << "[Upgrade] upgrade(2) 调用完成";
+            } else {
+                qWarning() << "[Upgrade] 父窗口或游戏状态为空，跳过升级";
+            }
+            
+            // 恢复游戏（延迟执行）
+            QTimer::singleShot(100, this, [this]() {
+                if (parent) {
+                    qDebug() << "[Upgrade] 调用 resumeGame";
+                    parent->resumeGame();
+                    qDebug() << "[Upgrade] resumeGame 调用完成";
+                }
+                // 最后安全删除对话框
+                qDebug() << "[Upgrade] 对话框准备关闭";
+                this->deleteLater();
+            });
+        } catch (const std::exception& e) {
+            qCritical() << "[Upgrade] 升级过程异常:" << e.what();
+            if (parent) parent->resumeGame();
+            this->deleteLater();
+        } catch (...) {
+            qCritical() << "[Upgrade] 升级过程未知异常";
+            if (parent) parent->resumeGame();
+            this->deleteLater();
+        }
+    });
+    
+    qDebug() << "[Upgrade] 选择升级选项2结束";
 }
 
 // 选择选项3
 void UpgradeDialog::choose3() {
-    parent->game->upgrade(3);
-    parent->resumeGame();
+    qDebug() << "[Upgrade] 选择升级选项3开始";
+    
+    // 立即禁用所有按钮，防止多次点击
+    choice1->setEnabled(false);
+    choice2->setEnabled(false);
+    choice3->setEnabled(false);
+    
+    // 先隐藏对话框，避免卡顿感
     this->hide();
-    delete this;
+    
+    // 使用安全的延迟方式执行升级和恢复游戏
+    QTimer::singleShot(0, this, [this]() {
+        try {
+            // 执行升级
+            if (parent && parent->game) {
+                qDebug() << "[Upgrade] 调用 upgrade(3)";
+                parent->game->upgrade(3);
+                qDebug() << "[Upgrade] upgrade(3) 调用完成";
+            } else {
+                qWarning() << "[Upgrade] 父窗口或游戏状态为空，跳过升级";
+            }
+            
+            // 恢复游戏（延迟执行）
+            QTimer::singleShot(100, this, [this]() {
+                if (parent) {
+                    qDebug() << "[Upgrade] 调用 resumeGame";
+                    parent->resumeGame();
+                    qDebug() << "[Upgrade] resumeGame 调用完成";
+                }
+                // 最后安全删除对话框
+                qDebug() << "[Upgrade] 对话框准备关闭";
+                this->deleteLater();
+            });
+        } catch (const std::exception& e) {
+            qCritical() << "[Upgrade] 升级过程异常:" << e.what();
+            if (parent) parent->resumeGame();
+            this->deleteLater();
+        } catch (...) {
+            qCritical() << "[Upgrade] 升级过程未知异常";
+            if (parent) parent->resumeGame();
+            this->deleteLater();
+        }
+    });
+    
+    qDebug() << "[Upgrade] 选择升级选项3结束";
 }
