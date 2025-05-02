@@ -18,6 +18,9 @@
 #include <QCoreApplication>
 #include <QFile>
 #include <QTimer>
+#include <QMovie>
+#include <QLabel>
+#include <QShortcut>
 
 // 添加 Windows API 头文件和链接库
 #ifdef _WIN32
@@ -31,6 +34,9 @@ GameMain::GameMain(QWidget *parent) : QWidget(parent) {
     // 初始化指针为 nullptr
     bgmPlayer = nullptr;
     audioOutput = nullptr;
+    maodieMovie = nullptr;
+    maodieLabel = nullptr;
+    maodieShortcut = nullptr;
     
     setupUi();
     setAttribute(Qt::WA_DeleteOnClose);
@@ -38,6 +44,9 @@ GameMain::GameMain(QWidget *parent) : QWidget(parent) {
     initScene();
     m_Timer.setInterval(TIMER_RATE);
     hero_type = 1;
+    
+    // 初始化猫蝶动画
+    initMaodieAnimation();
     
     // 调用初始化音频函数
     initAndPlayBGM();
@@ -124,6 +133,17 @@ GameMain::~GameMain() {
      if (audioOutput) {
          delete audioOutput;
          audioOutput = nullptr;
+     }
+     // 停止并清理动画
+     if (maodieMovie) {
+         maodieMovie->stop();
+         delete maodieMovie;
+         maodieMovie = nullptr;
+     }
+     // 删除快捷键
+     if (maodieShortcut) {
+         delete maodieShortcut;
+         maodieShortcut = nullptr;
      }
     delete game;
 }
@@ -442,17 +462,153 @@ void GameMain::initAndPlayBGM() {
     playBackgroundMusicWithWinAPI();
 }
 
+// 新增函数 - 初始化猫蝶动画
+void GameMain::initMaodieAnimation() {
+    qDebug() << "==== 猫蝶动画初始化开始 ====";
+    
+    // 尝试多种可能的文件路径
+    QStringList possiblePaths;
+    possiblePaths << "Assets/maodie.gif"
+                << QCoreApplication::applicationDirPath() + "/Assets/maodie.gif"
+                << QCoreApplication::applicationDirPath() + "/../Assets/maodie.gif"
+                << "D:/Survivors/Survivors/Assets/maodie.gif"
+                << "./Assets/maodie.gif"
+                << "../Assets/maodie.gif"
+                << ":/Assets/maodie.gif";
+    
+    // 查看哪些路径存在
+    qDebug() << "尝试以下猫蝶动画文件路径:";
+    for (const QString& path : possiblePaths) {
+        bool exists = QFile::exists(path);
+        qDebug() << " - " << path << (exists ? "【存在】" : "【不存在】");
+    }
+    
+    // 依次尝试加载
+    bool loaded = false;
+    for (const QString& path : possiblePaths) {
+        if (QFile::exists(path)) {
+            qDebug() << "尝试加载文件: " << path;
+            
+            // 创建QMovie对象
+            maodieMovie = new QMovie(path);
+            
+            // 检查GIF是否有效
+            if (maodieMovie->isValid()) {
+                qDebug() << "★★★ 成功加载猫蝶动画: " << path << " ★★★";
+                
+                // 创建快捷键: Ctrl+M 显示猫蝶
+                maodieShortcut = new QShortcut(QKeySequence(tr("Ctrl+M")), this);
+                connect(maodieShortcut, &QShortcut::activated, this, &GameMain::onShowMaodieTriggered);
+                
+                loaded = true;
+                break;
+            } else {
+                qDebug() << "✘✘✘ 文件无效: " << path << " ✘✘✘";
+                delete maodieMovie;
+                maodieMovie = nullptr;
+            }
+        }
+    }
+    
+    // 如果所有路径都失败，尝试使用绝对路径
+    if (!loaded) {
+        qDebug() << "所有路径都失败，尝试硬编码的绝对路径";
+        QString absolutePath = "D:/Survivors/Survivors/Assets/maodie.gif";
+        if (QFile::exists(absolutePath)) {
+            maodieMovie = new QMovie(absolutePath);
+            if (maodieMovie->isValid()) {
+                qDebug() << "★★★ 成功使用绝对路径加载猫蝶动画 ★★★";
+                
+                // 创建快捷键: Ctrl+M 显示猫蝶
+                maodieShortcut = new QShortcut(QKeySequence(tr("Ctrl+M")), this);
+                connect(maodieShortcut, &QShortcut::activated, this, &GameMain::onShowMaodieTriggered);
+                
+                loaded = true;
+            } else {
+                qDebug() << "✘✘✘ 绝对路径文件也无效 ✘✘✘";
+                delete maodieMovie;
+                maodieMovie = nullptr;
+            }
+        } else {
+            qDebug() << "✘✘✘ 绝对路径文件不存在 ✘✘✘";
+        }
+    }
+    
+    // 加载失败最终处理
+    if (!loaded) {
+        qDebug() << "无法加载猫蝶动画，所有路径尝试均失败";
+        maodieMovie = nullptr;
+    }
+    
+    qDebug() << "==== 猫蝶动画初始化完成 ====";
+}
+
+// 快捷键触发显示猫蝶动画
+void GameMain::onShowMaodieTriggered() {
+    // 当按下快捷键时，在屏幕中央显示猫蝶动画
+    int centerX = this->width() / 2 - 50;  // 居中显示，50是默认大小的一半
+    int centerY = this->height() / 2 - 50;
+    
+    showMaodieAnimation(centerX, centerY, 100);
+}
+
+// 新增函数 - 显示猫蝶动画
+void GameMain::showMaodieAnimation(int x, int y, int size) {
+    // 如果动画对象未初始化，则返回
+    if (!maodieMovie) {
+        qDebug() << "猫蝶动画未初始化，无法显示";
+        return;
+    }
+    
+    // 如果标签已存在，则移除它
+    if (maodieLabel) {
+        maodieLabel->hide();
+        delete maodieLabel;
+    }
+    
+    // 创建标签
+    maodieLabel = new QLabel(this);
+    maodieLabel->setMovie(maodieMovie);
+    maodieLabel->setGeometry(x, y, size, size);
+    maodieLabel->setAttribute(Qt::WA_TransparentForMouseEvents); // 点击穿透
+    
+    // 设置标签样式
+    maodieLabel->setScaledContents(true); // 缩放内容以适应标签大小
+    maodieLabel->setStyleSheet("background: transparent;"); // 透明背景
+    
+    // 显示标签
+    maodieLabel->show();
+    
+    // 启动动画
+    maodieMovie->start();
+    
+    // 设置定时器，自动关闭动画(5秒后)
+    QTimer::singleShot(5000, this, [this]() {
+        if (maodieLabel) {
+            maodieLabel->hide();
+            delete maodieLabel;
+            maodieLabel = nullptr;
+        }
+    });
+}
+
 // 使用指定英雄类型创建游戏
 GameMain::GameMain(int hero_type, QWidget *parent) : QWidget(parent), hero_type(hero_type) {
     // 初始化指针为 nullptr
     bgmPlayer = nullptr;
     audioOutput = nullptr;
+    maodieMovie = nullptr;
+    maodieLabel = nullptr;
+    maodieShortcut = nullptr;
     
     setupUi();
     setAttribute(Qt::WA_DeleteOnClose);
 
     initScene();
     m_Timer.setInterval(TIMER_RATE);
+    
+    // 初始化猫蝶动画
+    initMaodieAnimation();
     
     // 调用初始化音频函数
     initAndPlayBGM();
@@ -494,5 +650,14 @@ void GameMain::mouseMoveEvent(QMouseEvent *event) {
             game->player->mouseMoveTick(event);
         }
     }
+}
+
+// 添加鼠标双击事件处理
+void GameMain::mouseDoubleClickEvent(QMouseEvent *event) {
+    // 在点击位置显示猫蝶动画
+    showMaodieAnimation(event->pos().x() - 50, event->pos().y() - 50, 100);
+    
+    // 调用父类处理
+    QWidget::mouseDoubleClickEvent(event);
 }
 
