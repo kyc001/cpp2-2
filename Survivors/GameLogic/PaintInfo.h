@@ -4,14 +4,14 @@
 
 
 class PaintInfo {
-    QPixmap & target;
+    QPixmap target;
     int m_X;
     int m_Y;
 
 public:
-    PaintInfo(QPixmap &target, int mX, int mY);
+    PaintInfo(const QPixmap &target, int mX, int mY);
 
-    QPixmap &getTarget() const;
+    const QPixmap &getTarget() const;
 
     int getMX() const;
 

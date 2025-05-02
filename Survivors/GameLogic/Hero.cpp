@@ -4,6 +4,9 @@
 #include <cmath>
 #include "GameState.h"
 #include <iostream>
+#include <QtGui/QPainter>
+#include <QtGui/QPen>
+#include <QtGui/QImage>
 
 Hero::Hero() {
     _image.load(HERO_1_PATH);
@@ -46,22 +49,37 @@ Hero::Hero() {
 }
 
 Hero::Hero(int hero_style, QWidget *w_parent, GameMap *m_parent) {
+    bool load_success = false;
+    QString hero_path;
+
     switch(hero_style){
         case 1:
-            _image.load(HERO_1_PATH);
+            hero_path = HERO_1_PATH;
             HP_MAX = HERO_1_HEALTH; //TODO:后续这里要改成可以根据文件读写结果调整，实现升级效果
             weapon_type = 1;
             reduce = HERO_1_REDUCE;
             speed = HERO_1_SPEED;
             break;
         case 2:
-            _image.load(HERO_1_PATH);
+            hero_path = HERO_1_PATH; // 暂时假设英雄2也用此路径，待后续确认或添加 HERO_2_PATH
             HP_MAX = HERO_2_HEALTH;
             weapon_type = 2;
             reduce = HERO_2_REDUCE;
             speed = HERO_2_SPEED;
             break;
+        default: // 添加默认情况处理
+            hero_path = HERO_1_PATH;
+            HP_MAX = HERO_1_HEALTH;
+            weapon_type = 1;
+            reduce = HERO_1_REDUCE;
+            speed = HERO_1_SPEED;
+            std::cerr << "[警告] Hero: 未知的英雄类型 " << hero_style << "，使用默认类型 1" << std::endl;
+            break;
     }
+
+    std::cout << "[Log] Hero: 尝试加载英雄图像: " << hero_path.toStdString() << std::endl;
+    QImage tempImage;
+    load_success = tempImage.load(hero_path);
 
     hp = HP_MAX;
     exp = 0;
@@ -87,10 +105,38 @@ Hero::Hero(int hero_style, QWidget *w_parent, GameMap *m_parent) {
     exp_bar->show();
 
     QSize pix_size(60,60);
-    _image = _image.scaled(pix_size);
+
+    if (!load_success) {
+        std::cerr << "[错误] Hero: 无法加载英雄图像: " << hero_path.toStdString() << "，创建备用图像" << std::endl;
+        // 创建备用图像 - 在临时的 QImage 上绘制
+        tempImage = QImage(pix_size, QImage::Format_ARGB32_Premultiplied);
+        tempImage.fill(Qt::transparent);
+        QPainter painter(&tempImage);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QPen(Qt::black, 2));
+        painter.setBrush(Qt::blue);
+        painter.drawEllipse(5, 5, pix_size.width() - 10, pix_size.height() - 10);
+        painter.end();
+        _image = QPixmap::fromImage(tempImage);
+    } else {
+         std::cout << "[Log] Hero: 英雄图像加载成功!" << std::endl;
+         // 成功加载后，从 QImage 创建 QPixmap 并缩放
+         _image = QPixmap::fromImage(tempImage).scaled(pix_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+
+    // 检查最终的 _image 是否为空 (以防 fromImage 失败等极端情况)
+    if (_image.isNull()) {
+        std::cerr << "[错误] Hero: _image 在构造后仍为空，创建最终备用图像" << std::endl;
+        _image = QPixmap(pix_size);
+        _image.fill(Qt::darkBlue);
+    }
+
+    std::cout << "[Log] Hero: 图像准备完成, 尺寸: " << _image.width() << "x" << _image.height()
+              << ", isNull: " << (_image.isNull() ? "是" : "否") << std::endl;
 
     absolute_pos.first = GAME_WIDTH * 0.5 - _image.width()*0.5;
     absolute_pos.second = GAME_HEIGHT * 0.5 - _image.height()*0.5;
+
     absolute_rect.setWidth(_image.width());
     absolute_rect.setHeight(_image.height());
     absolute_rect.moveTo(absolute_pos.first, absolute_pos.second);
@@ -261,8 +307,8 @@ void Hero::handleMouseControl() {
 }
 
 void Hero::mouseMoveTick(QMouseEvent *event) {
-    mousePos.first = event->x();
-    mousePos.second = event->y();
+    mousePos.first = event->position().x();
+    mousePos.second = event->position().y();
     mouseControlActive = true;
 }
 
@@ -277,15 +323,26 @@ void Hero::keyReleaseTick(QKeyEvent *event) {
 }
 
 std::vector<PaintInfo> Hero::paint() {
-    std::vector<PaintInfo> buffer;
     std::vector<PaintInfo> temp;
-    temp = _weapon->paint();
-    buffer.reserve(temp.size());
-    for(auto& item: temp){
-        buffer.push_back(item);
+
+    // 确保 _image (QPixmap) 有效才使用
+    if (_image.isNull()) {
+         std::cerr << "[错误] Hero::paint - _image (QPixmap) 为空，无法绘制英雄!" << std::endl;
+         QPixmap errorPixmap(60, 60);
+         errorPixmap.fill(Qt::magenta); // 品红色表示错误
+         temp.push_back(PaintInfo(errorPixmap, absolute_pos.first, absolute_pos.second));
+    } else {
+         // _image 本身就是 QPixmap，直接使用
+         temp.push_back(PaintInfo(_image, absolute_pos.first, absolute_pos.second));
     }
-    buffer.emplace_back(_image, absolute_pos.first, absolute_pos.second);
-    return buffer;
+
+    // 绘制武器（如果存在）
+    if (_weapon) {
+        std::vector<PaintInfo> weapon_info = _weapon->paint();
+        // 现在 PaintInfo 可以复制/移动了，insert 可以正常工作
+        temp.insert(temp.end(), weapon_info.begin(), weapon_info.end());
+    }
+    return temp;
 }
 
 void Hero::setRealPosition(double x, double y) {
@@ -313,13 +370,34 @@ bool Hero::judgeDamage(Enemy *e) {
 }
 
 void Hero::damage(int h) {
-    if(alive){
-        hp -= int(h * (1 - reduce));
-        if(hp < 0){
+    // 防止多次处理相同的伤害或重复处理
+    static bool processing_damage = false;
+    
+    // 如果当前正在处理伤害，直接返回，防止递归调用
+    if (processing_damage) {
+        return;
+    }
+    
+    // 设置处理标志
+    processing_damage = true;
+    
+    // 实际处理伤害
+    if (alive) {
+        // 计算实际伤害 (考虑减伤)
+        int actual_damage = (int)(h * (1.0 - reduce));
+        hp -= actual_damage;
+        // 记录日志
+        std::cout << "英雄受到伤害: " << actual_damage << ", 当前血量: " << hp << "/" << HP_MAX << std::endl;
+        healthChange();
+        if (hp <= 0) {
+            hp = 0;
+            std::cout << "英雄死亡！" << std::endl;
             alive = false;
         }
     }
-    healthChange();
+    
+    // 清除处理标志
+    processing_damage = false;
 }
 
 bool Hero::attemptMove(double x_bias, double y_bias) {

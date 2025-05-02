@@ -99,14 +99,21 @@ GameMain::~GameMain() {
 
 // 初始化游戏场景
 void GameMain::initScene() {
+    std::cout << "[Log] GameMain::initScene 开始" << std::endl;
     setFixedSize(GAME_WIDTH, GAME_HEIGHT);
     setWindowTitle(GAME_TITLE);
+    std::cout << "[Log] GameMain::initScene: 准备创建 GameState" << std::endl;
     game = new GameState(this);
+    std::cout << "[Log] GameMain::initScene: GameState 创建完毕，准备 initMap" << std::endl;
     game->initMap(1);
+    std::cout << "[Log] GameMain::initScene: initMap 调用完毕，准备 initHero" << std::endl;
     game->initHero(hero_type);
+    std::cout << "[Log] GameMain::initScene: initHero 调用完毕，准备 initEnemy" << std::endl;
     game->initEnemy(1);
+    std::cout << "[Log] GameMain::initScene: initEnemy 调用完毕" << std::endl;
     GAME_HALT = 0;
     FIRST_RESUME = 0;
+    std::cout << "[Log] GameMain::initScene 结束" << std::endl;
 }
 
 // 开始游戏
