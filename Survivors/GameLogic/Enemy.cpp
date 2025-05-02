@@ -6,59 +6,120 @@
 #include "Hero.h"
 #include <iostream>
 #include <QtCore/QDir>
+#include <QPainter>
+#include <QPainterPath>
+#include <QPen>
+#include <QFile>
+#include <QStringList>
 
 Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, GameMap *m_parent, Hero *target, double real_X, double real_Y) {
+    std::cout << "[Log] Enemy 构造函数开始, 类型: " << enemy_style << std::endl;
     QSize pix_size;
     enemy_type = enemy_style;
     
     // 输出当前目录信息，帮助调试
     std::cout << "当前目录: " << QDir::currentPath().toStdString() << std::endl;
     
+    // 提前声明文件检查变量
+    QString imagePath;
+    
     switch(enemy_style) {
         case 1:
-            std::cout << "尝试加载敌人1图片: " << ENEMY_1_PATH << std::endl;
-            if (!_image.load(ENEMY_1_PATH)) {
-                std::cout << "无法加载敌人1图片: " << ENEMY_1_PATH << std::endl;
-                // 创建一个红色方块作为替代
-                _image = QImage(40, 40, QImage::Format_RGBA8888);
-                _image.fill(Qt::red);
+            imagePath = ENEMY_1_PATH;
+            std::cout << "尝试加载敌人1图片: " << imagePath.toStdString() << std::endl;
+            
+            // 检查文件是否存在
+            if (QFile::exists(imagePath)) {
+                std::cout << "图片文件存在，尝试加载..." << std::endl;
+            } else {
+                std::cout << "图片文件不存在!尝试使用其他路径加载..." << std::endl;
+                // 尝试其他路径
+                QStringList paths;
+                paths << ":/Assets/laocai.png"
+                      << "D:/Survivors/Survivors/Assets/laocai.png"
+                      << "../Assets/laocai.png"
+                      << "../laocai.png"
+                      << "./Assets/laocai.png"
+                      << "./laocai.png"
+                      << "laocai.png";
+                
+                for (const QString& path : paths) {
+                    std::cout << "尝试路径: " << path.toStdString() << std::endl;
+                    if (QFile::exists(path)) {
+                        std::cout << "找到文件!" << std::endl;
+                        imagePath = path;
+                        break;
+                    }
+                }
+            }
+            
+            // 尝试加载图片
+            if (!_image.load(imagePath)) {
+                std::cout << "无法加载敌人1图片: " << imagePath.toStdString() << std::endl;
+                
+                // 尝试直接加载根目录的laocai.jpg，因为之前看到项目根目录有这个文件
+                if (QFile::exists("laocai.jpg") && _image.load("laocai.jpg")) {
+                    std::cout << "成功从根目录加载laocai.jpg" << std::endl;
+                } else {
+                    // 创建一个红色圆形作为替代
+                    _image = QImage(150, 150, QImage::Format_RGBA8888);
+                    _image.fill(Qt::transparent);
+                    
+                    // 直接绘制自定义图形
+                    QPainter painter(&_image);
+                    painter.setRenderHint(QPainter::Antialiasing);
+                    
+                    // 绘制一个红色圆形
+                    painter.setPen(QPen(Qt::black, 3));
+                    painter.setBrush(QColor(200, 0, 0));
+                    painter.drawEllipse(20, 20, 110, 110);
+                    
+                    // 添加一些细节
+                    painter.setBrush(QColor(255, 150, 150));
+                    painter.drawEllipse(40, 40, 35, 35);
+                    painter.drawEllipse(75, 40, 35, 35);
+                    
+                    std::cout << "已创建替代图形" << std::endl;
+                }
             } else {
                 std::cout << "成功加载敌人1图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
             }
             HP_MAX = ENEMY_1_HEALTH;
             speed = ENEMY_1_SPEED;
-            pix_size.setWidth(40);
-            pix_size.setHeight(40);
+            pix_size.setWidth(150);
+            pix_size.setHeight(150);
             break;
         case 2:
-            std::cout << "尝试加载敌人2图片: " << ENEMY_2_PATH << std::endl;
-            if (!_image.load(ENEMY_2_PATH)) {
-                std::cout << "无法加载敌人2图片: " << ENEMY_2_PATH << std::endl;
+            imagePath = ENEMY_1_PATH;  // 使用敌人1的图片
+            std::cout << "尝试加载敌人2图片: " << imagePath.toStdString() << std::endl;
+            if (!_image.load(imagePath)) {
+                std::cout << "无法加载敌人2图片: " << imagePath.toStdString() << std::endl;
                 // 创建一个绿色方块作为替代
-                _image = QImage(40, 40, QImage::Format_RGBA8888);
+                _image = QImage(150, 150, QImage::Format_RGBA8888);
                 _image.fill(Qt::green);
             } else {
                 std::cout << "成功加载敌人2图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
             }
-            HP_MAX = ENEMY_2_HEALTH;
-            speed = ENEMY_2_SPEED;
-            pix_size.setWidth(40);
-            pix_size.setHeight(40);
+            HP_MAX = ENEMY_1_HEALTH;  // 使用敌人1的生命值
+            speed = ENEMY_1_SPEED;    // 使用敌人1的速度
+            pix_size.setWidth(150);
+            pix_size.setHeight(150);
             break;
         case 3:
-            std::cout << "尝试加载敌人3图片: " << ENEMY_3_PATH << std::endl;
-            if (!_image.load(ENEMY_3_PATH)) {
-                std::cout << "无法加载敌人3图片: " << ENEMY_3_PATH << std::endl;
+            imagePath = ENEMY_1_PATH;  // 使用敌人1的图片
+            std::cout << "尝试加载敌人3图片: " << imagePath.toStdString() << std::endl;
+            if (!_image.load(imagePath)) {
+                std::cout << "无法加载敌人3图片: " << imagePath.toStdString() << std::endl;
                 // 创建一个蓝色方块作为替代
-                _image = QImage(40, 40, QImage::Format_RGBA8888);
+                _image = QImage(150, 150, QImage::Format_RGBA8888);
                 _image.fill(Qt::blue);
             } else {
                 std::cout << "成功加载敌人3图片，尺寸: " << _image.width() << "x" << _image.height() << std::endl;
             }
-            HP_MAX = ENEMY_3_HEALTH;
-            speed = ENEMY_3_SPEED;
-            pix_size.setWidth(40);
-            pix_size.setHeight(40);
+            HP_MAX = ENEMY_1_HEALTH;  // 使用敌人1的生命值
+            speed = ENEMY_1_SPEED;    // 使用敌人1的速度
+            pix_size.setWidth(150);
+            pix_size.setHeight(150);
             break;
     }
     enabled = false;
@@ -66,9 +127,16 @@ Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, Ga
 
     hp = HP_MAX;
     widget_parent = w_parent;
-    hp_bar = new QProgressBar();
-    hp_bar->setParent(widget_parent);
-    hp_bar->hide();
+    hp_bar = nullptr;
+    if (widget_parent) {
+        std::cout << "[Log] Enemy 构造函数: 尝试创建 hp_bar" << std::endl;
+        hp_bar = new QProgressBar();
+        hp_bar->setParent(widget_parent);
+        hp_bar->hide();
+        std::cout << "[Log] Enemy 构造函数: hp_bar 创建成功" << std::endl;
+    } else {
+        std::cout << "警告: Enemy 创建时 widget_parent 为空，无法创建 hp_bar" << std::endl;
+    }
 
     _image = _image.scaled(pix_size);
 
@@ -91,38 +159,71 @@ Enemy::Enemy(int enemy_style, QWidget *w_parent, EnemyController *controller, Ga
     setHpBarPosition();
 
     this->controller = controller;
+    std::cout << "[Log] Enemy 构造函数结束" << std::endl;
 }
 
 std::vector<PaintInfo> Enemy::paint() {
     std::vector<PaintInfo> temp;
     
-    // 创建一个永久存在的静态QPixmap对象作为备用
-    static QPixmap defaultPixmapRed(40, 40);
-    static QPixmap defaultPixmapGreen(40, 40);
-    static bool initialized = false;
+    // 使用敌人自身的QImage创建QPixmap
+    QPixmap pixmap = QPixmap::fromImage(_image);
     
-    if (!initialized) {
-        defaultPixmapRed.fill(Qt::red);
-        defaultPixmapGreen.fill(Qt::green);
-        initialized = true;
-    }
-    
-    if (_image.isNull()) {
-        std::cout << "警告：敌人" << enemy_type << "的图像为空" << std::endl;
-        // 使用静态备用QPixmap
-        temp.push_back(PaintInfo(defaultPixmapRed, absolute_pos.first, absolute_pos.second));
-    } else {
-        // 创建一个新的持久存在的QPixmap
-        static QPixmap pixmap;
-        pixmap = QPixmap::fromImage(_image);
-        
-        if (pixmap.isNull()) {
-            std::cout << "警告：无法从敌人图像创建QPixmap" << std::endl;
-            temp.push_back(PaintInfo(defaultPixmapGreen, absolute_pos.first, absolute_pos.second));
-        } else {
-            temp.push_back(PaintInfo(pixmap, absolute_pos.first, absolute_pos.second));
+    if (pixmap.isNull()) {
+        std::cout << "警告：敌人" << enemy_type << "的图像创建失败" << std::endl;
+        // 根据敌人类型创建不同颜色的备用图像
+        QPixmap defaultPixmap(150, 150);
+        switch(enemy_type) {
+            case 1: 
+                defaultPixmap.fill(Qt::transparent);
+                {
+                    QPainter painter(&defaultPixmap);
+                    painter.setRenderHint(QPainter::Antialiasing);
+                    // 绘制红色圆形
+                    painter.setPen(QPen(Qt::black, 3));
+                    painter.setBrush(QColor(200, 0, 0));
+                    painter.drawEllipse(20, 20, 110, 110);
+                }
+                break;
+            case 2: 
+                defaultPixmap.fill(Qt::transparent);
+                {
+                    QPainter painter(&defaultPixmap);
+                    painter.setRenderHint(QPainter::Antialiasing);
+                    // 绘制绿色圆形
+                    painter.setPen(QPen(Qt::black, 3));
+                    painter.setBrush(QColor(0, 200, 0));
+                    painter.drawEllipse(20, 20, 110, 110);
+                }
+                break;
+            case 3: 
+                defaultPixmap.fill(Qt::transparent);
+                {
+                    QPainter painter(&defaultPixmap);
+                    painter.setRenderHint(QPainter::Antialiasing);
+                    // 绘制蓝色圆形
+                    painter.setPen(QPen(Qt::black, 3));
+                    painter.setBrush(QColor(0, 0, 200));
+                    painter.drawEllipse(20, 20, 110, 110);
+                }
+                break;
+            default: 
+                defaultPixmap.fill(Qt::transparent);
+                {
+                    QPainter painter(&defaultPixmap);
+                    painter.setRenderHint(QPainter::Antialiasing);
+                    // 绘制灰色圆形
+                    painter.setPen(QPen(Qt::black, 3));
+                    painter.setBrush(Qt::gray);
+                    painter.drawEllipse(20, 20, 110, 110);
+                }
+                break;
         }
+        temp.push_back(PaintInfo(defaultPixmap, absolute_pos.first, absolute_pos.second));
+        std::cout << "绘制了备用敌人图像，尺寸: 150x150" << std::endl;
+    } else {
+        temp.push_back(PaintInfo(pixmap, absolute_pos.first, absolute_pos.second));
     }
+    
     return temp;
 }
 
@@ -140,7 +241,9 @@ void Enemy::setRealPosition(double x, double y) {
 void Enemy::damage(int d) {
     if(alive) {
         hp -= d;
-        hp_bar->show();
+        if (hp_bar) {
+            hp_bar->show();
+        }
         healthChange();
         if(hp <= 0)
             die();
@@ -155,27 +258,37 @@ void Enemy::die() {
 }
 
 void Enemy::enable() {
+    std::cout << "[Log] Enemy::enable 开始, 类型: " << enemy_type << std::endl;
     alive = true;
     enabled = true;
     hp = HP_MAX;
-    hp_bar->show();
-    setHpBarPosition();
-    healthChange();
-    hp_bar->hide();
+    if (hp_bar) {
+        hp_bar->show();
+        setHpBarPosition();
+        healthChange();
+        hp_bar->hide();
+    }
+    std::cout << "[Log] Enemy::enable 结束" << std::endl;
 }
 
 void Enemy::disable() {
     enabled = false;
-    hp_bar->hide();
+    if (hp_bar) {
+        hp_bar->hide();
+    }
 }
 
 void Enemy::healthChange() {
-    hp_bar->setRange(0, HP_MAX);
-    hp_bar->setValue(hp);
+    if (hp_bar) {
+        hp_bar->setRange(0, HP_MAX);
+        hp_bar->setValue(hp);
+    }
 }
 
 void Enemy::setHpBarPosition() {
-    hp_bar->setGeometry(absolute_pos.first, absolute_pos.second - 20, absolute_rect.width(), 40);
+    if (hp_bar) {
+        hp_bar->setGeometry(absolute_pos.first, absolute_pos.second - 20, absolute_rect.width(), 40);
+    }
 }
 
 NoWeaponEnemy::NoWeaponEnemy(int enemy_style, QWidget *w_parent, EnemyController *controller, GameMap *m_parent, Hero *target,
@@ -187,8 +300,8 @@ NoWeaponEnemy::NoWeaponEnemy(int enemy_style, QWidget *w_parent, EnemyController
             CD = ENEMY_1_CD;
             break;
         case 2:
-            power = ENEMY_2_POWER;
-            CD = ENEMY_2_CD;
+            power = ENEMY_1_POWER;  // 使用敌人1的伤害值
+            CD = ENEMY_1_CD;       // 使用敌人1的冷却时间
             break;
         case 3:
             power = 0;

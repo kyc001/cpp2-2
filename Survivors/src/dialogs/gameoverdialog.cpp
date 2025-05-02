@@ -21,7 +21,7 @@ GameOverDialog::GameOverDialog(Menu * parent, int e_cnt, double h_percent, int s
     SOUL += delta_soul;
     
     // 设置灵魂统计
-    soul_cnt->setText("本次结算魂：" + QString::number(delta_soul) + "(" + QString::number(SOUL) + ")");
+    soul_cnt->setText("本次结算分数：" + QString::number(delta_soul) + "(" + QString::number(SOUL) + ")");
 
     // 确认按钮点击事件
     connect(pushButton, &QPushButton::clicked, [&](){
@@ -58,7 +58,7 @@ void GameOverDialog::setupUi() {
     hp_percent->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(hp_percent);
     
-    soul_cnt = new QLabel("本次结算魂：0(0)", this);
+    soul_cnt = new QLabel("本次结算分数：0(0)", this);
     soul_cnt->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(soul_cnt);
     

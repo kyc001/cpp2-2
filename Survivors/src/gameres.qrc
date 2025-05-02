@@ -1,16 +1,12 @@
 <RCC>
     <qresource prefix="/">
         <file>../Assets/map1_bg.png</file>
-        <file>../Assets/hero1.png</file>
-        <file>../Assets/pic1.gif</file>
-        <file>../Assets/pic2.gif</file>
-        <file>../Assets/pic3.gif</file>
-        <file>../Assets/pic4.gif</file>
+        <file>../Assets/maodie.gif</file>
         <file>../Assets/aoebullet1.png</file>
-        <file>../Assets/map1_br.png</file>
         <file>../Assets/bullet2.svg</file>
         <file>../Assets/enemybullet.png</file>
         <file>../Assets/expball.png</file>
         <file>../Assets/bg.jpg</file>
+        <file>../Assets/laocai.png</file>
     </qresource>
 </RCC>

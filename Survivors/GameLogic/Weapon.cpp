@@ -1,7 +1,3 @@
-//
-// Created by 金文泽 on 2023/4/29.
-//
-
 #include "Weapon.h"
 #include "Hero.h"
 #include "Enemy.h"
@@ -44,7 +40,8 @@ bool Weapon::judgeDamage(Enemy * e) {
 }
 
 void Weapon::upgrade() {
-    damage = (int)((double)damage * WEAPON_INC_RATE);
+    damage = (int)((double)damage * (WEAPON_INC_RATE + 0.5));
+    std::cout << "武器伤害已升级至: " << damage << std::endl;
 }
 
 HeroStaticAOEWeapon::HeroStaticAOEWeapon(GameMap *map_p, Hero *user, int range, unsigned int bullet_style, int damage) :
@@ -65,6 +62,8 @@ void HeroStaticAOEWeapon::tick() {
 
 void HeroStaticAOEWeapon::upgrade() {
     Weapon::upgrade();
+    range = (int)(range * 1.2);
+    std::cout << "AOE范围已增加至: " << range << std::endl;
     bullet_buffer[0]->upgrade();
 }
 
@@ -181,10 +180,11 @@ Enemy * HeroDynamicWeapon::findTarget() {
 
 void HeroDynamicWeapon::upgrade() {
     Weapon::upgrade();
-    CD = (int)((double)CD / WEAPON_INC_RATE);
-    if(CD <= 10){
-        CD = 10;
+    CD = (int)((double)CD / (WEAPON_INC_RATE + 0.3));
+    if(CD <= 8){
+        CD = 8;
     }
+    std::cout << "武器CD已减少至: " << CD << std::endl;
 }
 
 
