@@ -16,6 +16,7 @@
 │   ├── enemybullet.png
 │   ├── bullet2.svg
 │   ├── 111.jpg
+|   |── bgm.mp3
 │   └── aoebullet1.png
 ├── build/（空）
 ├── GameLogic/

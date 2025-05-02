@@ -412,27 +412,70 @@ bool Hero::attemptMove(double x_bias, double y_bias) {
 }
 
 void Hero::upgrade(int type) {
-    switch(type){
-        case 1: {
-            int bias = HP_MAX - hp;
-            HP_MAX = (int)((double) HP_MAX * HP_INC_RATE);
-            hp = HP_MAX - bias;
-            healthChange();
-            break;
+    std::cout << "[Log] Hero::upgrade 开始，类型: " << type << std::endl;
+    
+    try {
+        switch(type){
+            case 1: { // 提升 HP
+                std::cout << "[Log] 升级类型 1: 提升 HP" << std::endl;
+                int bias = HP_MAX - hp;
+                HP_MAX = (int)((double) HP_MAX * HP_INC_RATE);
+                hp = HP_MAX - bias;
+                healthChange();
+                std::cout << "[Log] HP 上限提升至: " << HP_MAX << std::endl;
+                break;
+            }
+            case 2: { // 提升速度
+                std::cout << "[Log] 升级类型 2: 提升速度" << std::endl;
+                speed = (int)((double) speed * SPEED_INC_RATE);
+                std::cout << "[Log] 速度提升至: " << speed << std::endl;
+                break;
+            }
+            case 3: { // 提高悬浮球转速
+                std::cout << "[Log] 升级类型 3: 提升悬浮球转速" << std::endl;
+                if (_game) { // 确保 _game 指针有效
+                    for (auto& orb : _game->floating_orbs) { // 访问 GameState 中的悬浮球列表
+                        if (orb) { // 确保 orb 指针有效
+                            try {
+                                orb->increaseSpeed(); // 调用悬浮球的提速方法
+                            } catch(const std::exception& e) {
+                                std::cerr << "[错误] Hero::upgrade: 调用 increaseSpeed 时异常: " << e.what() << std::endl;
+                            }
+                        }
+                    }
+                } else {
+                    std::cerr << "[错误] Hero::upgrade: _game 指针为空，无法升级悬浮球！" << std::endl;
+                }
+                break;
+            }
+            default: // 处理未知类型
+                std::cerr << "[错误] Hero::upgrade: 未知的升级类型 " << type << std::endl;
+                break;
         }
-        case 2:
-            speed = (int)((double) speed * SPEED_INC_RATE);
-            break;
-        case 3:
-            _weapon->upgrade();
-            break;
+        
+        // 更新状态
+        keys_pressed.clear();
+        waiting_upgrade = false;
+        EXP_MAX *= 2;
+        exp = 0;
+        level++;
+        
+        // 触发UI更新
+        try {
+            expChange();
+        } catch(const std::exception& e) {
+            std::cerr << "[错误] Hero::upgrade: 调用 expChange 时异常: " << e.what() << std::endl;
+        }
+        
+        std::cout << "[Log] Hero::upgrade 完成，等级提升至: " << level << std::endl;
+    } catch(const std::exception& e) {
+        std::cerr << "[严重错误] Hero::upgrade: 升级过程中发生异常: " << e.what() << std::endl;
+        // 确保升级状态正确，即使出现异常
+        waiting_upgrade = false;
+    } catch(...) {
+        std::cerr << "[严重错误] Hero::upgrade: 升级过程中发生未知异常" << std::endl;
+        waiting_upgrade = false;
     }
-    keys_pressed.clear();
-    waiting_upgrade = false;
-    EXP_MAX *= 2;
-    exp = 0;
-    level ++;
-    expChange();
 }
 
 int Hero::getHpMax() const {
