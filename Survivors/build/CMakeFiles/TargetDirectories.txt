@@ -1,5 +1,0 @@
-D:/Survivors/Survivors/build/CMakeFiles/Survivors.dir
-D:/Survivors/Survivors/build/CMakeFiles/edit_cache.dir
-D:/Survivors/Survivors/build/CMakeFiles/rebuild_cache.dir
-D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen_timestamp_deps.dir
-D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir

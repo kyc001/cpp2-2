@@ -2,6 +2,7 @@
     <qresource prefix="/">
         <file alias="Assets/map1_bg.png">../Assets/map1_bg.png</file>
         <file alias="Assets/maodie.gif">../Assets/maodie.gif</file>
+        <file alias="Assets/maodie2.gif">../Assets/maodie2.gif</file>
         <file alias="Assets/aoebullet1.png">../Assets/aoebullet1.png</file>
         <file alias="Assets/bullet2.svg">../Assets/bullet2.svg</file>
         <file alias="Assets/enemybullet.png">../Assets/enemybullet.png</file>
@@ -11,5 +12,8 @@
         <file alias="Assets/enemy2.png">../Assets/enemy2.png</file>
         <file alias="Assets/enemy3.png">../Assets/enemy3.png</file>
         <file alias="Assets/bgm.mp3">../Assets/bgm.mp3</file>
+        <file alias="Assets/shengming.png">../Assets/shengming.png</file>
+        <file alias="Assets/sudu.png">../Assets/sudu.png</file>
+        <file alias="Assets/gongji.png">../Assets/gongji.png</file>
     </qresource>
 </RCC>

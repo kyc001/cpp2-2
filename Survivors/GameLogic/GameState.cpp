@@ -14,9 +14,15 @@ void GameState::initHero(unsigned int hero_style) {
     player->giveWeapon();
     HERO_TYPE = hero_style;
     
-    // 创建三个环绕玩家的悬浮球
-    for (int i = 0; i < 3; i++) {
-        floating_orbs.push_back(new FloatingOrb(player, this, i));
+    // 根据英雄类型决定是否创建悬浮球
+    if (hero_style == 2) { // 奔跑耄耋使用悬浮球
+        // 创建三个环绕玩家的悬浮球
+        for (int i = 0; i < 3; i++) {
+            floating_orbs.push_back(new FloatingOrb(player, this, i));
+        }
+    } else {
+        // 哈气耄耋不使用悬浮球，清空悬浮球数组
+        floating_orbs.clear();
     }
 }
 
