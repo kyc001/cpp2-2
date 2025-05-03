@@ -64,6 +64,9 @@ class Hero : public QObject {
     bool animationActive; // 动画是否激活
     int animationDuration; // 动画持续时间(毫秒)
     
+    // 自动攻击计时器 (仅哈气耄耋)
+    QTimer* _autoAttackTimer = nullptr; 
+    
     GameMap * map_parent;
     //武器部分
     int weapon_type;
@@ -166,6 +169,12 @@ public:
 
     // 更新动画帧
     void updateAnimationFrame();
+    
+    // 自动发射追踪子弹 (仅哈气耄耋)
+    void autoFireTrackingBullets();
+    
+    // 获取当前等级下应发射的子弹数量
+    int getTrackingBulletCount() const { return 2 + (level - 1) * 2; }
 
 private:
     void healthChange();

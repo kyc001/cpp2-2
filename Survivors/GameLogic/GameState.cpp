@@ -16,9 +16,9 @@ void GameState::initHero(unsigned int hero_style) {
     
     // 根据英雄类型决定是否创建悬浮球
     if (hero_style == 2) { // 奔跑耄耋使用悬浮球
-        // 创建三个环绕玩家的悬浮球
-        for (int i = 0; i < 3; i++) {
-            floating_orbs.push_back(new FloatingOrb(player, this, i));
+    // 创建三个环绕玩家的悬浮球
+    for (int i = 0; i < 3; i++) {
+        floating_orbs.push_back(new FloatingOrb(player, this, i));
         }
     } else {
         // 哈气耄耋不使用悬浮球，清空悬浮球数组
@@ -55,6 +55,13 @@ std::vector<PaintInfo> GameState::paint() {
     for(auto& orb : floating_orbs) {
         if (orb) { // 安全检查
             buffer.push_back(orb->paint());
+        }
+    }
+
+    // 4.5 绘制追踪子弹
+    for(auto& bullet : tracking_bullets) {
+        if (bullet && bullet->isEnabled()) {
+            buffer.push_back(bullet->paint());
         }
     }
 
@@ -141,6 +148,33 @@ void GameState::tick() {
         for (auto& orb : floating_orbs) {
             if (orb) {
                 orb->tick();
+            }
+        }
+        
+        // 3.5 更新追踪子弹
+        for (auto it = tracking_bullets.begin(); it != tracking_bullets.end();) {
+            HeroDynamicBullet* bullet = *it;
+            if (bullet && bullet->isEnabled()) {
+                try {
+                    bullet->tick();
+                    ++it;  // 子弹仍然有效，继续下一个
+                } catch (TargetLossError&) {
+                    // 目标丢失，清理子弹
+                    delete bullet;
+                    it = tracking_bullets.erase(it);
+                } catch (TargetHit&) {
+                    // 目标命中，清理子弹
+                    delete bullet;
+                    it = tracking_bullets.erase(it);
+                } catch (std::exception& e) {
+                    std::cout << "子弹更新异常: " << e.what() << std::endl;
+                    delete bullet;
+                    it = tracking_bullets.erase(it);
+                }
+            } else {
+                // 子弹无效，清理并移除
+                delete bullet;
+                it = tracking_bullets.erase(it);
             }
         }
         
@@ -439,5 +473,45 @@ void GameState::upgrade(int type) {
     } catch (...) {
         qCritical() << "[GameState] upgrade() 未知异常";
     }
+}
+
+// 创建追踪子弹
+void GameState::createProjectile(Hero* source, Enemy* target) {
+    if (!source || !target || !target->isEnabled()) return;
+    
+    try {
+        // 创建追踪子弹
+        // 使用Hero::getDamage()方法获取攻击力
+        int attackValue = source->getDamage(); // 获取攻击力
+        // 修正：使用正确的 bullet_style (2 代表追踪子弹)
+        HeroDynamicBullet* bullet = new HeroDynamicBullet(_map, source, target, 2, attackValue);
+        
+        // 设置子弹初始位置（与英雄相同）
+        bullet->setRealPosition(source->getRealX(), source->getRealY());
+        
+        // 启用子弹并指定目标
+        bullet->enable(target);
+        
+        // 添加到追踪子弹列表
+        tracking_bullets.push_back(bullet);
+        std::cout << "[Log] 创建了一个追踪子弹，目标: " << target << std::endl;
+    } catch (std::exception& e) {
+        std::cout << "创建追踪子弹异常: " << e.what() << std::endl;
+    }
+}
+
+// 获取所有敌人
+std::vector<Enemy*> GameState::getAllEnemies() {
+    std::vector<Enemy*> result;
+    
+    for (auto& type : enemies) {
+        for (auto& enemy : type) {
+            if (enemy && enemy->isEnabled()) {
+                result.push_back(enemy);
+            }
+        }
+    }
+    
+    return result;
 }
 

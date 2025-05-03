@@ -67,6 +67,11 @@ Hero::~Hero() {
         _animTimer->stop();
         delete _animTimer;
     }
+    
+    if (_autoAttackTimer) {
+        _autoAttackTimer->stop();
+        delete _autoAttackTimer;
+    }
 }
 
 Hero::Hero(int hero_style, QWidget *w_parent, GameMap *m_parent) {
@@ -533,9 +538,18 @@ void Hero::setRealPosition(double x, double y) {
 
 void Hero::giveWeapon() {
     switch(weapon_type){
-        case 1: // 哈气耄耋 - AOE攻击
+        case 1: // 哈气耄耋 - AOE攻击 + 自动追踪
+            // 原来的AOE攻击
             _weapon = new HeroStaticAOEWeapon(map_parent, (Hero *)this,
                                               WEAPON_1_DEFAULT_RANGE, (unsigned)WEAPON_1_BULLET_TYPE, WEAPON_1_DAMAGE);
+            
+            // 添加自动发射追踪子弹的定时器
+            if (!_autoAttackTimer) {
+                _autoAttackTimer = new QTimer(this);
+                connect(_autoAttackTimer, &QTimer::timeout, this, &Hero::autoFireTrackingBullets);
+                _autoAttackTimer->start(500); // 每500毫秒发射一次
+                std::cout << "[Log] 哈气耄耋：启用自动追踪子弹功能" << std::endl;
+            }
             break;
         case 2: // 奔跑耄耋 - 悬浮球攻击
             _weapon = new HeroDynamicWeapon(map_parent, (Hero *) this, WEAPON_2_CD,
@@ -594,22 +608,22 @@ void Hero::upgrade(int type) {
     std::cout << "[Log] Hero::upgrade 开始，类型: " << type << std::endl;
     
     try {
-        switch(type){
+    switch(type){
             case 1: { // 提升 HP（通用）
-                std::cout << "[Log] 升级类型 1: 提升 HP" << std::endl;
-                int bias = HP_MAX - hp;
-                HP_MAX = (int)((double) HP_MAX * HP_INC_RATE);
-                hp = HP_MAX - bias;
-                healthChange();
-                std::cout << "[Log] HP 上限提升至: " << HP_MAX << std::endl;
-                break;
-            }
+            std::cout << "[Log] 升级类型 1: 提升 HP" << std::endl;
+            int bias = HP_MAX - hp;
+            HP_MAX = (int)((double) HP_MAX * HP_INC_RATE);
+            hp = HP_MAX - bias;
+            healthChange();
+            std::cout << "[Log] HP 上限提升至: " << HP_MAX << std::endl;
+            break;
+        }
             case 2: { // 提升速度（通用）
-                std::cout << "[Log] 升级类型 2: 提升速度" << std::endl;
-                speed = (int)((double) speed * SPEED_INC_RATE);
-                std::cout << "[Log] 速度提升至: " << speed << std::endl;
-                break;
-            }
+            std::cout << "[Log] 升级类型 2: 提升速度" << std::endl;
+            speed = (int)((double) speed * SPEED_INC_RATE);
+            std::cout << "[Log] 速度提升至: " << speed << std::endl;
+            break;
+        }
             case 3: { 
                 if (weapon_type == 1) { // 哈气耄耋 - 提升AOE范围
                     std::cout << "[Log] 升级类型 3: 提升AOE范围" << std::endl;
@@ -618,43 +632,43 @@ void Hero::upgrade(int type) {
                         std::cout << "[Log] AOE范围已增加" << std::endl;
                     }
                 } else if (weapon_type == 2) { // 奔跑耄耋 - 提高悬浮球转速
-                    std::cout << "[Log] 升级类型 3: 提升悬浮球转速" << std::endl;
-                    if (_game) { // 确保 _game 指针有效
-                        for (auto& orb : _game->floating_orbs) { // 访问 GameState 中的悬浮球列表
-                            if (orb) { // 确保 orb 指针有效
+            std::cout << "[Log] 升级类型 3: 提升悬浮球转速" << std::endl;
+            if (_game) { // 确保 _game 指针有效
+                for (auto& orb : _game->floating_orbs) { // 访问 GameState 中的悬浮球列表
+                    if (orb) { // 确保 orb 指针有效
                                 try {
-                                    orb->increaseSpeed(); // 调用悬浮球的提速方法
+                        orb->increaseSpeed(); // 调用悬浮球的提速方法
                                 } catch(const std::exception& e) {
                                     std::cerr << "[错误] Hero::upgrade: 调用 increaseSpeed 时异常: " << e.what() << std::endl;
                                 }
-                            }
-                        }
-                    } else {
-                        std::cerr << "[错误] Hero::upgrade: _game 指针为空，无法升级悬浮球！" << std::endl;
                     }
                 }
-                break;
+            } else {
+                std::cerr << "[错误] Hero::upgrade: _game 指针为空，无法升级悬浮球！" << std::endl;
+                    }
             }
-            default: // 处理未知类型
-                std::cerr << "[错误] Hero::upgrade: 未知的升级类型 " << type << std::endl;
-                break;
+            break;
         }
+        default: // 处理未知类型
+             std::cerr << "[错误] Hero::upgrade: 未知的升级类型 " << type << std::endl;
+             break;
+    }
         
         // 更新状态
-        keys_pressed.clear();
-        waiting_upgrade = false;
-        EXP_MAX *= 2;
-        exp = 0;
+    keys_pressed.clear();
+    waiting_upgrade = false;
+    EXP_MAX *= 2;
+    exp = 0;
         level++;
         
         // 触发UI更新
         try {
-            expChange();
+    expChange();
         } catch(const std::exception& e) {
             std::cerr << "[错误] Hero::upgrade: 调用 expChange 时异常: " << e.what() << std::endl;
         }
         
-        std::cout << "[Log] Hero::upgrade 完成，等级提升至: " << level << std::endl;
+    std::cout << "[Log] Hero::upgrade 完成，等级提升至: " << level << std::endl;
     } catch(const std::exception& e) {
         std::cerr << "[严重错误] Hero::upgrade: 升级过程中发生异常: " << e.what() << std::endl;
         // 确保升级状态正确，即使出现异常
@@ -738,6 +752,60 @@ void Hero::mouseDoubleClickEvent(QMouseEvent *event) {
         startAnimation();
     } else {
         stopAnimation();
+    }
+}
+
+// 自动发射追踪子弹实现
+void Hero::autoFireTrackingBullets() {
+    // 只有哈气耄耋使用此功能
+    if (weapon_type != 1 || !_game) return;
+    
+    try {
+        // 获取当前应发射的子弹数量
+        int bulletCount = getTrackingBulletCount();
+        
+        // 查找最近的敌人
+        std::vector<std::pair<double, Enemy*>> enemiesWithDistance;
+        std::vector<Enemy*> enemies;
+        
+        // 遍历所有敌人类型和实例
+        for (auto& enemyTypeList : _game->enemies) {
+            for (auto& enemy : enemyTypeList) {
+                if (enemy && enemy->isEnabled()) {
+                    // 修正：直接访问 Enemy 的公共成员 real_pos
+                    double dx = enemy->real_pos.first - real_pos.first;
+                    double dy = enemy->real_pos.second - real_pos.second;
+                    double distanceSquared = dx*dx + dy*dy;
+                    
+                    enemiesWithDistance.push_back({distanceSquared, enemy});
+                }
+            }
+        }
+        
+        // 按照距离排序
+        std::sort(enemiesWithDistance.begin(), enemiesWithDistance.end(),
+            [](const auto& a, const auto& b) {
+                return a.first < b.first;
+            });
+        
+        // 取最近的bulletCount个敌人
+        for (int i = 0; i < bulletCount && i < enemiesWithDistance.size(); ++i) {
+            enemies.push_back(enemiesWithDistance[i].second);
+        }
+        
+        // 如果没有敌人，直接返回
+        if (enemies.empty()) return;
+        
+        // 给每个敌人发射一个追踪子弹
+        for (auto& enemy : enemies) {
+            _game->createProjectile(this, enemy);
+        }
+        
+        std::cout << "[Log] 哈气耄耋：发射了" << enemies.size() << "个追踪子弹" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "[错误] Hero::autoFireTrackingBullets: 异常: " << e.what() << std::endl;
+    } catch (...) {
+        std::cerr << "[错误] Hero::autoFireTrackingBullets: 未知异常" << std::endl;
     }
 }
 
