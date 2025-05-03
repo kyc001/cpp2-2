@@ -39,7 +39,7 @@ public:
 
     // 恢复游戏
     void resumeGame();
-    
+
     // 显示猫蝶GIF动画
     void showMaodieAnimation(int x, int y, int size = 100);
 

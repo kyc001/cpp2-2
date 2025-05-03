@@ -593,6 +593,17 @@ void GameMain::initMaodieAnimation() {
 
 // 快捷键触发显示猫蝶动画
 void GameMain::onShowMaodieTriggered() {
+    // 切换英雄动画状态
+    if (game && game->getHero()) {
+        // 切换动画状态 - 如果动画活动则停止，否则启动
+        if (game->getHero()->isAnimationActive()) {
+            game->getHero()->stopAnimation();
+        } else {
+            game->getHero()->startAnimation();
+        }
+        qDebug() << "英雄动画状态切换为：" << (game->getHero()->isAnimationActive() ? "动态" : "静态");
+    }
+    
     // 获取鼠标当前位置
     QPoint mousePos = QCursor::pos();
     // 将鼠标全局坐标转换为窗口坐标
@@ -719,9 +730,15 @@ void GameMain::mouseMoveEvent(QMouseEvent *event) {
 
 // 重写鼠标双击事件
 void GameMain::mouseDoubleClickEvent(QMouseEvent *event) {
-    // 将双击事件传递给Hero对象
+    // 切换英雄动画状态
     if (game && game->getHero()) {
-        game->getHero()->mouseDoubleClickEvent(event);
+        // 切换动画状态 - 如果动画活动则停止，否则启动
+        if (game->getHero()->isAnimationActive()) {
+            game->getHero()->stopAnimation();
+        } else {
+            game->getHero()->startAnimation();
+        }
+        qDebug() << "英雄动画状态切换为：" << (game->getHero()->isAnimationActive() ? "动态" : "静态");
     }
     
     // 在双击位置显示动画

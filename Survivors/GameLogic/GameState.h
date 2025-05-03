@@ -11,6 +11,7 @@
 #include <utility>
 #include "ExpBall.h"
 #include "FloatingOrb.h"
+#include "Bullet.h"
 
 class EnemyController;
 
@@ -24,6 +25,9 @@ class GameState {
     
     // 环绕玩家的悬浮球
     std::vector<FloatingOrb *> floating_orbs;
+    
+    // 追踪型子弹
+    std::vector<HeroDynamicBullet *> tracking_bullets;
 
     int exp_cnt;
     int exp_max;
@@ -62,6 +66,12 @@ public:
 
     // 获取英雄对象指针
     [[nodiscard]] Hero* getHero() const { return player; }
+    
+    // 创建追踪子弹
+    void createProjectile(Hero* source, Enemy* target);
+    
+    // 获取所有敌人
+    std::vector<Enemy*> getAllEnemies();
 
     // 检查悬浮球与敌人的碰撞
     void checkOrbEnemyCollisions();

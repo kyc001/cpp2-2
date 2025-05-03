@@ -105,10 +105,10 @@ void Menu::launch_game() {
         
         // 根据选择的英雄类型创建游戏实例
         auto * new_game = new GameMain(selectedHeroType);
-        new_game->show();
-        new_game->setWidgetParent(this);
-        this->hide();
-        _game = new_game;
+    new_game->show();
+    new_game->setWidgetParent(this);
+    this->hide();
+    _game = new_game;
     }
     // 如果用户取消选择，不进入游戏
 }
