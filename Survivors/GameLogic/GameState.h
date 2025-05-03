@@ -60,6 +60,9 @@ public:
 
     bool isWaiting() { return player->isWaiting(); };
 
+    // 获取英雄对象指针
+    [[nodiscard]] Hero* getHero() const { return player; }
+
     // 检查悬浮球与敌人的碰撞
     void checkOrbEnemyCollisions();
 

@@ -73,6 +73,18 @@ private:
     int hero_type;         // 英雄类型
     bool game_paused;      // 游戏暂停标志
 
+    // 升级面板相关
+    QWidget *upgradePanel;
+    QVBoxLayout *upgradePanelLayout;
+    QList<QPushButton*> upgradeButtons;
+
+    // 结算面板相关
+    QWidget *gameOverPanel;
+    QVBoxLayout *gameOverLayout;
+    QLabel *gameOverTitleLabel;
+    QLabel *gameOverStatsLabel;
+    QPushButton *gameOverCloseButton;
+
     // 初始化UI
     void setupUi();
     // 初始化游戏场景
@@ -88,6 +100,24 @@ private:
 
     // 暂停按钮点击处理
     void pauseButtonClicked();
+
+    // 初始化升级面板
+    void initUpgradePanel();
+    // 显示升级面板
+    void showUpgradePanel();
+    // 隐藏升级面板
+    void hideUpgradePanel();
+    // 处理升级选择
+    void handleUpgradeChoice(int choice);
+
+    // 初始化结算面板
+    void initGameOverPanel();
+    // 显示结算面板
+    void showGameOverPanel(int enemyCount, double hpPercent);
+    // 隐藏结算面板
+    void hideGameOverPanel();
+    // 处理结算面板关闭
+    void handleGameOverClose();
 };
 
 

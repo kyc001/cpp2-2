@@ -7,6 +7,11 @@
 #include <QtGui/QKeyEvent>
 #include <QtGui/QMouseEvent>
 #include <list>
+#include <QVector>
+#include <QString>
+#include <QPair>
+#include <QMovie>
+#include <QTimer>
 #include "PaintInfo.h"
 #include "config.h"
 #include "GameMap.h"
@@ -22,7 +27,9 @@ enum ControlMode {
     MOUSE_CONTROL      // 跟随鼠标移动
 };
 
-class Hero {
+class Hero : public QObject {
+    Q_OBJECT
+    
     //基本属性
     int HP_MAX;
     int hp;
@@ -50,6 +57,13 @@ class Hero {
     //相对地图坐标
     std::pair<double, double> real_pos;
     QPixmap _image;
+    // 用于动画显示
+    QMovie* _heroMovie;
+    int hero_style;  // 英雄类型
+    QTimer* _animTimer;  // 用于定时更新动画帧
+    bool animationActive; // 动画是否激活
+    int animationDuration; // 动画持续时间(毫秒)
+    
     GameMap * map_parent;
     //武器部分
     int weapon_type;
@@ -70,6 +84,7 @@ public:
 
     Hero();
     explicit Hero(int hero_style, QWidget * w_parent, GameMap * m_parent); //一般使用这个
+    ~Hero();  // 析构函数释放动画资源
     void setGame(GameState * t) {_game = t;}
 
     void setWidgetParent(QWidget * parent);
@@ -81,6 +96,7 @@ public:
     
     // 鼠标事件处理
     void mouseMoveTick(QMouseEvent * event);
+    void mouseDoubleClickEvent(QMouseEvent * event);
     
     // 切换控制模式
     void switchControlMode() { 
@@ -93,6 +109,11 @@ public:
     
     // 设置控制模式
     void setControlMode(ControlMode mode) { controlMode = mode; }
+    
+    // 动画控制方法
+    void startAnimation();
+    void stopAnimation();
+    bool isAnimationActive() const { return animationActive; }
     
     bool judgeDamage(Enemy * e);
     std::vector<PaintInfo> paint();
@@ -120,6 +141,9 @@ public:
 
     void upgrade(int type);
 
+    // 获取可用的升级选项描述和图标路径
+    [[nodiscard]] QVector<QPair<QString, QString>> getUpgradeOptions() const;
+
     [[nodiscard]] int getHpMax() const;
 
     [[nodiscard]] int getHp() const;
@@ -140,6 +164,8 @@ public:
     int getDamage();
     int getCD();
 
+    // 更新动画帧
+    void updateAnimationFrame();
 
 private:
     void healthChange();
@@ -154,7 +180,10 @@ private:
     
     // 处理鼠标控制逻辑
     void handleMouseControl();
+    
+    // 初始化动画
+    void initAnimation(bool autoStart = false);
 };
 
 
-#endif //VSCPROJECT_HERO_H
+#endif

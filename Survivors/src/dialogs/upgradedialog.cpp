@@ -22,14 +22,14 @@ UpgradeDialog::UpgradeDialog(GameMain * game_widget, QWidget *parent) :
     
     // 初始化UI
     try {
-        setupUi();
+    setupUi();
         
         // 设置窗口属性
         setWindowTitle("升级选择");
         setWindowModality(Qt::NonModal); // 确保非模态
         setAttribute(Qt::WA_DeleteOnClose, false); // 不自动删除，我们会手动处理
-        
-        // 连接选择按钮
+
+    // 连接选择按钮
         connect(choice1, &QPushButton::clicked, this, [this](){
             qDebug() << "[Upgrade] 按钮1被点击";
             choose1();
@@ -42,14 +42,14 @@ UpgradeDialog::UpgradeDialog(GameMain * game_widget, QWidget *parent) :
             qDebug() << "[Upgrade] 按钮3被点击";
             choose3();
         });
-        
-        // 设置按钮文本
-        choice1->setText("更多血量");
-        choice1->setToolTip("提高最大生命值");
-        choice2->setText("更快速度");
-        choice2->setToolTip("提高移动速度");
-        choice3->setText("更强武器");
-        choice3->setToolTip("提高武器伤害");
+
+    // 设置按钮文本
+    choice1->setText("更多血量");
+    choice1->setToolTip("提高最大生命值");
+    choice2->setText("更快速度");
+    choice2->setToolTip("提高移动速度");
+    choice3->setText("更强武器");
+    choice3->setToolTip("提高武器伤害");
         
         qDebug() << "[Upgrade] 对话框初始化完成";
     } catch (const std::exception& e) {

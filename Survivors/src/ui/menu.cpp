@@ -8,12 +8,14 @@
 #include "../gamemain.h"
 #include "../dialogs/settingdialog.h"
 #include "../dialogs/aboutdialog.h"
+#include "../dialogs/heroselectdialog.h"
 #include <QLabel>
 #include <QPixmap>
 #include <QMessageBox>
 #include <QApplication>
 #include <QHBoxLayout>
 #include <iostream>
+#include <QDebug>
 
 Menu::Menu(QWidget *parent) : QWidget(parent) {
     std::cout << "[Log] Menu 构造函数开始" << std::endl;
@@ -90,16 +92,25 @@ Menu::~Menu() {
 
 // 启动游戏
 void Menu::launch_game() {
-    // 直接创建游戏实例并进入游戏，使用默认英雄类型1
     if(_game){
         delete _game;
         _game = nullptr;
     }
-    auto * new_game = new GameMain(1);
-    new_game->show();
-    new_game->setWidgetParent(this);
-    this->hide();
-    _game = new_game;
+    
+    // 显示英雄选择对话框
+    HeroSelectDialog heroDialog(this);
+    if (heroDialog.exec() == QDialog::Accepted) {
+        int selectedHeroType = heroDialog.getSelectedHeroType();
+        qDebug() << "创建游戏，选择的英雄类型: " << selectedHeroType;
+        
+        // 根据选择的英雄类型创建游戏实例
+        auto * new_game = new GameMain(selectedHeroType);
+        new_game->show();
+        new_game->setWidgetParent(this);
+        this->hide();
+        _game = new_game;
+    }
+    // 如果用户取消选择，不进入游戏
 }
 
 // 打开设置对话框

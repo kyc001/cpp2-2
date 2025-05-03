@@ -69,6 +69,8 @@ set(DIALOG_SRC
     src/dialogs/settingdialog.h
     src/dialogs/aboutdialog.cpp
     src/dialogs/aboutdialog.h
+    src/dialogs/heroselectdialog.cpp
+    src/dialogs/heroselectdialog.h
 )
 
 # 主可执行文件
