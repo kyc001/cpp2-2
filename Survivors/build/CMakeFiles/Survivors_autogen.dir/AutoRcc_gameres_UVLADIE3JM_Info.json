@@ -5,6 +5,10 @@
 	"CMAKE_CURRENT_SOURCE_DIR" : "D:/Survivors/Survivors",
 	"CMAKE_SOURCE_DIR" : "D:/Survivors/Survivors",
 	"INCLUDE_DIR" : "D:/Survivors/Survivors/build/Survivors_autogen/include",
+	"INCLUDE_DIR_Debug" : "D:/Survivors/Survivors/build/Survivors_autogen/include_Debug",
+	"INCLUDE_DIR_MinSizeRel" : "D:/Survivors/Survivors/build/Survivors_autogen/include_MinSizeRel",
+	"INCLUDE_DIR_RelWithDebInfo" : "D:/Survivors/Survivors/build/Survivors_autogen/include_RelWithDebInfo",
+	"INCLUDE_DIR_Release" : "D:/Survivors/Survivors/build/Survivors_autogen/include_Release",
 	"INPUTS" : 
 	[
 		"D:/Survivors/Survivors/Assets/enemybullet.png",
@@ -24,13 +28,17 @@
 		"D:/Survivors/Survivors/Assets/maodie.gif"
 	],
 	"LOCK_FILE" : "D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Lock.lock",
-	"MULTI_CONFIG" : false,
+	"MULTI_CONFIG" : true,
 	"OPTIONS" : [ "-name", "gameres" ],
 	"OUTPUT_CHECKSUM" : "UVLADIE3JM",
 	"OUTPUT_NAME" : "qrc_gameres.cpp",
 	"RCC_EXECUTABLE" : "D:/Qt20250127/6.8.1/mingw_64/bin/rcc.exe",
 	"RCC_LIST_OPTIONS" : [ "--list" ],
 	"SETTINGS_FILE" : "D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Used.txt",
+	"SETTINGS_FILE_Debug" : "D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Used_Debug.txt",
+	"SETTINGS_FILE_MinSizeRel" : "D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Used_MinSizeRel.txt",
+	"SETTINGS_FILE_RelWithDebInfo" : "D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Used_RelWithDebInfo.txt",
+	"SETTINGS_FILE_Release" : "D:/Survivors/Survivors/build/CMakeFiles/Survivors_autogen.dir/AutoRcc_gameres_UVLADIE3JM_Used_Release.txt",
 	"SOURCE" : "D:/Survivors/Survivors/src/gameres.qrc",
 	"VERBOSITY" : 0
 }
